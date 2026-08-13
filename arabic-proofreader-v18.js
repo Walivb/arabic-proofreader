@@ -1,15 +1,25 @@
 /*!
  * ============================================================================
- *  Arabic Proofreader V18.2.0 PRO-MODULAR — Blogger Standalone Bundle
+ *  Arabic Proofreader V18.3.0 CONTEXT-PRO — Blogger Standalone Bundle
  *  ملف جاهز للنشر (Deployment-Ready) — بدون أي تبعيات خارجية
  * ============================================================================
  *
- *  الإصدار : 18.2.0 (PRO-MODULAR)
- *  التاريخ : 2026-08-12
+ *  الإصدار : 18.3.0 (CONTEXT-PRO)
+ *  التاريخ : 2026-08-13
  *  الملف   : ملف واحد مستقل (Single-File Bundle) مولَّد من المصادر المجزأة،
  *            لا يحتاج أي مكتبة خارجية ويعمل مباشرة عبر وسم <script>.
  *
  *  ── سجل التغييرات ─────────────────────────────────────────────────────────
+ *  18.3.0 (طبقة السياق والتحقق):
+ *    • محلل اتجاه العدد وعبارات 11–19 و21–99؛ يمنع الإنذار الخاطئ
+ *      «واحد ← واحدة» في «واحد وعشرون كتابًا».
+ *    • محلل فاعل محافظ يدعم شبه الجملة وعبارة العدد، ويكتشف الخطأين المستقلين
+ *      في «حضر اثنا عشر طالبة»: الفعل والعدد.
+ *    • قواعد الأفعال الخمسة بعد أدوات النصب والجزم.
+ *    • قواعد محافظة لكان/إن والجملة الاسمية، مع التصحيح عند وجود دليل صرفي.
+ *    • ContextValidator + ConfidenceReRanker قبل العرض، مع درجات ديناميكية
+ *      ووسم صريح للمراجعة اليدوية ومنع التصحيح النحوي التلقائي.
+ *    • رفع معيار «عالٍ جدًا» إلى 0.995، وإخفاء النتائج الأقل من 0.75 افتراضيًا.
  *  18.2.0 (الدفعة 2 — القواعد السياقية):
  *    • واو الجماعة: 22 صيغة قطعية (تصحيح تلقائي) + قاعدة سياقية اقتراحية
  *      بحُرّاس ضد واو الإضافة (معلمو المدرسة) وأفعال لام الواو (يدعو).
@@ -90,10 +100,10 @@
 const META = Object.freeze({
   name: 'Arabic Proofreader Hybrid Engine',
   nameArabic: 'محرك التدقيق العربي الهجين',
-  version: '18.2.0',
-  edition: 'PRO-MODULAR',
+  version: '18.3.0',
+  edition: 'CONTEXT-PRO',
   language: 'ar',
-  release: 'V18 Modular Arabic Grammar',
+  release: 'V18.3 Context-Aware Arabic Grammar',
   offsetPolicy: 'original-input',
   architecture: Object.freeze([
     'offset-aware-normalization',
@@ -108,7 +118,10 @@ const META = Object.freeze({
     'hal-and-tamyiz',
     'coordination',
     'dependents',
-    'confidence-ranking',
+    'number-direction-analysis',
+    'subject-resolution',
+    'context-validation',
+    'confidence-re-ranking',
     'safe-correction-policy',
     'gold-and-no-false-positive-validation'
   ])
@@ -119,10 +132,10 @@ const META = Object.freeze({
 const DEFAULT_OPTIONS = Object.freeze({
   safeMode: true,
   showPotential: true,
-  possibleThreshold: 0.65,
-  highThreshold: 0.85,
-  certainThreshold: 0.94,
-  autoCorrectThreshold: 0.985,
+  possibleThreshold: 0.75,
+  highThreshold: 0.97,
+  certainThreshold: 0.995,
+  autoCorrectThreshold: 0.995,
   maxFindings: 500,
   rules: Object.freeze({
     orthography: true,
@@ -134,6 +147,8 @@ const DEFAULT_OPTIONS = Object.freeze({
     tamyiz: true,
     conjunction: true,
     dependents: true,
+    syntaxContext: true,
+    fiveVerbs: true,
     wawAljamaa: true,
     contextualTaa: true,
     punctuation: true
@@ -144,15 +159,16 @@ const DEFAULT_OPTIONS = Object.freeze({
 const CONFIG = Object.freeze({
   version: META.version,
   confidenceBands: Object.freeze({
-    certain: 0.94,
-    high: 0.85,
-    medium: 0.65
+    certain: 0.995,
+    high: 0.97,
+    medium: 0.90,
+    low: 0.75
   }),
   correctionPolicy: Object.freeze({
     automatic: Object.freeze(['orthographic', 'spacing', 'punctuation']),
     suggestionOnly: Object.freeze([
       'morphology', 'syntax', 'agreement', 'case', 'number', 'diptote',
-      'exception', 'hal', 'tamyiz', 'coordination', 'dependent'
+      'exception', 'hal', 'tamyiz', 'coordination', 'dependent', 'five-verbs'
     ])
   })
 });
@@ -279,10 +295,12 @@ function featuresMatch(left, right, dimensions = ['gender', 'number']) {
 }
 
 function confidenceBand(confidence) {
-  if (confidence >= 0.94) return {code: 'certain', label: 'عالٍ جدًا'};
-  if (confidence >= 0.85) return {code: 'high', label: 'عالٍ'};
-  if (confidence >= 0.65) return {code: 'medium', label: 'متوسط'};
-  return {code: 'suppressed', label: 'منخفض'};
+  // لا يُستعمل وصف «عالٍ جدًا» إلا مع دليل شبه قطعي (معجم مراجع أو قاعدة شكلية).
+  if (confidence >= 0.995) return {code: 'certain', label: 'عالٍ جدًا'};
+  if (confidence >= 0.97) return {code: 'high', label: 'عالٍ'};
+  if (confidence >= 0.90) return {code: 'medium', label: 'متوسط'};
+  if (confidence >= 0.75) return {code: 'low', label: 'منخفض'};
+  return {code: 'suppressed', label: 'غير معروض'};
 }
 
 function caseLabel(value) {
@@ -372,6 +390,33 @@ const DEMONSTRATIVES = Object.freeze({
   'تلك': {gender: 'f', number: 'sg'}, 'أولئك': {number: 'pl', humanOnly: true}
 });
 
+/* ضمائر الرفع المنفصلة: مهمة لحسم SVO في «هي تكتب» و«هم يكتبون». */
+const PERSONAL_PRONOUNS = Object.freeze({
+  'هو': {person: 3, gender: 'm', number: 'sg'},
+  'هي': {person: 3, gender: 'f', number: 'sg'},
+  'هما': {person: 3, gender: null, number: 'du'},
+  'هم': {person: 3, gender: 'm', number: 'pl'},
+  'هن': {person: 3, gender: 'f', number: 'pl'},
+  'أنت': {person: 2, gender: 'm', number: 'sg'},
+  'أنتِ': {person: 2, gender: 'f', number: 'sg'},
+  'أنتما': {person: 2, gender: null, number: 'du'},
+  'أنتم': {person: 2, gender: 'm', number: 'pl'},
+  'أنتن': {person: 2, gender: 'f', number: 'pl'},
+  'أنا': {person: 1, gender: null, number: 'sg'},
+  'نحن': {person: 1, gender: null, number: 'pl'}
+});
+
+/* صور كان وأخواتها الأكثر شيوعًا التي تكفي للتحليل التركيبي المحافظ. */
+const KANA_SURFACES = new Set([
+  ...KANA_VERBS,
+  'كانت', 'كانا', 'كانتا', 'كانوا', 'كن', 'كنت', 'كنتم', 'كنا',
+  'أصبح', 'أصبحت', 'أصبحوا', 'أمسى', 'أمست', 'صار', 'صارت', 'صاروا',
+  'ظل', 'ظلت', 'بات', 'باتت', 'ليس', 'ليست', 'ليسوا'
+]);
+
+const SUBJUNCTIVE_PARTICLES = new Set(['لن', 'أن', 'كي', 'لكي']);
+const JUSSIVE_PARTICLES = new Set(['لم']);
+
 const NOUN_FORM_INDEX = new Map();
 for (const [lemma, data] of Object.entries(NOUN_LEMMAS)) {
   for (const item of data.forms) {
@@ -403,8 +448,9 @@ for (const [lemma, p] of Object.entries(ADJECTIVE_LEMMAS)) {
 
 const KNOWN_SURFACES = new Set([
   ...NOUN_FORM_INDEX.keys(), ...ADJECTIVE_FORM_INDEX.keys(), ...PROPER_NAMES,
-  ...PREPOSITIONS, ...CONJUNCTIONS, ...INNA_PARTICLES, ...KANA_VERBS,
-  ...Object.keys(DEMONSTRATIVES)
+  ...PREPOSITIONS, ...CONJUNCTIONS, ...INNA_PARTICLES, ...KANA_SURFACES,
+  ...Object.keys(DEMONSTRATIVES), ...Object.keys(PERSONAL_PRONOUNS),
+  ...SUBJUNCTIVE_PARTICLES, ...JUSSIVE_PARTICLES
 ]);
 
 function nounForm(lemma, number, caseValue = null) {
@@ -564,6 +610,102 @@ function expectedCompoundNumber(value, countedGender, caseValue = 'nominative') 
     return [expectedSimpleNumber(unit, countedGender), countedGender === 'f' ? 'عشرة' : 'عشر'];
   }
   return null;
+}
+
+const DECADE_NOMINATIVE = Object.freeze({
+  20: 'عشرون', 30: 'ثلاثون', 40: 'أربعون', 50: 'خمسون',
+  60: 'ستون', 70: 'سبعون', 80: 'ثمانون', 90: 'تسعون'
+});
+
+function decadeForm(value, caseValue = 'nominative') {
+  const nominative = DECADE_NOMINATIVE[value];
+  if (!nominative) return null;
+  return caseValue === 'nominative' ? nominative : nominative.replace(/ون$/u, 'ين');
+}
+
+/** يحلل 21–99 المكتوبة بواو متصلة أو منفصلة: «واحد وعشرون»/«واحد و عشرون». */
+function parseCoordinatedNumber(tokens, index) {
+  const first = simpleCardinal(tokens[index]?.morph?.core);
+  if (!first || first.value < 1 || first.value > 9) return null;
+
+  let decadeIndex = index + 1;
+  let length = 2;
+  const second = tokens[decadeIndex];
+  if (second?.morph?.core === 'و' && tokens[index + 2]) {
+    decadeIndex = index + 2;
+    length = 3;
+  } else if (second?.morph?.segments?.conjunction !== 'و') {
+    return null;
+  }
+
+  const decade = simpleCardinal(tokens[decadeIndex]?.morph?.core);
+  if (!decade || !DECADE_NOMINATIVE[decade.value]) return null;
+  const decadeCase = /ين$/u.test(tokens[decadeIndex].morph.core) ? 'accgen' : 'nominative';
+  const unitCase = first.value === 2 ? first.caseForm : null;
+  return {
+    value: decade.value + first.value,
+    unitValue: first.value,
+    countedGender: first.countedGender,
+    caseForm: decadeCase,
+    unitCase,
+    length,
+    decadeIndex,
+    surface: tokens.slice(index, index + length).map(x => x.surface).join(' '),
+    kind: 'coordinated'
+  };
+}
+
+function expectedCoordinatedNumber(parsed, countedGender, caseValue = 'nominative') {
+  const oblique = ['accusative', 'genitive', 'accgen'].includes(caseValue);
+  let unit;
+  if (parsed.unitValue === 1) unit = countedGender === 'f' ? 'واحدة' : 'واحد';
+  else if (parsed.unitValue === 2) {
+    if (countedGender === 'f') unit = oblique ? 'اثنتين' : 'اثنتان';
+    else unit = oblique ? 'اثنين' : 'اثنان';
+  } else unit = expectedSimpleNumber(parsed.unitValue, countedGender);
+  const decade = decadeForm(parsed.value - parsed.unitValue, caseValue);
+  return unit && decade ? [unit, decade] : null;
+}
+
+/**
+ * يحدد عبارة العدد واتجاه المعدود بدل افتراض أن الكلمة السابقة هي المعدود.
+ * النتيجة تستخدمها قواعد العدد ومحلل الفاعل وطبقة التحقق النهائية.
+ */
+function analyzeNumberPhrase(tokens, index) {
+  const compound = parseCompoundNumber(tokens, index);
+  if (compound) {
+    const countedIndex = index + compound.length;
+    return {...compound, start: index, end: countedIndex, countedIndex, direction: 'number-before-noun', kind: 'teen'};
+  }
+  const coordinated = parseCoordinatedNumber(tokens, index);
+  if (coordinated) {
+    const countedIndex = index + coordinated.length;
+    return {...coordinated, start: index, end: countedIndex, countedIndex, direction: 'number-before-noun'};
+  }
+
+  const data = simpleCardinal(tokens[index]?.morph?.core);
+  if (!data) return null;
+  if (data.value === 1 || data.value === 2) {
+    if (tokens[index + 1]?.morph?.core === 'من') {
+      const {end: sentenceEnd} = sentenceBounds(tokens, index);
+      const partitiveCounted = nextNominal(tokens, index + 2, {end: sentenceEnd, skipPrepositional: false});
+      if (partitiveCounted >= 0) {
+        return {
+          ...data, start: index, end: index + 1, countedIndex: partitiveCounted,
+          direction: 'partitive-number-before-min', length: 1, kind: 'simple'
+        };
+      }
+    }
+    const previous = tokens[index - 1];
+    // العدد الوصفي يطابق المعدود في التعريف: «كتاب واحد/الكتاب الواحد»؛
+    // وهذا يمنع ربط «واحد» بالمكتبة في «في المكتبة واحد».
+    const definitenessCompatible = previous
+      && Boolean(previous.morph?.definite) === Boolean(tokens[index].morph?.definite);
+    const countedIndex = previous && previous.sentence === tokens[index].sentence
+      && isStrongNominalCandidate(previous) && definitenessCompatible ? index - 1 : -1;
+    return {...data, start: index, end: index + 1, countedIndex, direction: countedIndex >= 0 ? 'noun-before-number' : 'standalone', length: 1, kind: 'simple'};
+  }
+  return {...data, start: index, end: index + 1, countedIndex: index + 1, direction: 'number-before-noun', length: 1, kind: 'simple'};
 }
 
 function numberGovernance(value) {
@@ -780,7 +922,13 @@ const VERB_LEXICON = Object.freeze({
   'سمع': entry('سمع', 'س-م-ع', 'sound', 'يسمع', soundParadigm('سمع', 'يسمع'), 'transitive'),
   'عرف': entry('عرف', 'ع-ر-ف', 'sound', 'يعرف', soundParadigm('عرف', 'يعرف'), 'transitive'),
   'طلب': entry('طلب', 'ط-ل-ب', 'sound', 'يطلب', soundParadigm('طلب', 'يطلب'), 'transitive'),
-  'فتح': entry('فتح', 'ف-ت-ح', 'sound', 'يفتح', soundParadigm('فتح', 'يفتح'), 'transitive')
+  'فتح': entry('فتح', 'ف-ت-ح', 'sound', 'يفتح', soundParadigm('فتح', 'يفتح'), 'transitive'),
+
+  /* 18.3: أفعال شائعة لازمة لاختبارات الجمل الإسنادية المستقلة. */
+  'نجح': entry('نجح', 'ن-ج-ح', 'sound', 'ينجح', soundParadigm('نجح', 'ينجح')),
+  'فاز': entry('فاز', 'ف-و-ز', 'hollow-waw', 'يفوز', hollowParadigm('فاز', 'فز', 'يفوز', 'فز')),
+  'شارك': entry('شارك', 'ش-ر-ك', 'sound-derived', 'يشارك', soundParadigm('شارك', 'يشارك'), 'ambitransitive'),
+  'كرم': entry('كرم', 'ك-ر-م', 'sound', 'يكرم', soundParadigm('كرم', 'يكرم'), 'transitive')
 });
 
 const VERB_FORM_INDEX = new Map();
@@ -830,8 +978,9 @@ function exactKnown(value) {
     || PROPER_NAMES.has(core) || VERB_FORM_INDEX.has(core)
     || SIMPLE_CARDINALS[core] || DIPTOTE_EXACT.has(core)
     || PREPOSITIONS.has(core) || CONJUNCTIONS.has(core)
-    || INNA_PARTICLES.has(core) || KANA_VERBS.has(core)
-    || DEMONSTRATIVES[core];
+    || INNA_PARTICLES.has(core) || KANA_SURFACES.has(core)
+    || DEMONSTRATIVES[core] || PERSONAL_PRONOUNS[core]
+    || SUBJUNCTIVE_PARTICLES.has(core) || JUSSIVE_PARTICLES.has(core);
 }
 
 function knownCore(value) {
@@ -852,15 +1001,15 @@ function splitClitics(surface) {
     rest = rest.slice(1);
   }
 
-  if (rest.startsWith('لل') && rest.length > 3 && knownCore(`ال${rest.slice(2)}`)) {
+  if (!exactKnown(rest) && rest.startsWith('لل') && rest.length > 3 && knownCore(`ال${rest.slice(2)}`)) {
     preposition = 'ل';
     article = true;
     rest = rest.slice(2);
-  } else if (/^[بكل]ال/u.test(rest) && rest.length > 4 && knownCore(rest.slice(1))) {
+  } else if (!exactKnown(rest) && /^[بكل]ال/u.test(rest) && rest.length > 4 && knownCore(rest.slice(1))) {
     preposition = rest[0];
     article = true;
     rest = rest.slice(3);
-  } else if (/^[بكل]/u.test(rest) && rest.length > 2 && knownCore(rest.slice(1))) {
+  } else if (!exactKnown(rest) && /^[بكل]/u.test(rest) && rest.length > 2 && knownCore(rest.slice(1))) {
     preposition = rest[0];
     rest = rest.slice(1);
   }
@@ -914,11 +1063,14 @@ function analyzeNominal(token, segments) {
 
   if (PROPER_NAMES.has(core)) candidates.push({pos: 'proper', lemma: core, gender: /[ةى]$/u.test(core) ? 'f' : null, number: 'sg', animacy: 'human', confidence: 0.99, source: 'proper-name-lexicon'});
   if (DEMONSTRATIVES[core]) candidates.push({pos: 'demonstrative', lemma: core, ...DEMONSTRATIVES[core], confidence: 0.995, source: 'closed-class'});
+  if (PERSONAL_PRONOUNS[core]) candidates.push({pos: 'pronoun', lemma: core, ...PERSONAL_PRONOUNS[core], animacy: 'human', definite: true, confidence: 0.999, source: 'closed-class'});
   if (PREPOSITIONS.has(core)) candidates.push({pos: 'particle', sub: 'preposition', lemma: core, confidence: 0.999, source: 'closed-class'});
   if (CONJUNCTIONS.has(core)) candidates.push({pos: 'particle', sub: 'conjunction', lemma: core, confidence: 0.999, source: 'closed-class'});
   if (INNA_PARTICLES.has(core)) candidates.push({pos: 'particle', sub: 'inna', lemma: core, confidence: 0.999, source: 'closed-class'});
-  if (KANA_VERBS.has(core)) candidates.push({pos: 'verb', sub: 'kana', lemma: core, confidence: 0.995, source: 'closed-class'});
+  if (KANA_SURFACES.has(core)) candidates.push({pos: 'verb', sub: 'kana', lemma: core, confidence: 0.995, source: 'closed-class'});
   if (NEGATION.has(core)) candidates.push({pos: 'particle', sub: 'negation', lemma: core, confidence: 0.995, source: 'closed-class'});
+  if (SUBJUNCTIVE_PARTICLES.has(core)) candidates.push({pos: 'particle', sub: 'subjunctive', lemma: core, confidence: 0.999, source: 'closed-class'});
+  if (JUSSIVE_PARTICLES.has(core)) candidates.push({pos: 'particle', sub: 'jussive', lemma: core, confidence: 0.999, source: 'closed-class'});
   if (core === 'إلا') candidates.push({pos: 'particle', sub: 'exception', lemma: core, confidence: 0.999, source: 'closed-class'});
   if (['غير', 'سوى', 'عدا', 'خلا', 'حاشا'].includes(core)) candidates.push({pos: 'exception-tool', lemma: core, confidence: 0.995, source: 'closed-class'});
   if (['نفس', 'عين', 'كل', 'كلا', 'كلتا', 'كلي', 'كلتي', 'أجمع'].includes(core)) candidates.push({pos: 'emphasis', lemma: core, confidence: 0.98, source: 'dependent-lexicon'});
@@ -938,7 +1090,7 @@ function analyzeNominal(token, segments) {
   if (!candidates.length && core.length >= 3) candidates.push({pos: 'unknown', lemma: core, gender: null, number: 'sg', confidence: 0.3, source: 'fallback'});
 
   const all = dedupe(candidates);
-  const nominal = all.find(x => ['noun', 'proper', 'adj', 'emphasis', 'demonstrative'].includes(x.pos));
+  const nominal = all.find(x => ['noun', 'proper', 'adj', 'emphasis', 'demonstrative', 'pronoun'].includes(x.pos));
   const sameLemmaNominals = nominal ? all.filter(x => x.pos === nominal.pos && x.lemma === nominal.lemma) : [];
   const indexedNumbers = [...new Set(sameLemmaNominals.map(x => x.number).filter(Boolean))];
   const ambiguousNumbers = indexedNumbers.length > 1 ? indexedNumbers : null;
@@ -950,7 +1102,7 @@ function analyzeNominal(token, segments) {
     nominal,
     diptote,
     structuralCase: observedStructural,
-    definite: segments.definite,
+    definite: segments.definite || nominal?.pos === 'pronoun' || nominal?.pos === 'proper',
     gender: nominal?.gender || ending?.gender || null,
     number: ambiguousNumbers ? null : (nominal?.number || ending?.number || null),
     numberCandidates: ambiguousNumbers || nominal?.numberCandidates || ending?.numberCandidates || null,
@@ -996,6 +1148,13 @@ function inflectCoreCase(core, expected, options = {}) {
   if (/(?:ون|ين)$/u.test(clean) && options.number === 'pl') {
     const stem = clean.slice(0, -2);
     return `${stem}${expected === 'nominative' ? 'ون' : 'ين'}`;
+  }
+  // جمع المؤنث السالم ينصب بالكسرة نيابة عن الفتحة.
+  if (/ات$/u.test(clean) && options.number === 'pl') {
+    if (options.onlyWhenVisible && !options.visibleCase) return clean;
+    const tanwin = Boolean(options.tanwin && !options.noTanwin);
+    if (expected === 'nominative') return `${clean}${tanwin ? 'ٌ' : 'ُ'}`;
+    if (expected === 'accusative' || expected === 'genitive') return `${clean}${tanwin ? 'ٍ' : 'ِ'}`;
   }
   if (options.onlyWhenVisible && !options.visibleCase) return clean;
   return withCaseMark(core, expected, options);
@@ -1176,6 +1335,7 @@ function findingFromSpan(context, {
     evidence,
     safeCandidate: Boolean(safe),
     autoCorrectable: false,
+    metadata: {...metadata},
     ...metadata
   };
 }
@@ -1208,6 +1368,7 @@ function findingFromTextSpan(context, {
     normalizedLength: normalizedEnd - normalizedStart,
     confidence, confidenceBand: band.code, confidenceLabel: band.label,
     explanation, evidence, safeCandidate: Boolean(safe), autoCorrectable: false,
+    metadata: {...metadata},
     ...metadata
   };
 }
@@ -1241,7 +1402,7 @@ function applyFindings(original, findings) {
 /* ===== MODULE: src/core/context.js ===== */
 function isNominal(token) {
   return Boolean(token?.morph?.nominal)
-    || ['noun', 'proper', 'adj', 'emphasis', 'demonstrative'].includes(token?.morph?.pos);
+    || ['noun', 'proper', 'adj', 'emphasis', 'demonstrative', 'pronoun'].includes(token?.morph?.pos);
 }
 
 function isAdjective(token) {
@@ -1265,6 +1426,15 @@ function nextNominal(tokens, start, {end = tokens.length, skipPrepositional = tr
   return -1;
 }
 
+function nextUngovernedNominal(tokens, start, {end = tokens.length} = {}) {
+  for (let i = start; i < end; i += 1) {
+    if (!isNominal(tokens[i])) continue;
+    if (tokens[i].morph.segments?.preposition || PREPOSITIONS.has(tokens[i - 1]?.morph?.core)) continue;
+    return i;
+  }
+  return -1;
+}
+
 function previousNominal(tokens, start, {startAt = 0} = {}) {
   for (let i = start; i >= startAt; i -= 1) if (isNominal(tokens[i])) return i;
   return -1;
@@ -1278,6 +1448,7 @@ function tokenFeatures(token) {
   const n = token?.morph?.nominal;
   const candidates = token?.morph?.numberCandidates || n?.numberCandidates || null;
   return {
+    person: n?.person || 3,
     gender: n?.gender || token?.morph?.gender || null,
     number: candidates ? null : (token?.morph?.number || n?.number || null),
     numberCandidates: candidates,
@@ -1353,6 +1524,146 @@ function sentenceBounds(tokens, index) {
   return {start, end};
 }
 
+const SUBJECT_SKIP_ADVERBS = new Set([
+  'اليوم', 'أمس', 'غدًا', 'غدا', 'مبكرًا', 'مبكرا', 'متأخرًا', 'متأخرا',
+  'هنا', 'هناك', 'الآن', 'حينئذ', 'فجأة', 'أيضًا', 'أيضا'
+]);
+const ADVERBIAL_GOVERNORS = new Set([
+  'بعد', 'قبل', 'أمام', 'خلف', 'فوق', 'تحت', 'بين', 'عند', 'أثناء', 'خلال', 'حول'
+]);
+
+function isStrongNominalCandidate(token) {
+  if (!isNominal(token)) return false;
+  const pos = token.morph?.nominal?.pos || token.morph?.pos;
+  return ['noun', 'proper', 'pronoun', 'demonstrative'].includes(pos);
+}
+
+/**
+ * محلل فاعل محافظ لا يبني شجرة كاملة، لكنه يميز SVO/VSO ويتجاوز شبه الجملة
+ * والظرف وعبارة العدد. لا يعيد علاقة إذا بقي احتمال المفعول به قويًا.
+ */
+function resolveSubject(tokens, verbIndex, verb = bestVerb(tokens[verbIndex]), {allowPreverbal = true} = {}) {
+  const {start, end} = sentenceBounds(tokens, verbIndex);
+  const immediatePrevious = tokens[verbIndex - 1];
+
+  if (allowPreverbal && immediatePrevious && immediatePrevious.sentence === tokens[verbIndex].sentence
+      && isStrongNominalCandidate(immediatePrevious)
+      && !immediatePrevious.morph.segments?.preposition
+      && !isAdjective(immediatePrevious)) {
+    return {
+      subjectIndex: verbIndex - 1,
+      order: 'SVO',
+      confidence: immediatePrevious.morph.nominal?.pos === 'pronoun' ? 0.99 : 0.965,
+      evidence: ['subject-before-verb', 'adjacent-subject']
+    };
+  }
+
+  // فاعل متقدم يفصله ظرف قصير: «الطلاب اليوم يكتبون».
+  for (let j = allowPreverbal ? verbIndex - 1 : start - 1; j >= Math.max(start, verbIndex - 3); j -= 1) {
+    const candidate = tokens[j];
+    if (SUBJECT_SKIP_ADVERBS.has(candidate.morph.core)) continue;
+    if (isStrongNominalCandidate(candidate) && !candidate.morph.segments?.preposition && !isAdjective(candidate)) {
+      const between = tokens.slice(j + 1, verbIndex);
+      if (between.every(x => SUBJECT_SKIP_ADVERBS.has(x.morph.core))) {
+        return {subjectIndex: j, order: 'SVO', confidence: 0.9, evidence: ['subject-before-verb', 'intervening-adverb']};
+      }
+    }
+    break;
+  }
+
+  let skipped = 0;
+  for (let i = verbIndex + 1; i < end && i <= verbIndex + 10; i += 1) {
+    const token = tokens[i];
+    const core = token.morph.core;
+
+    // جمع مذكر مضاف حذفت نونه: «معلمو المدرسة». لا يجوز التقاط المضاف إليه فاعلًا.
+    if (/[ء-ي]و$/u.test(token.clean) && tokens[i + 1]?.sentence === token.sentence
+        && isStrongNominalCandidate(tokens[i + 1]) && tokens[i + 1].morph.definite) {
+      i += 1;
+      skipped += 2;
+      continue;
+    }
+
+    // عبارة عدد متقدمة: المعدود هو مصدر الجنس والعدد الدلالي للفاعل.
+    const phrase = analyzeNumberPhrase(tokens, i);
+    if (phrase && ['number-before-noun', 'partitive-number-before-min'].includes(phrase.direction)
+        && phrase.countedIndex >= 0 && phrase.countedIndex < end
+        && isStrongNominalCandidate(tokens[phrase.countedIndex])) {
+      const counted = tokens[phrase.countedIndex];
+      if (counted.morph.segments?.preposition) {
+        i = phrase.countedIndex;
+        skipped += phrase.length + 1;
+        continue;
+      }
+      return {
+        subjectIndex: phrase.countedIndex,
+        order: 'VSO',
+        confidence: skipped ? 0.88 : 0.955,
+        evidence: ['subject-after-verb', 'number-phrase-subject', `number:${phrase.value}`],
+        numberPhrase: phrase
+      };
+    }
+
+    // ظرف مضاف: نتجاوز مركبه الإضافي القصير («بعد انتهاء الحصة»).
+    if (ADVERBIAL_GOVERNORS.has(core)) {
+      const phraseStart = i;
+      let last = i;
+      for (let k = i + 1; k < end && k <= i + 3; k += 1) {
+        last = k;
+        if (tokens[k].morph.definite || tokens[k].morph.nominal?.pos === 'proper') break;
+      }
+      i = last;
+      skipped += Math.max(1, last - phraseStart + 1);
+      continue;
+    }
+
+    // حرف جر منفصل: نتجاوز الاسم المجرور وتوابعه القريبة.
+    if (PREPOSITIONS.has(core)) {
+      const governed = nextNominal(tokens, i + 1, {end, skipPrepositional: false});
+      if (governed >= 0) {
+        i = governed;
+        while (i + 1 < end && isAdjective(tokens[i + 1])) i += 1;
+      }
+      skipped += 1;
+      continue;
+    }
+    // حرف جر متصل بالاسم.
+    if (token.morph.segments?.preposition) {
+      skipped += 1;
+      continue;
+    }
+    if (SUBJECT_SKIP_ADVERBS.has(core)) {
+      skipped += 1;
+      continue;
+    }
+    if (bestVerb(token) || KANA_SURFACES.has(core) || INNA_PARTICLES.has(core)) break;
+    if (!isStrongNominalCandidate(token) || isAdjective(token)) {
+      skipped += 1;
+      continue;
+    }
+    // بعد فعل معطوف لا نقبل وصفًا/اسمًا مخمنًا بوصفه فاعلًا جديدًا.
+    if (!allowPreverbal && (token.morph.nominal?.confidence || 0) < 0.9) {
+      skipped += 1;
+      continue;
+    }
+
+    const observed = observedCase(token);
+    if (verb?.transitive) {
+      if (observed === 'accusative' || observed === 'accgen') continue;
+      const next = nextNominal(tokens, i + 1, {end, skipPrepositional: true});
+      const completeFrame = next >= 0 && !isAdjective(tokens[next]);
+      if (!completeFrame && observed !== 'nominative') return null;
+    }
+    return {
+      subjectIndex: i,
+      order: 'VSO',
+      confidence: skipped ? 0.86 : (observed === 'nominative' ? 0.96 : 0.94),
+      evidence: ['subject-after-verb', skipped ? 'skipped-nonargument-span' : 'adjacent-subject']
+    };
+  }
+  return null;
+}
+
 
 /* ===== MODULE: src/rules/orthography.js ===== */
 const PHRASES = Object.freeze({
@@ -1365,7 +1676,7 @@ const PHRASES = Object.freeze({
   /* الدفعة 1.1: فصل «لا» عن الكلمة — الصيغة الموصولة لا قراءة صحيحة لها */
   'لابد': 'لا بد', 'لاشك': 'لا شك', 'لابأس': 'لا بأس',
   /* المتبوعة بواو العطف (السياق الأكثر ورودًا) */
-  'ولابد': 'ولا بد', 'ولا شك': 'ولا شك', 'ولا بأس': 'ولا بأس',
+  'ولابد': 'ولا بد',
   'باذن الله': 'بإذن الله'
 });
 
@@ -1665,6 +1976,12 @@ function punctuationRule(context) {
 function desiredPerson(features, order) {
   const effective = effectiveAgreement(features);
   if (order === 'VSO') return effective?.gender === 'f' ? '3fs' : '3ms';
+  if (effective?.person === 1) return effective.number === 'pl' ? '1p' : '1s';
+  if (effective?.person === 2) {
+    if (effective.number === 'du') return '2du';
+    if (effective.number === 'pl') return effective.gender === 'f' ? '2fp' : '2mp';
+    return effective.gender === 'f' ? '2fs' : '2ms';
+  }
   if (effective?.number === 'du') return effective.gender === 'f' ? '3df' : '3dm';
   if (effective?.number === 'pl') return effective.gender === 'f' ? '3fp' : '3mp';
   return effective?.gender === 'f' ? '3fs' : '3ms';
@@ -1679,62 +1996,49 @@ function weakVerbAgreementRule(context) {
     const verb = bestVerb(token);
     if (!verb || verb.person !== 3) continue;
 
-    // الفعل المسبوق بواو/فاء العطف المتصلة يشارك الفاعلَ الجملةَ السابقة؛
-    // الاسم الذي قبله مباشرة ليس فاعله، فنتجاوزه منعًا للإنذارات الكاذبة
-    // (مثل: «الطلاب كتبوا الدرس وحضروا» — الدرس ليس فاعل حضروا).
-    if (token.morph.segments?.conjunction) continue;
-
-    let subjectIndex = -1;
-    let order = 'VSO';
     // إذا كان السطح مشتركًا بين اسم وفعل وتلاه نعت، فالقراءة الاسمية أرجح: «كتب جديدة».
-    if (token.morph.nominal && tokens[i + 1] && tokens[i + 1].sentence === token.sentence && tokens[i + 1].morph.candidates.some(x => x.pos === 'adj')) continue;
+    if (token.morph.nominal && tokens[i + 1] && tokens[i + 1].sentence === token.sentence
+        && tokens[i + 1].morph.candidates.some(x => x.pos === 'adj')) continue;
 
-    const previous = previousNominal(tokens, i - 1, {startAt: Math.max(0, i - 2)});
-    if (previous >= 0 && previous === i - 1 && tokens[previous].sentence === token.sentence) {
-      subjectIndex = previous;
-      order = 'SVO';
-    } else {
-      subjectIndex = nextNominal(tokens, i + 1, {end: tokens.length, skipPrepositional: true});
-      if (subjectIndex < 0 || tokens[subjectIndex].sentence !== token.sentence) continue;
-      // الفاعل الظاهر في VSO يلي الفعل مباشرة؛ وجود كلمة بينهما يجعل الإسناد غير موثوق
-      let interveningWord = false;
-      for (let j = i + 1; j < subjectIndex; j += 1) {
-        if (tokens[j].type === 'word') { interveningWord = true; break; }
-      }
-      if (interveningWord) continue;
-      if (verb.transitive) {
-        const observed = observedCase(tokens[subjectIndex]);
-        // قد يكون الاسم المنصوب أو غير المشكول مفعولًا والفاعل مستترًا.
-        if (observed === 'accusative' || observed === 'accgen') continue;
-        const objectCandidate = nextNominal(tokens, subjectIndex + 1, {end: tokens.length, skipPrepositional: true});
-        const completeFrame = objectCandidate >= 0 && tokens[objectCandidate].sentence === token.sentence;
-        const nominativeEvidence = observed === 'nominative';
-        if (!completeFrame && !nominativeEvidence) continue;
-      }
-    }
+    // الفعل المعطوف قد يشترك مع سابقه في الفاعل؛ لذا لا نسمح له بالتقاط الاسم السابق
+    // مفعولًا كان أو غيره، لكننا نحلل فاعلًا ظاهرًا جديدًا بعده.
+    const relation = resolveSubject(tokens, i, verb, {
+      allowPreverbal: !token.morph.segments?.conjunction
+    });
+    if (!relation) continue;
 
+    const {subjectIndex, order} = relation;
     const subject = tokens[subjectIndex];
-    // فاعل منتهٍ بواو الإضافة (معلمو المدرسة…) لا تُوثق خصائصه الصرفية هنا
-    if (/[ء-ي]و$/.test(subject.clean)) continue;
+    if (!subject || /[ء-ي]و$/u.test(subject.clean)) continue;
     const features = tokenFeatures(subject);
-    if (!features.gender && !features.number) continue;
+    if (!features.gender && !features.number && features.person === 3) continue;
     const personCode = desiredPerson(features, order);
     const desired = conjugateVerb(verb.lemma, verb.tense, personCode);
-    if (!desired || desired === token.morph.core) continue;
+    if (!desired || stripDiacritics(desired) === stripDiacritics(token.morph.core)) continue;
 
+    // الدرجة مبنية على قوة تحديد العلاقة، لا على رقم ثابت للقاعدة وحدها.
+    const morphologyEvidence = Math.min(0.995, verb.confidence || 0.9);
+    const confidence = Math.min(0.985, 0.55 * relation.confidence + 0.45 * morphologyEvidence);
     out.push(findingFromSpan(context, {
       startToken: token,
       replacement: rebuildToken(token, desired),
       ruleId: 'WEAK_VERB_AGREEMENT_V18',
       type: 'صرفي',
       classification: 'morphology',
-      confidence: order === 'SVO' ? 0.97 : 0.94,
+      confidence,
       explanation: order === 'SVO'
-        ? 'إذا تقدم الفاعل وجبت المطابقة الكاملة في الجنس والعدد، ويستعمل التصريف المراجع للفعل المعتل أو غير المنتظم.'
-        : 'إذا تقدم الفعل على الفاعل الظاهر أفرد الفعل غالبًا، مع بقاء مطابقة الجنس.',
-      evidence: ['verified-verb-paradigm', verb.verbClass, order, `subject:${subject.surface}`],
+        ? 'دلّ التحليل السياقي على فاعل متقدم؛ فتجب المطابقة في الشخص والجنس والعدد.'
+        : relation.numberPhrase
+          ? 'الفاعل عبارة عدد متقدمة، ويؤخذ جنس الفعل المفرد من جنس المعدود الظاهر.'
+          : 'دلّ التحليل السياقي على فاعل ظاهر متأخر؛ فيفرد الفعل مع مطابقة الجنس.',
+      evidence: ['verified-verb-paradigm', verb.verbClass, order, ...relation.evidence, `subject:${subject.surface}`],
       safe: false,
-      metadata: {lemma: verb.lemma, verbClass: verb.verbClass, tense: verb.tense, personFrom: verb.personCode, personTo: personCode, subjectIndex}
+      metadata: {
+        lemma: verb.lemma, verbClass: verb.verbClass, tense: verb.tense,
+        personFrom: verb.personCode, personTo: personCode, subjectIndex,
+        subjectOrder: order, relationConfidence: relation.confidence,
+        numberPhrase: relation.numberPhrase || null
+      }
     }));
   }
   return out;
@@ -1807,8 +2111,22 @@ function numberPhraseCase(tokens, index) {
   const previous = tokens[index - 1];
   if (token?.morph?.segments?.preposition || PREPOSITIONS.has(previous?.morph?.core)) return 'genitive';
   if (INNA_PARTICLES.has(previous?.morph?.core)) return 'accusative';
-  const verb = bestVerb(previous);
-  if (verb && verb.transitive && (verb.person === 1 || verb.person === 2)) return 'accusative';
+
+  const {start} = sentenceBounds(tokens, index);
+  for (let i = index - 1; i >= start; i -= 1) {
+    const verb = bestVerb(tokens[i]);
+    if (!verb) continue;
+    const argumentsBetween = [];
+    for (let j = i + 1; j < index; j += 1) {
+      if (isStrongNominalCandidate(tokens[j]) && !tokens[j].morph.segments?.preposition) argumentsBetween.push(j);
+    }
+    // فعل المتكلم/المخاطب المتعدي: فاعله مضمر، فالعدد التالي مفعول غالبًا.
+    if (verb.transitive && (verb.person === 1 || verb.person === 2)) return 'accusative';
+    // وجود فاعل ظاهر قبل العدد يجعل العدد مفعولًا في الفعل المتعدي.
+    if (verb.transitive && argumentsBetween.length) return 'accusative';
+    // أول عبارة اسمية بعد فعل الغائب تُحلل فاعلًا ظاهرًا.
+    return 'nominative';
+  }
   return 'nominative';
 }
 
@@ -1871,21 +2189,64 @@ function simplePolarityFinding(context, numberToken, countedToken, data) {
 }
 
 function oneTwoAgreementFinding(context, nounToken, numberToken, data) {
-  if (![1, 2].includes(data.value) || !isNominal(nounToken)) return null;
+  if (![1, 2].includes(data.value) || !isStrongNominalCandidate(nounToken)) return null;
   const features = tokenFeatures(nounToken);
-  if (!features.gender || data.countedGender === features.gender) return null;
-  const expected = expectedSimpleNumber(data.value, features.gender);
-  if (!expected) return null;
+  if (!features.gender) return null;
+  const inferred = inferSyntacticCase(context.tokens, nounToken.index);
+  let expectedCase = inferred?.case || observedCase(nounToken) || 'nominative';
+  if (expectedCase === 'accgen') expectedCase = data.caseForm || 'accgen';
+  const oblique = ['accusative', 'genitive', 'accgen'].includes(expectedCase);
+
+  let expected;
+  if (data.value === 1) expected = features.gender === 'f' ? 'واحدة' : 'واحد';
+  else if (features.gender === 'f') expected = oblique ? 'اثنتين' : 'اثنتان';
+  else expected = oblique ? 'اثنين' : 'اثنان';
+
+  const genderMismatch = data.countedGender !== features.gender;
+  const caseMismatch = data.value === 2 && data.caseForm && !caseMatches(data.caseForm, expectedCase);
+  const visible = numberToken.visibleCase;
+  const visibleMismatch = Boolean(visible && expectedCase !== 'accgen' && !caseMatches(visible.case, expectedCase));
+  if (!genderMismatch && !caseMismatch && !visibleMismatch) return null;
+
+  if (visible && data.value === 1 && expectedCase !== 'accgen') {
+    expected = withCaseMark(expected, expectedCase, {tanwin: visible.kind === 'tanwin'});
+  }
   return findingFromSpan(context, {
     startToken: numberToken,
     replacement: rebuildToken(numberToken, expected),
-    ruleId: 'NUMBER_ONE_TWO_AGREEMENT_V18',
+    ruleId: caseMismatch && !genderMismatch ? 'NUMBER_TWO_CASE_V18' : 'NUMBER_ONE_TWO_AGREEMENT_V18',
     type: 'نحوي',
     classification: 'number',
-    confidence: 0.97,
-    explanation: 'الواحد والاثنان يتبعان المعدود في التذكير والتأنيث، ويأتيان بعده غالبًا.',
-    evidence: [`number:${data.value}`, `counted-gender:${features.gender}`],
-    safe: false
+    confidence: Math.min(0.98, 0.82 + 0.16 * (features.confidence || 0.3)),
+    explanation: data.value === 2
+      ? 'الاثنان يتبع المعدود في التذكير والتأنيث والإعراب: بالألف رفعًا وبالياء نصبًا وجرًا.'
+      : 'الواحد يتبع المعدود في التذكير والتأنيث والإعراب عندما يأتي نعتًا بعده.',
+    evidence: [`number:${data.value}`, `counted-gender:${features.gender}`, `expected-case:${expectedCase}`, 'noun-before-number', 'adjacent-counted-noun'],
+    safe: false,
+    metadata: {numberValue: data.value, countedGender: features.gender, countedIndex: nounToken.index, direction: 'noun-before-number', expectedCase, genderMismatch, caseMismatch, relationConfidence: 0.98}
+  });
+}
+
+function partitiveOneTwoFinding(context, numberToken, countedToken, data) {
+  if (![1, 2].includes(data.value) || !isStrongNominalCandidate(countedToken)) return null;
+  const features = tokenFeatures(countedToken);
+  if (!features.gender) return null;
+  const expectedCase = numberPhraseCase(context.tokens, numberToken.index);
+  const oblique = ['accusative', 'genitive', 'accgen'].includes(expectedCase);
+  let expected;
+  if (data.value === 1) expected = features.gender === 'f' ? 'واحدة' : 'واحد';
+  else if (features.gender === 'f') expected = oblique ? 'اثنتين' : 'اثنتان';
+  else expected = oblique ? 'اثنين' : 'اثنان';
+  const genderMismatch = data.countedGender !== features.gender;
+  const caseMismatch = data.value === 2 && data.caseForm && !caseMatches(data.caseForm, expectedCase);
+  if (!genderMismatch && !caseMismatch) return null;
+  return findingFromSpan(context, {
+    startToken: numberToken, replacement: rebuildToken(numberToken, expected),
+    ruleId: 'NUMBER_PARTITIVE_ONE_TWO_V18', type: 'نحوي', classification: 'number', confidence: 0.955,
+    explanation: 'العدد المستقل قبل «من» يوافق المجموعة في الجنس، ويعرب بحسب موقعه في الجملة.',
+    evidence: [`number:${data.value}`, 'partitive-min', `counted-gender:${features.gender}`, `phrase-case:${expectedCase}`],
+    safe: false,
+    metadata: {numberValue: data.value, countedGender: features.gender, countedIndex: countedToken.index, direction: 'partitive-number-before-min', expectedCase, genderMismatch, caseMismatch, relationConfidence: 0.94}
   });
 }
 
@@ -1894,59 +2255,110 @@ function numberRule(context) {
   const {tokens} = context;
   const consumed = new Set();
 
-  for (let i = 0; i < tokens.length - 2; i += 1) {
-    const compound = parseCompoundNumber(tokens, i);
-    if (!compound) continue;
-    const counted = tokens[i + compound.length];
-    if (!counted || counted.sentence !== tokens[i].sentence || !isNominal(counted)) continue;
-    const gender = tokenFeatures(counted).gender;
-    const phraseCase = numberPhraseCase(tokens, i);
-    const genderMismatch = Boolean(gender && compound.countedGender !== gender);
-    const caseMismatch = compound.value === 12 && compound.caseForm && !caseMatches(compound.caseForm, phraseCase);
-    if (genderMismatch || caseMismatch) {
-      const expected = expectedCompoundNumber(compound.value, gender || compound.countedGender, phraseCase);
-      if (expected) {
-        out.push(findingFromSpan(context, {
-          startToken: tokens[i], endToken: tokens[i + 1],
-          replacement: `${rebuildToken(tokens[i], expected[0])} ${rebuildToken(tokens[i + 1], expected[1])}`,
-          ruleId: caseMismatch && !genderMismatch ? 'NUMBER_TWELVE_CASE_V18' : 'NUMBER_COMPOUND_AGREEMENT_V18',
-          type: 'نحوي', classification: 'number', confidence: 0.985,
-          explanation: caseMismatch && !genderMismatch
-            ? 'صدر العدد اثني عشر/اثنتي عشرة يعرب إعراب المثنى: بالألف رفعًا وبالياء نصبًا وجرًا.'
-            : compound.value <= 12
-              ? 'جزآ العدد أحد عشر واثنا عشر يوافقان المعدود في التذكير والتأنيث.'
-              : 'في الأعداد من ثلاثة عشر إلى تسعة عشر يخالف الجزء الأول المعدود، ويوافقه جزء العشرة.',
-          evidence: [`number:${compound.value}`, `counted-gender:${gender}`, `phrase-case:${phraseCase}`, 'compound-number'],
-          safe: false,
-          metadata: {numberValue: compound.value, countedGender: gender, phraseCase, genderMismatch, caseMismatch}
-        }));
-      }
-    }
-    const countedFinding = countedNounFinding(context, counted, compound.value);
-    if (countedFinding) out.push(countedFinding);
-    consumed.add(i); consumed.add(i + 1);
-  }
-
+  // المرحلة الأولى: العبارات المركبة 11–19 والمنسقة 21–99 قبل الكلمات المفردة.
   for (let i = 0; i < tokens.length; i += 1) {
     if (consumed.has(i)) continue;
+    const phrase = analyzeNumberPhrase(tokens, i);
+    if (!phrase || !['teen', 'coordinated'].includes(phrase.kind)) continue;
+    const counted = tokens[phrase.countedIndex];
+    if (!counted || counted.sentence !== tokens[i].sentence || !isStrongNominalCandidate(counted)) continue;
+
+    const countedFeatures = tokenFeatures(counted);
+    const gender = countedFeatures.gender;
+    const phraseCase = numberPhraseCase(tokens, i);
+    const genderMismatch = Boolean(gender && phrase.countedGender && phrase.countedGender !== gender);
+    const expectedTeen = phrase.kind === 'teen'
+      ? expectedCompoundNumber(phrase.value, gender || phrase.countedGender, phraseCase) : null;
+    const formMismatch = phrase.kind === 'teen' && expectedTeen
+      ? expectedTeen.some((part, offset) => stripDiacritics(tokens[i + offset].morph.core) !== part)
+      : false;
+    const caseMismatch = phrase.kind === 'teen'
+      ? Boolean(phrase.value === 12 && phrase.caseForm && !caseMatches(phrase.caseForm, phraseCase))
+      : Boolean((phrase.caseForm && !caseMatches(phrase.caseForm, phraseCase))
+          || (phrase.unitValue === 2 && phrase.unitCase && !caseMatches(phrase.unitCase, phraseCase)));
+
+    if (genderMismatch || caseMismatch || formMismatch) {
+      if (phrase.kind === 'teen') {
+        const expected = expectedTeen;
+        if (expected) {
+          out.push(findingFromSpan(context, {
+            startToken: tokens[i], endToken: tokens[i + 1],
+            replacement: `${rebuildToken(tokens[i], expected[0])} ${rebuildToken(tokens[i + 1], expected[1])}`,
+            ruleId: caseMismatch && !genderMismatch ? 'NUMBER_TWELVE_CASE_V18' : 'NUMBER_COMPOUND_AGREEMENT_V18',
+            type: 'نحوي', classification: 'number', confidence: 0.98,
+            explanation: caseMismatch && !genderMismatch
+              ? 'صدر العدد اثني عشر/اثنتي عشرة يعرب إعراب المثنى: بالألف رفعًا وبالياء نصبًا وجرًا.'
+              : phrase.value <= 12
+                ? 'جزآ العدد أحد عشر واثنا عشر يوافقان المعدود في التذكير والتأنيث.'
+                : 'في الأعداد من ثلاثة عشر إلى تسعة عشر يخالف الجزء الأول المعدود، ويوافقه جزء العشرة.',
+            evidence: [`number:${phrase.value}`, `counted-gender:${gender}`, `phrase-case:${phraseCase}`, 'compound-number', 'number-before-noun'],
+            safe: false,
+            metadata: {numberValue: phrase.value, countedGender: gender, phraseCase, genderMismatch, caseMismatch, formMismatch, countedIndex: phrase.countedIndex, direction: phrase.direction, relationConfidence: 0.98}
+          }));
+        }
+      } else {
+        const expected = expectedCoordinatedNumber(phrase, gender || phrase.countedGender, phraseCase);
+        if (expected) {
+          let replacement;
+          if (phrase.length === 3) {
+            replacement = `${rebuildToken(tokens[i], expected[0])} و ${rebuildToken(tokens[phrase.decadeIndex], expected[1])}`;
+          } else {
+            replacement = `${rebuildToken(tokens[i], expected[0])} ${rebuildToken(tokens[phrase.decadeIndex], expected[1])}`;
+          }
+          out.push(findingFromSpan(context, {
+            startToken: tokens[i], endToken: tokens[i + phrase.length - 1], replacement,
+            ruleId: genderMismatch ? 'NUMBER_COORDINATED_AGREEMENT_V18' : 'NUMBER_COORDINATED_CASE_V18',
+            type: 'نحوي', classification: 'number', confidence: 0.975,
+            explanation: genderMismatch
+              ? 'جزء الآحاد في 21–99 يوافق المعدود في الواحد والاثنين، ويخالفه في 3–9، أما ألفاظ العقود فلا تتغير للجنس.'
+              : 'العقود والاثنان في العدد المعطوف ترفع بالواو/الألف وتنصب وتجر بالياء.',
+            evidence: [`number:${phrase.value}`, `counted-gender:${gender}`, `phrase-case:${phraseCase}`, 'coordinated-number', 'number-before-noun'],
+            safe: false,
+            metadata: {numberValue: phrase.value, countedGender: gender, phraseCase, genderMismatch, caseMismatch, countedIndex: phrase.countedIndex, direction: phrase.direction, relationConfidence: 0.975}
+          }));
+        }
+      }
+    }
+
+    const countedFinding = countedNounFinding(context, counted, phrase.value);
+    if (countedFinding) {
+      countedFinding.metadata = {...(countedFinding.metadata || {}), countedIndex: phrase.countedIndex, numberStart: i, direction: phrase.direction, relationConfidence: 0.98};
+      out.push(countedFinding);
+    }
+    for (let j = i; j < i + phrase.length; j += 1) consumed.add(j);
+  }
+
+  // المرحلة الثانية: الأعداد المفردة. الواحد والاثنان لا ينظران إلا إلى اسم سابق ملاصق.
+  for (let i = 0; i < tokens.length; i += 1) {
+    if (consumed.has(i)) continue;
+    const phrase = analyzeNumberPhrase(tokens, i);
+    if (!phrase || phrase.kind !== 'simple') continue;
     const data = simpleCardinal(tokens[i].morph.core);
     if (!data) continue;
 
     if (data.value === 1 || data.value === 2) {
-      const previous = tokens[i - 1];
-      if (previous && previous.sentence === tokens[i].sentence) {
-        const agreement = oneTwoAgreementFinding(context, previous, tokens[i], data);
+      if (phrase.direction === 'noun-before-number' && phrase.countedIndex >= 0) {
+        const agreement = oneTwoAgreementFinding(context, tokens[phrase.countedIndex], tokens[i], data);
+        if (agreement) out.push(agreement);
+      } else if (phrase.direction === 'partitive-number-before-min' && phrase.countedIndex >= 0) {
+        const agreement = partitiveOneTwoFinding(context, tokens[i], tokens[phrase.countedIndex], data);
         if (agreement) out.push(agreement);
       }
       continue;
     }
 
-    const counted = tokens[i + 1];
-    if (!counted || counted.sentence !== tokens[i].sentence) continue;
+    const counted = tokens[phrase.countedIndex];
+    if (!counted || counted.sentence !== tokens[i].sentence || !isStrongNominalCandidate(counted)) continue;
     const polarity = simplePolarityFinding(context, tokens[i], counted, data);
-    if (polarity) out.push(polarity);
+    if (polarity) {
+      polarity.metadata = {...(polarity.metadata || {}), countedIndex: phrase.countedIndex, direction: phrase.direction, relationConfidence: 0.98};
+      out.push(polarity);
+    }
     const countedFinding = countedNounFinding(context, counted, data.value);
-    if (countedFinding) out.push(countedFinding);
+    if (countedFinding) {
+      countedFinding.metadata = {...(countedFinding.metadata || {}), countedIndex: phrase.countedIndex, numberStart: i, direction: phrase.direction, relationConfidence: 0.98};
+      out.push(countedFinding);
+    }
   }
   return out;
 }
@@ -2340,6 +2752,143 @@ function dependentsRule(context) {
 }
 
 
+/* ===== MODULE: src/rules/syntax-context.js ===== */
+function syntaxCaseFinding(context, token, expected, ruleId, explanation, evidence, confidence = 0.96) {
+  const observed = observedCase(token);
+  if (!observed || caseMatches(observed, expected)) return null;
+  return findingFromSpan(context, {
+    startToken: token,
+    replacement: inflectTokenCase(token, expected, {onlyWhenVisible: true}),
+    ruleId, type: 'نحوي', classification: 'syntax', confidence,
+    explanation, evidence, safe: false,
+    metadata: {observedCase: observed, expectedCase: expected, relationConfidence: confidence}
+  });
+}
+
+function predicateAgreementFinding(context, subject, predicate, expectedCase, ruleId, evidence, confidence = 0.95) {
+  const adjective = bestAdjective(predicate);
+  if (!adjective) return null;
+  const target = effectiveAgreement(tokenFeatures(subject));
+  const actual = tokenFeatures(predicate);
+  const mismatch = featuresMatch(target, actual, ['gender', 'number']);
+  const observed = observedCase(predicate);
+  const caseMismatch = Boolean(observed && !caseMatches(observed, expectedCase));
+  if (!mismatch.length && !caseMismatch) return null;
+  return findingFromSpan(context, {
+    startToken: predicate,
+    replacement: inflectAdjectiveToken(predicate, target, expectedCase, {
+      forceVisibleCase: Boolean(predicate.visibleCase || caseMismatch)
+    }),
+    ruleId, type: 'نحوي', classification: 'syntax', confidence,
+    explanation: 'الخبر يطابق المبتدأ أو اسم الناسخ في الجنس والعدد، وتتحدد حالته الإعرابية بحسب العامل الناسخ.',
+    evidence: [...evidence, ...mismatch.map(x => `mismatch:${x}`), `expected-case:${expectedCase}`],
+    safe: false,
+    metadata: {subjectIndex: subject.index, predicateIndex: predicate.index, mismatch, expectedCase, relationConfidence: confidence}
+  });
+}
+
+function syntaxContextRule(context) {
+  const out = [];
+  const {tokens} = context;
+
+  for (let i = 0; i < tokens.length; i += 1) {
+    const core = tokens[i].morph.core;
+    const {end} = sentenceBounds(tokens, i);
+
+    if (KANA_SURFACES.has(core)) {
+      const subjectIndex = nextUngovernedNominal(tokens, i + 1, {end});
+      if (subjectIndex < 0) continue;
+      const subject = tokens[subjectIndex];
+      const subjectCase = syntaxCaseFinding(
+        context, subject, 'nominative', 'KANA_SUBJECT_CASE_V18',
+        'اسم كان وأخواتها مرفوع.', ['kana-sister', core], 0.97
+      );
+      if (subjectCase) out.push(subjectCase);
+      const predicateIndex = nextUngovernedNominal(tokens, subjectIndex + 1, {end});
+      if (predicateIndex >= 0) {
+        const predicate = predicateAgreementFinding(
+          context, subject, tokens[predicateIndex], 'accusative', 'KANA_PREDICATE_V18',
+          ['kana-predicate', core], 0.965
+        );
+        if (predicate) out.push(predicate);
+      }
+      continue;
+    }
+
+    if (INNA_PARTICLES.has(core)) {
+      const subjectIndex = nextUngovernedNominal(tokens, i + 1, {end});
+      if (subjectIndex < 0) continue;
+      const subject = tokens[subjectIndex];
+      const subjectCase = syntaxCaseFinding(
+        context, subject, 'accusative', 'INNA_SUBJECT_CASE_V18',
+        'اسم إن وأخواتها منصوب.', ['inna-sister', core], 0.97
+      );
+      if (subjectCase) out.push(subjectCase);
+      const predicateIndex = nextUngovernedNominal(tokens, subjectIndex + 1, {end});
+      if (predicateIndex >= 0) {
+        const predicate = predicateAgreementFinding(
+          context, subject, tokens[predicateIndex], 'nominative', 'INNA_PREDICATE_V18',
+          ['inna-predicate', core], 0.96
+        );
+        if (predicate) out.push(predicate);
+      }
+    }
+  }
+
+  // جملة اسمية مباشرة محافظة: معرفة/ضمير ثم خبر صفة نكرة، بلا ناسخ أو فعل.
+  for (const group of context.sentences) {
+    const subject = group[0];
+    const predicate = group[1];
+    if (!subject || !predicate || !isStrongNominalCandidate(subject) || !bestAdjective(predicate)) continue;
+    if (!(subject.morph.definite || subject.morph.nominal?.pos === 'pronoun')) continue;
+    if (predicate.morph.definite || predicate.morph.segments?.conjunction || predicate.morph.segments?.preposition) continue;
+    const finding = predicateAgreementFinding(
+      context, subject, predicate, 'nominative', 'NOMINAL_PREDICATE_AGREEMENT_V18',
+      ['direct-nominal-sentence', 'definite-subject', 'indefinite-predicate'], 0.95
+    );
+    if (finding) out.push(finding);
+  }
+  return out;
+}
+
+
+/* ===== MODULE: src/rules/five-verbs.js ===== */
+function fiveVerbObliqueForm(core) {
+  if (/ون$/u.test(core)) return core.replace(/ون$/u, 'وا');
+  if (/ان$/u.test(core)) return core.replace(/ان$/u, 'ا');
+  if (/ين$/u.test(core)) return core.replace(/ين$/u, 'ي');
+  return null;
+}
+
+function fiveVerbsRule(context) {
+  const out = [];
+  const {tokens} = context;
+  const fivePersons = new Set(['2fs', '2du', '2mp', '3dm', '3df', '3mp']);
+  for (let i = 1; i < tokens.length; i += 1) {
+    const verb = bestVerb(tokens[i]);
+    if (!verb || verb.tense !== 'present' || !fivePersons.has(verb.personCode)) continue;
+    const governor = tokens[i - 1].morph.core;
+    const mood = SUBJUNCTIVE_PARTICLES.has(governor)
+      ? 'subjunctive' : (JUSSIVE_PARTICLES.has(governor) ? 'jussive' : null);
+    if (!mood) continue;
+    const desired = fiveVerbObliqueForm(tokens[i].morph.core);
+    if (!desired || desired === tokens[i].morph.core) continue;
+    out.push(findingFromSpan(context, {
+      startToken: tokens[i], replacement: rebuildToken(tokens[i], desired),
+      ruleId: mood === 'subjunctive' ? 'FIVE_VERBS_SUBJUNCTIVE_V18' : 'FIVE_VERBS_JUSSIVE_V18',
+      type: 'صرفي', classification: 'five-verbs', confidence: 0.99,
+      explanation: mood === 'subjunctive'
+        ? 'الأفعال الخمسة تنصب بحذف النون بعد أداة النصب، وتثبت ألف التفريق بعد واو الجماعة.'
+        : 'الأفعال الخمسة تجزم بحذف النون بعد أداة الجزم، وتثبت ألف التفريق بعد واو الجماعة.',
+      evidence: ['five-verbs', `governor:${governor}`, `person:${verb.personCode}`, 'verified-verb-paradigm'],
+      safe: false,
+      metadata: {mood, governorIndex: i - 1, personCode: verb.personCode, relationConfidence: 0.99}
+    }));
+  }
+  return out;
+}
+
+
 /* ===== MODULE: src/pipeline/rules.js ===== */
 const RULE_PIPELINE = Object.freeze([
   {id: 'orthography', run: orthographyRule},
@@ -2351,6 +2900,8 @@ const RULE_PIPELINE = Object.freeze([
   {id: 'tamyiz', run: tamyizRule},
   {id: 'conjunction', run: conjunctionRule},
   {id: 'dependents', run: dependentsRule},
+  {id: 'syntaxContext', run: syntaxContextRule},
+  {id: 'fiveVerbs', run: fiveVerbsRule},
   {id: 'wawAljamaa', run: wawAljamaaRule},
   {id: 'contextualTaa', run: contextualTaaRule},
   {id: 'punctuation', run: punctuationRule}
@@ -2361,20 +2912,145 @@ function pipelineDescription() {
 }
 
 
+/* ===== MODULE: src/pipeline/context-validator.js ===== */
+const GRAMMAR_CLASSES = new Set([
+  'morphology', 'syntax', 'agreement', 'case', 'number', 'diptote',
+  'exception', 'hal', 'tamyiz', 'coordination', 'dependent', 'five-verbs'
+]);
+
+function tokenAtOriginalSpan(context, finding) {
+  return context.tokens.find(t => t.originalStart <= finding.index && t.originalEnd >= finding.index + finding.length)
+    || context.tokens.find(t => t.originalStart === finding.index)
+    || null;
+}
+
+function contextValidateFinding(context, finding) {
+  const validation = {valid: true, checks: [], penalties: [], originalConfidence: finding.confidence};
+  const metadata = finding.metadata || {};
+  const replacement = finding.replacement == null ? null : String(finding.replacement);
+
+  if (replacement != null && replacement === finding.original) {
+    validation.valid = false;
+    validation.reason = 'replacement-does-not-change-surface';
+  }
+
+  if (finding.ruleId === 'NUMBER_ONE_TWO_AGREEMENT_V18') {
+    const numberToken = tokenAtOriginalSpan(context, finding);
+    const counted = context.tokens[metadata.countedIndex];
+    const coordinated = numberToken ? parseCoordinatedNumber(context.tokens, numberToken.index) : null;
+    if (metadata.direction !== 'noun-before-number' || !counted
+        || counted.index !== numberToken?.index - 1 || coordinated) {
+      validation.valid = false;
+      validation.reason = 'unresolved-one-two-direction';
+    } else {
+      validation.checks.push('number-direction-confirmed', 'adjacent-counted-noun-confirmed');
+    }
+  }
+
+  if (finding.classification === 'number' && Number.isInteger(metadata.countedIndex)) {
+    const counted = context.tokens[metadata.countedIndex];
+    if (!counted || !isStrongNominalCandidate(counted)) {
+      validation.valid = false;
+      validation.reason = 'counted-noun-not-confirmed';
+    } else {
+      validation.checks.push('counted-noun-confirmed');
+    }
+  }
+
+  if (finding.ruleId === 'WEAK_VERB_AGREEMENT_V18') {
+    const verbToken = tokenAtOriginalSpan(context, finding);
+    const verb = verbToken && bestVerb(verbToken);
+    const relation = verbToken && resolveSubject(context.tokens, verbToken.index, verb, {
+      allowPreverbal: !verbToken.morph.segments?.conjunction
+    });
+    if (!relation || relation.subjectIndex !== metadata.subjectIndex || relation.order !== metadata.subjectOrder) {
+      validation.valid = false;
+      validation.reason = 'subject-revalidation-failed';
+    } else {
+      validation.checks.push('subject-revalidated', `order:${relation.order}`);
+      metadata.relationConfidence = Math.min(metadata.relationConfidence || 1, relation.confidence);
+    }
+  }
+
+  const token = tokenAtOriginalSpan(context, finding);
+  const morphConfidence = token?.morph?.confidence || 0.75;
+  const relationConfidence = metadata.relationConfidence
+    || (finding.evidence?.some(x => String(x).includes('visible')) ? 0.98 : null)
+    || (finding.classification === 'orthographic' || finding.classification === 'orthographic-phrase' ? 0.999 : 0.9);
+  const posKinds = new Set((token?.morph?.candidates || []).map(x => x.pos));
+  const ambiguityPenalty = GRAMMAR_CLASSES.has(finding.classification) && posKinds.size > 1 ? 0.025 : 0;
+  if (ambiguityPenalty) validation.penalties.push('multi-pos-ambiguity');
+
+  if (GRAMMAR_CLASSES.has(finding.classification)) {
+    finding.confidence = Math.min(
+      0.985,
+      Math.max(0, 0.60 * finding.confidence + 0.25 * relationConfidence + 0.15 * morphConfidence - ambiguityPenalty)
+    );
+  }
+
+  finding.metadata = metadata;
+  finding.contextValidation = validation;
+  finding.requiresReview = GRAMMAR_CLASSES.has(finding.classification) || finding.confidence < 0.95;
+  finding.recommendedAction = finding.requiresReview ? 'manual-review' : 'apply';
+  finding.confidenceBand = confidenceBand(finding.confidence).code;
+  finding.confidenceLabel = confidenceBand(finding.confidence).label;
+  return validation.valid;
+}
+
+function validateAndRerankFindings(context, findings) {
+  const accepted = [];
+  const rejected = [];
+  for (const finding of deduplicateFindings(findings)) {
+    if (contextValidateFinding(context, finding)) accepted.push(finding);
+    else rejected.push(finding);
+  }
+
+  // عند وجود اقتراحين مختلفين للمقطع نفسه نعرض الأقوى فقط، ونمنع قرارًا ملتبسًا.
+  const groups = new Map();
+  for (const item of accepted) {
+    const key = `${item.index}|${item.length}`;
+    const list = groups.get(key) || [];
+    list.push(item);
+    groups.set(key, list);
+  }
+  const unambiguous = [];
+  for (const list of groups.values()) {
+    const replacements = new Set(list.map(x => x.replacement));
+    if (replacements.size <= 1) {
+      unambiguous.push(...list);
+      continue;
+    }
+    list.sort((a, b) => b.confidence - a.confidence);
+    const winner = list[0];
+    winner.requiresReview = true;
+    winner.recommendedAction = 'manual-review';
+    winner.contextValidation.checks.push('conflicting-alternative-retained-as-review');
+    unambiguous.push(winner);
+    for (const loser of list.slice(1)) {
+      loser.contextValidation.valid = false;
+      loser.contextValidation.reason = 'conflicting-lower-ranked-alternative';
+      rejected.push(loser);
+    }
+  }
+  return {accepted: unambiguous.sort((a, b) => a.index - b.index || b.confidence - a.confidence), rejected};
+}
+
+
 /* ===== MODULE: src/pipeline/rank.js ===== */
 const AUTOMATIC = new Set(['orthographic', 'orthographic-phrase', 'spacing', 'punctuation']);
 
-function rankAndClassify(findings, options) {
-  const unique = deduplicateFindings(findings);
+function rankAndClassify(findings, options, context) {
+  const checked = validateAndRerankFindings(context, findings);
   const visible = [];
-  const suppressed = [];
+  const suppressed = [...checked.rejected];
 
-  for (const finding of unique) {
+  for (const finding of checked.accepted) {
     const automaticClass = AUTOMATIC.has(finding.classification);
     finding.autoCorrectable = Boolean(
       options.safeMode
       && automaticClass
       && finding.safeCandidate
+      && !finding.requiresReview
       && finding.confidence >= options.autoCorrectThreshold
       && finding.replacement != null
     );
@@ -2395,7 +3071,7 @@ function rankAndClassify(findings, options) {
     else occupied.push({start: item.index, end});
   }
 
-  return {visible: visible.slice(0, options.maxFindings), suppressed, all: unique};
+  return {visible: visible.slice(0, options.maxFindings), suppressed, all: [...checked.accepted, ...checked.rejected]};
 }
 
 
@@ -2448,7 +3124,7 @@ function analyze(input, options = {}) {
     }
   }
 
-  const ranked = rankAndClassify(rawFindings, context.options);
+  const ranked = rankAndClassify(rawFindings, context.options, context);
   const corrected = applyFindings(context.original, ranked.visible);
   const result = {
     engine: META,
@@ -2499,7 +3175,7 @@ const GOLD_CORPUS = Object.freeze([
   {id: 'orth-ya-alif', text: 'لدي موعد في منتدي ثقافي', rules: ['ORTHOGRAPHY_V18:لدي', 'ORTHOGRAPHY_V18:منتدي'], corrected: 'لدى موعد في منتدى ثقافي'},
   {id: 'orth-pronouns', text: 'انت هنا. انا هنا. انتم هنا.', rules: ['ORTHOGRAPHY_V18:انت', 'ORTHOGRAPHY_V18:انا', 'ORTHOGRAPHY_V18:انتم'], corrected: 'أنت هنا. أنا هنا. أنتم هنا.'},
   {id: 'orth-particles', text: 'جاء الان الذى فاز', rules: ['ORTHOGRAPHY_V18:الان', 'ORTHOGRAPHY_V18:الذى'], corrected: 'جاء الآن الذي فاز'},
-  {id: 'orth-la-phrases', text: 'لابد من الصبر. ولا شك في ذالك', rules: ['ORTHOGRAPHY_V18:لابد', 'ORTHOGRAPHY_V18:ولا شك', 'ORTHOGRAPHY_V18:ذالك'], corrected: 'لا بد من الصبر. ولا شك في ذلك'},
+  {id: 'orth-la-phrases', text: 'لابد من الصبر. ولا شك في ذالك', rules: ['ORTHOGRAPHY_V18:لابد', 'ORTHOGRAPHY_V18:ذالك'], corrected: 'لا بد من الصبر. ولا شك في ذلك'},
   {id: 'orth-bidhnillah', text: 'باذن الله ننجح', rules: ['ORTHOGRAPHY_V18:باذن الله'], corrected: 'بإذن الله ننجح'},
   {id: 'orth-review-jumlah', text: 'كتب الطالب جمله جيده', rules: ['ORTHOGRAPHY_V18:جمله']},
 
@@ -2562,7 +3238,20 @@ const GOLD_CORPUS = Object.freeze([
   {id: 'dependent-demonstrative-case', text: 'بهذان الطالبان', rules: ['DEMONSTRATIVE_DEPENDENT_V18', 'DEMONSTRATIVE_APPOSITION_CASE_V18'], replacements: ['بهذين', 'الطالبين']},
   {id: 'dependent-emphasis-nom', text: 'حضر الطالبان كليهما', rules: ['EMPHASIS_DEPENDENT_CASE_V18'], replacements: ['كلاهما']},
   {id: 'dependent-emphasis-acc', text: 'رأيت الطالبين كلاهما', rules: ['EMPHASIS_DEPENDENT_CASE_V18'], replacements: ['كليهما']},
-  {id: 'dependent-apposition', text: 'جاء الطالب محمدًا', rules: ['APPOSITION_DEPENDENT_CASE_V18'], replacements: ['محمدٌ']}
+  {id: 'dependent-apposition', text: 'جاء الطالب محمدًا', rules: ['APPOSITION_DEPENDENT_CASE_V18'], replacements: ['محمدٌ']},
+
+  /* ── 18.3: اختبارات طبقة السياق والعدد والفاعل والأفعال الخمسة ── */
+  {id: 'context-multi-error-number-subject', text: 'حضر اثنا عشر طالبةً إلى القاعة.', rules: ['WEAK_VERB_AGREEMENT_V18', 'NUMBER_COMPOUND_AGREEMENT_V18'], replacements: ['حضرت', 'اثنتا عشرة']},
+  {id: 'number-coordinated-gender', text: 'في المكتبة واحدة وعشرون كتابًا.', rules: ['NUMBER_COORDINATED_AGREEMENT_V18'], replacements: ['واحد وعشرون']},
+  {id: 'subject-after-pp', text: 'حضر إلى المدرسة مبكرًا الطالبات.', rules: ['WEAK_VERB_AGREEMENT_V18'], replacements: ['حضرت']},
+  {id: 'subject-pronoun-svo', text: 'هي يكتب الدرس.', rules: ['WEAK_VERB_AGREEMENT_V18'], replacements: ['تكتب']},
+  {id: 'subject-new-conjoined-clause', text: 'حضر الطلاب ونجح الطالبات.', rules: ['WEAK_VERB_AGREEMENT_V18'], replacements: ['ونجحت']},
+  {id: 'five-verbs-subjunctive', text: 'لن يدرسون.', rules: ['FIVE_VERBS_SUBJUNCTIVE_V18'], replacements: ['يدرسوا']},
+  {id: 'five-verbs-jussive', text: 'لم تدرسين.', rules: ['FIVE_VERBS_JUSSIVE_V18'], replacements: ['تدرسي']},
+  {id: 'kana-dual-predicate', text: 'كان الطالبان مجتهدون.', rules: ['KANA_PREDICATE_V18'], replacements: ['مجتهدين']},
+  {id: 'kana-feminine-plural-case', text: 'كانت الطالبات مجتهداتٌ.', rules: ['KANA_PREDICATE_V18'], replacements: ['مجتهداتٍ']},
+  {id: 'inna-subject-case', text: 'إن الطالبُ مجتهدٌ.', rules: ['INNA_SUBJECT_CASE_V18'], replacements: ['الطالبَ']},
+  {id: 'nominal-predicate-dual', text: 'الطالبان مجتهدون.', rules: ['NOMINAL_PREDICATE_AGREEMENT_V18'], replacements: ['مجتهدان']}
 ]);
 
 const NO_FALSE_POSITIVE_CORPUS = Object.freeze([
@@ -2628,7 +3317,19 @@ const NO_FALSE_POSITIVE_CORPUS = Object.freeze([
   ['nfp-akhdhan-masdar', 'بدأ اخذا وردا.'],
   ['nfp-uklan-masdar', 'رأيت اكلا كثيرا.'],
   ['nfp-waw-imperfect-1s', 'أرجو منك المساعدة.'],
-  ['nfp-waw-imperfect-1p-n', 'نرجو التوفيق.']
+  ['nfp-waw-imperfect-1p-n', 'نرجو التوفيق.'],
+
+  /* ── 18.3: مصائد طبقة الاتجاه والتحقق السياقي ── */
+  ['nfp-number-21-masculine', 'في المكتبة واحد وعشرون كتابًا جديدًا.'],
+  ['nfp-number-21-feminine', 'في المكتبة واحدة وعشرون صفحةً جديدةً.'],
+  ['nfp-number-one-standalone-after-pp', 'في المكتبة واحد.'],
+  ['nfp-number-twelve-feminine', 'حضرت اثنتا عشرة طالبةً.'],
+  ['nfp-five-verbs-subjunctive', 'لن يدرسوا.'],
+  ['nfp-five-verbs-jussive', 'لم تدرسي.'],
+  ['nfp-kana-dual', 'كان الطالبان مجتهدين.'],
+  ['nfp-kana-feminine-plural', 'كانت الطالبات مجتهداتٍ.'],
+  ['nfp-nominal-predicate-dual', 'الطالبان مجتهدان.'],
+  ['nfp-independent-conjoined-clause', 'حضر الطلاب ونجحت الطالبات.']
 ]);
 
 
