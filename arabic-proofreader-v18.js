@@ -1,15 +1,23 @@
 /*!
  * ============================================================================
- *  Arabic Proofreader V18.4.0 SYNTAX-CORE — Blogger Standalone Bundle
+ *  Arabic Proofreader V18.5.0 POS-DEPENDENCY — Blogger Standalone Bundle
  *  ملف جاهز للنشر (Deployment-Ready) — بدون أي تبعيات خارجية
  * ============================================================================
  *
- *  الإصدار : 18.4.0 (SYNTAX-CORE)
+ *  الإصدار : 18.5.0 (POS-DEPENDENCY)
  *  التاريخ : 2026-08-13
  *  الملف   : ملف واحد مستقل (Single-File Bundle) مولَّد من المصادر المجزأة،
  *            لا يحتاج أي مكتبة خارجية ويعمل مباشرة عبر وسم <script>.
  *
  *  ── سجل التغييرات ─────────────────────────────────────────────────────────
+ *  18.5.0 (حسم النوع النحوي والاعتماد السياقي):
+ *    • POS Disambiguator قبل القواعد: التنوين والعدد والجر والتعريف تحسم القراءة الاسمية.
+ *    • منع قراءة «كتبٍ/كتبًا» فعلًا، ومنع أي تصريف فعلي مبني على هذه القراءة.
+ *    • SubjectResolver 2.1 يستعمل النوع المحسوم ولا يلتقط الخبر أو جمع المؤنث فعلًا.
+ *    • AdjectiveResolver 2.0 يحافظ على حالة «الطالبين المجتهدين» في السياق الملتبس،
+ *      ويصحح المطابقة عند وجود عامل نحوي صريح فقط.
+ *    • FiveNouns Context Guard يمنع «أبيك وأخيك» من التصحيح بلا عامل، مع دعم العطف المحكوم.
+ *    • مجموعة اختبارات انحدار POS/Dependency للحالات التسع المطلوبة.
  *  18.4.0 (نواة التحليل النحوي):
  *    • SubjectResolver 2.0 بتمييز أقوى بين VSO وSVO وحماية من المفعول والمضاف إليه.
  *    • NounRoleResolver يوسم الفاعل والمفعول والمبتدأ والخبر والنعت والحال
@@ -60,9 +68,10 @@
  *    V18.analyze(text, options)  → نتيجة كاملة: findings + corrected + suggestions
  *    V18.correct(text, options)  → النص المصحح (سلسلة نصية)
  *    V18.suggest(text, options)  → قائمة الاقتراحات غير المؤتمتة
+ *    V18.inspectPOS(text)        → النوع النحوي المحسوم وأدلته والبدائل الممكنة
  *    V18.inspectSyntax(text)     → الجمل المتداخلة والأدوار النحوية لكل كلمة
  *    V18.lexiconStats()          → إحصاءات المعاجم الفعلية
- *    V18.validate()              → تشغيل 300 اختبار ذهبي + 300 جملة صحيحة
+ *    V18.validate()              → تشغيل corpus الذهبي ومنع الإنذارات الكاذبة وانحدارات POS
  *
  *  ── النشر على GitHub Pages ────────────────────────────────────────────────
  *  1) ارفع هذا الملف إلى مستودع GitHub (مثال: akhtai-engine).
@@ -111,16 +120,17 @@
 const META = Object.freeze({
   name: 'Arabic Proofreader Hybrid Engine',
   nameArabic: 'محرك التدقيق العربي الهجين',
-  version: '18.4.0',
-  edition: 'SYNTAX-CORE',
+  version: '18.5.0',
+  edition: 'POS-DEPENDENCY',
   language: 'ar',
-  release: 'V18.4 Arabic Syntax Core',
+  release: 'V18.5 POS and Dependency Context',
   offsetPolicy: 'original-input',
   architecture: Object.freeze([
     'offset-aware-normalization',
     'arabic-tokenization',
     'clitic-segmentation',
     'multi-candidate-morphology',
+    'contextual-pos-disambiguation',
     'verified-weak-verb-paradigms',
     'case-government',
     'diptote-rules',
@@ -1397,9 +1407,141 @@ function analyzeTokens(tokens) {
   return tokens.map(analyzeToken);
 }
 
+/* ===== MODULE: src/morphology/pos-disambiguator.js ===== */
+function isOvertVerbForm(analysis) {
+  if (!analysis) return false;
+  return analysis.personCode !== '3ms' || analysis.tense === 'present';
+}
+
+function contextualPOSDisambiguation(tokens) {
+  for (let i = 0; i < tokens.length; i += 1) {
+    const token = tokens[i];
+    const morph = token.morph;
+    const nominal = morph.nominal;
+    const verb = morph.verbAnalyses?.[0] || null;
+    const evidence = [];
+
+    if (!nominal && !verb) {
+      morph.resolvedPos = morph.pos;
+      morph.posConfidence = morph.confidence || 0.3;
+      morph.posEvidence = ['single-analysis-or-fallback'];
+      morph.posAmbiguous = false;
+      continue;
+    }
+    if (nominal && !verb) {
+      morph.pos = nominal.pos;
+      morph.resolvedPos = nominal.pos;
+      morph.posConfidence = nominal.confidence || morph.confidence || 0.8;
+      morph.posEvidence = ['nominal-analysis-only'];
+      morph.posAmbiguous = false;
+      morph.lemma = nominal.lemma;
+      continue;
+    }
+    if (verb && !nominal) {
+      morph.pos = 'verb';
+      morph.resolvedPos = 'verb';
+      morph.posConfidence = verb.confidence || 0.9;
+      morph.posEvidence = ['verbal-analysis-only'];
+      morph.posAmbiguous = false;
+      morph.lemma = verb.lemma;
+      continue;
+    }
+
+    let nounScore = nominal.confidence || 0.7;
+    let verbScore = verb.confidence || 0.7;
+    const previous = tokens[i - 1];
+    const next = tokens[i + 1];
+    const next2 = tokens[i + 2];
+
+    // التنوين لا يدخل على الفعل، وهو أقوى قرينة سطحية في «كتبٍ/كتبًا».
+    if (token.visibleCase?.kind === 'tanwin') {
+      nounScore += 1.2;
+      evidence.push('tanwin-forces-nominal');
+    } else if (token.visibleCase?.case === 'genitive') {
+      nounScore += 0.65;
+      evidence.push('visible-genitive-nominal');
+    } else if (token.visibleCase?.case === 'nominative') {
+      nounScore += 0.18;
+      evidence.push('visible-nominative-prefers-nominal');
+    } else if (token.visibleCase?.case === 'accusative' && next && isNominal(next)) {
+      verbScore += 0.14;
+      evidence.push('bare-past-fatha-before-argument');
+    }
+
+    if (morph.segments?.article || morph.segments?.preposition || PREPOSITIONS.has(previous?.morph?.core)) {
+      nounScore += 0.9;
+      evidence.push('nominal-governor-or-article');
+    }
+    const previousNumber = simpleCardinal(previous?.morph?.core);
+    if (previousNumber || previous?.type === 'number-digit') {
+      nounScore += 0.9;
+      evidence.push('counted-noun-after-number');
+    }
+    if (next && isAdjective(next)) {
+      nounScore += 0.55;
+      evidence.push('noun-before-adjective');
+    }
+    if (next?.morph?.definite && isNominal(next)) {
+      nounScore += 0.12; // احتمال الإضافة: «كتب الطالب»
+      verbScore += 0.16; // واحتمال VSO قائم كذلك
+      evidence.push('ambiguous-idafa-or-vso');
+    }
+    if (next && next2 && isNominal(next) && isNominal(next2)) {
+      verbScore += 0.42;
+      evidence.push('verb-subject-object-frame');
+    }
+    if (next?.visibleCase?.case === 'nominative' && isNominal(next)) {
+      verbScore += 0.32;
+      evidence.push('nominative-postverbal-subject');
+    }
+    if (isOvertVerbForm(verb)) {
+      verbScore += 0.75;
+      evidence.push('overt-verbal-person-or-present-form');
+    }
+    if (['لم', 'لن', 'قد', 'سوف', 'س'].includes(previous?.morph?.core)) {
+      verbScore += 0.9;
+      evidence.push('verbal-particle');
+    }
+
+    const gap = Math.abs(nounScore - verbScore);
+    if (gap < 0.12) {
+      morph.pos = 'ambiguous';
+      morph.resolvedPos = 'ambiguous';
+      morph.posConfidence = Math.max(nounScore, verbScore) / (nounScore + verbScore);
+      morph.posEvidence = [...evidence, 'unresolved-noun-verb-ambiguity'];
+      morph.posAmbiguous = true;
+      morph.bestVerb = null;
+      morph.lemma = nominal.lemma;
+    } else if (nounScore > verbScore) {
+      morph.pos = nominal.pos;
+      morph.resolvedPos = nominal.pos;
+      morph.posConfidence = evidence.includes('tanwin-forces-nominal') ? 0.999
+        : evidence.includes('counted-noun-after-number') ? 0.985
+          : evidence.includes('nominal-governor-or-article') ? 0.98
+            : Math.min(0.97, 0.5 + (nounScore - verbScore) / (2 * Math.max(nounScore, verbScore)));
+      morph.posEvidence = [...evidence, 'resolved-as-nominal'];
+      morph.posAmbiguous = false;
+      morph.bestVerb = null;
+      morph.lemma = nominal.lemma;
+    } else {
+      morph.pos = 'verb';
+      morph.resolvedPos = 'verb';
+      morph.posConfidence = evidence.includes('overt-verbal-person-or-present-form') || evidence.includes('verbal-particle') ? 0.995
+        : evidence.includes('verb-subject-object-frame') || evidence.includes('nominative-postverbal-subject') ? 0.94
+          : Math.min(0.93, 0.5 + (verbScore - nounScore) / (2 * Math.max(nounScore, verbScore)));
+      morph.posEvidence = [...evidence, 'resolved-as-verb'];
+      morph.posAmbiguous = false;
+      morph.bestVerb = verb;
+      morph.lemma = verb.lemma;
+    }
+    morph.posScores = {nominal: nounScore, verbal: verbScore};
+  }
+  return tokens;
+}
+
 function inspectWord(word) {
-  const token = {index: 0, sentence: 0, surface: String(word), clean: String(word), start: 0, end: String(word).length, originalStart: 0, originalEnd: String(word).length, visibleCase: null, type: 'word'};
-  return analyzeToken(token).morph;
+  const token = {index: 0, sentence: 0, surface: String(word), clean: String(word), start: 0, end: String(word).length, originalStart: 0, originalEnd: String(word).length, visibleCase: visibleCase(String(word)), type: 'word'};
+  return contextualPOSDisambiguation([analyzeToken(token)])[0].morph;
 }
 
 
@@ -1549,8 +1691,10 @@ function applyFindings(original, findings) {
 
 /* ===== MODULE: src/core/context.js ===== */
 function isNominal(token) {
-  return Boolean(token?.morph?.nominal)
-    || ['noun', 'proper', 'adj', 'emphasis', 'demonstrative', 'pronoun', 'relative'].includes(token?.morph?.pos);
+  if (!token?.morph) return false;
+  if (token.morph.resolvedPos === 'verb' || token.morph.pos === 'verb') return false;
+  return Boolean(token.morph.nominal)
+    || ['noun', 'proper', 'adj', 'emphasis', 'demonstrative', 'pronoun', 'relative', 'ambiguous'].includes(token.morph.pos);
 }
 
 function isAdjective(token) {
@@ -1562,7 +1706,9 @@ function bestAdjective(token) {
 }
 
 function bestVerb(token) {
-  return token?.morph?.verbAnalyses?.[0] || null;
+  if (!token?.morph || token.morph.resolvedPos === 'ambiguous' || token.morph.pos === 'ambiguous') return null;
+  if (token.morph.resolvedPos && token.morph.resolvedPos !== 'verb') return null;
+  return token.morph.bestVerb || token.morph.verbAnalyses?.[0] || null;
 }
 
 function nextNominal(tokens, start, {end = tokens.length, skipPrepositional = true} = {}) {
@@ -1681,7 +1827,7 @@ const ADVERBIAL_GOVERNORS = new Set([
 ]);
 
 function isStrongNominalCandidate(token) {
-  if (!isNominal(token)) return false;
+  if (!isNominal(token) || token?.morph?.posAmbiguous) return false;
   const pos = token.morph?.nominal?.pos || token.morph?.pos;
   return ['noun', 'proper', 'pronoun', 'demonstrative', 'relative'].includes(pos);
 }
@@ -1918,9 +2064,9 @@ function resolveSubjectV2(context, verbIndex, verb = bestVerb(context.tokens[ver
         const resolved = resolvedRelativeFeatures(context, clause.markerIndex);
         return {
           subjectIndex: clause.markerIndex, order: 'SVO', confidence: resolved ? 0.985 : 0.94,
-          evidence: ['subject-resolver-2', 'relative-pronoun-subject', `clause:${clause.id}`],
+          evidence: ['subject-resolver-2.1', 'relative-pronoun-subject', `clause:${clause.id}`],
           resolvedFeatures: resolved?.features || tokenFeatures(marker), antecedentIndex: resolved?.antecedentIndex ?? -1,
-          clauseId: clause.id, resolverVersion: '2.0'
+          clauseId: clause.id, resolverVersion: '2.1'
         };
       }
     }
@@ -1931,7 +2077,7 @@ function resolveSubjectV2(context, verbIndex, verb = bestVerb(context.tokens[ver
   const base = implicitSubject ? null : resolveSubject(tokens, verbIndex, verb, {allowPreverbal});
   if (base) {
     const role = useRoles ? context.syntax?.roles?.[base.subjectIndex] : null;
-    const excluded = ['object', 'genitive', 'object-of-preposition', 'adjective', 'hal'].includes(role?.role);
+    const excluded = ['object', 'genitive', 'object-of-preposition', 'adjective', 'hal', 'predicate', 'inna-predicate', 'kana-predicate'].includes(role?.role);
     const outsideClause = clause?.type !== 'root' && base.subjectIndex < clause.start;
     if (!excluded && !outsideClause) {
       const relative = RELATIVE_PRONOUNS[tokens[base.subjectIndex]?.morph?.core]
@@ -1939,11 +2085,11 @@ function resolveSubjectV2(context, verbIndex, verb = bestVerb(context.tokens[ver
       return {
         ...base,
         confidence: Math.min(0.99, base.confidence + 0.01),
-        evidence: ['subject-resolver-2', ...(base.evidence || [])],
+        evidence: ['subject-resolver-2.1', ...(base.evidence || [])],
         resolvedFeatures: relative?.features || null,
         antecedentIndex: relative?.antecedentIndex ?? -1,
         clauseId: clause?.id || null,
-        resolverVersion: '2.0'
+        resolverVersion: '2.1'
       };
     }
   }
@@ -1967,8 +2113,8 @@ function resolveSubjectV2(context, verbIndex, verb = bestVerb(context.tokens[ver
         return {
           subjectIndex: candidateIndex, order: 'VSO',
           confidence: ambitransitive || intransitive ? 0.94 : 0.89,
-          evidence: ['subject-resolver-2', ambitransitive ? 'ambitransitive-intransitive-reading' : (intransitive ? 'intransitive-verb' : 'selectional-human-subject')],
-          resolvedFeatures: null, antecedentIndex: -1, clauseId: clause?.id || null, resolverVersion: '2.0'
+          evidence: ['subject-resolver-2.1', ambitransitive ? 'ambitransitive-intransitive-reading' : (intransitive ? 'intransitive-verb' : 'selectional-human-subject')],
+          resolvedFeatures: null, antecedentIndex: -1, clauseId: clause?.id || null, resolverVersion: '2.1'
         };
       }
     }
@@ -2036,9 +2182,10 @@ function resolveNounRoles(context) {
       assignRole(roles, i, 'apposition', 0.88, ['adjacent-proper-name'], {headIndex: i - 1});
       continue;
     }
-    if (isNominal(previous) && isNominal(token) && !token.morph.segments.conjunction
+    if (isNominal(previous) && !previous.morph.posAmbiguous && isNominal(token) && !token.morph.segments.conjunction
         && !isAdjective(token) && (token.morph.definite || previous.morph.nominal?.fiveNoun)) {
-      assignRole(roles, i, 'genitive', 0.91, ['idafa-candidate'], {headIndex: i - 1});
+      // قرينة الإضافة أضعف من إطار الفعل المتعدي؛ يسمح ذلك للمفعول الصريح بتجاوزها لاحقًا.
+      assignRole(roles, i, 'genitive', 0.82, ['idafa-candidate'], {headIndex: i - 1});
     }
     if (RELATIVE_PRONOUNS[token.morph.core]) {
       const antecedentIndex = relativeAntecedentIndex(tokens, i);
@@ -2078,9 +2225,14 @@ function resolveNounRoles(context) {
   // المبتدأ والخبر في الجملة الاسمية المباشرة.
   for (const group of context.sentences) {
     const first = group[0];
-    if (!first || !group[1] || !isStrongNominalCandidate(first) || bestVerb(first)
+    const firstObserved = first ? observedCase(first) : null;
+    const ungovernedTopicAllowed = first
+      && !first.morph.posAmbiguous
+      && !['accusative', 'genitive', 'accgen'].includes(firstObserved)
+      && (!first.morph.nominal?.fiveNoun || first.morph.nominal.caseForm === 'nominative');
+    if (!first || !group[1] || !isStrongNominalCandidate(first) || !ungovernedTopicAllowed || bestVerb(first)
         || KANA_SURFACES.has(first.morph.core) || INNA_PARTICLES.has(first.morph.core)) continue;
-    if (!roles[first.index]) assignRole(roles, first.index, 'topic', 0.92, ['direct-nominal-sentence']);
+    if (!roles[first.index]) assignRole(roles, first.index, 'topic', 0.92, ['direct-nominal-sentence', 'topic-form-compatible']);
     const predicate = group.slice(1).find(token => isNominal(token) && !roles[token.index] && !token.morph.definite);
     if (predicate) assignRole(roles, predicate.index, 'predicate', 0.88, ['direct-nominal-predicate'], {headIndex: first.index});
   }
@@ -2490,6 +2642,33 @@ function fiveNounHasAddition(tokens, index) {
     && !isAdjective(next) && !next.morph.segments?.conjunction && !next.morph.segments?.preposition);
 }
 
+const FIVE_NOUN_STRONG_ROLES = new Set([
+  'subject', 'object', 'object-of-preposition',
+  'inna-subject', 'inna-predicate', 'kana-subject', 'kana-predicate'
+]);
+
+function fiveNounContextCase(context, index) {
+  const {tokens} = context;
+  const direct = directGovernorCase(tokens, index);
+  if (direct) return {...direct, reason: 'five-noun-direct-governor'};
+
+  const role = context.syntax?.roles?.[index];
+  if (role && FIVE_NOUN_STRONG_ROLES.has(role.role) && ROLE_CASE[role.role]) {
+    return {case: ROLE_CASE[role.role], confidence: role.confidence, reason: `five-noun-role:${role.role}`};
+  }
+
+  // المعطوف يتبع اسمًا خمسة ثبت دوره بعامل صريح؛ أما «أبيك وأخيك» المجردة فتبقى بلا اقتراح.
+  if (tokens[index].morph.segments?.conjunction && index > 0) {
+    const previousRole = context.syntax?.roles?.[index - 1];
+    if (previousRole && FIVE_NOUN_STRONG_ROLES.has(previousRole.role) && ROLE_CASE[previousRole.role]) {
+      return {case: ROLE_CASE[previousRole.role], confidence: Math.min(0.96, previousRole.confidence), reason: 'five-noun-governed-coordination'};
+    }
+    const previousDirect = directGovernorCase(tokens, index - 1);
+    if (previousDirect) return {...previousDirect, confidence: Math.min(0.96, previousDirect.confidence), reason: 'five-noun-coordination-after-preposition'};
+  }
+  return null;
+}
+
 function fiveNounsRule(context) {
   const out = [];
   const {tokens} = context;
@@ -2498,9 +2677,7 @@ function fiveNounsRule(context) {
     if (!nominal?.fiveNoun || !fiveNounHasAddition(tokens, i)) continue;
     // «فيك» يغلب فيها معنى حرف الجر مع الضمير؛ لا تحمل على «فم» بلا قرينة خارجية.
     if (tokens[i].morph.core === 'في' && !tokens[i].morph.segments?.preposition) continue;
-    const expectedInfo = roleExpectedCase(context, i)
-      || directGovernorCase(tokens, i)
-      || inferSyntacticCase(tokens, i);
+    const expectedInfo = fiveNounContextCase(context, i);
     const expectedCase = expectedInfo?.case;
     if (!['nominative', 'accusative', 'genitive'].includes(expectedCase)) continue;
     const observedCase = nominal.caseForm;
@@ -2511,8 +2688,8 @@ function fiveNounsRule(context) {
       startToken: tokens[i], replacement: rebuildToken(tokens[i], desiredCore),
       ruleId: 'FIVE_NOUNS_CASE_V18', type: 'نحوي', classification: 'five-nouns',
       confidence: Math.min(0.985, 0.72 + 0.265 * (expectedInfo?.confidence || 0.8)),
-      explanation: 'الاسم من الأسماء الخمسة، وقد ثبتت إضافته؛ فيرفع بالواو وينصب بالألف ويجر بالياء.',
-      evidence: ['five-nouns-lexicon', tokens[i].morph.segments?.enclitic ? 'attached-pronoun-addition' : 'nominal-addition', expectedInfo?.reason || 'syntactic-role', `expected-case:${expectedCase}`],
+      explanation: 'ثبتت إضافة الاسم وعامله السياقي الصريح؛ لذلك يعرب من الأسماء الخمسة: بالواو رفعًا، وبالألف نصبًا، وبالياء جرًا.',
+      evidence: ['five-nouns-context-guard', 'five-nouns-lexicon', tokens[i].morph.segments?.enclitic ? 'attached-pronoun-addition' : 'nominal-addition', expectedInfo?.reason || 'syntactic-role', `expected-case:${expectedCase}`],
       safe: false,
       metadata: {lemma: nominal.lemma, observedCase, expectedCase, role: context.syntax?.roles?.[i]?.role || null, relationConfidence: expectedInfo?.confidence || 0.8}
     }));
@@ -3122,36 +3299,52 @@ function recommendDemonstrative(features, caseValue = 'nominative') {
   return effective.gender === 'f' ? 'هذه' : 'هذا';
 }
 
+function resolveAdjectiveRelation(context, headIndex, dependentIndex) {
+  const {tokens} = context;
+  const head = tokens[headIndex];
+  const dependent = tokens[dependentIndex];
+  if (!head || !dependent || head.sentence !== dependent.sentence || !isNominal(head) || !isAdjective(dependent)) return null;
+  if (dependent.morph.segments.conjunction || dependent.morph.segments.preposition) return null;
+  if (Boolean(head.morph.definite) !== Boolean(dependent.morph.definite)) return null;
+
+  const roleCase = roleExpectedCase(context, headIndex);
+  const inferred = inferSyntacticCase(tokens, headIndex);
+  const headCase = roleCase?.case || inferred?.case || observedCase(head);
+  const source = roleCase ? 'noun-role-resolver' : (inferred ? inferred.reason : 'surface-agreement');
+  return {
+    headIndex, dependentIndex, head, dependent,
+    target: effectiveAgreement(tokenFeatures(head)),
+    actual: tokenFeatures(dependent),
+    headCase,
+    dependentCase: observedCase(dependent),
+    confidence: Math.min(0.98, roleCase?.confidence || inferred?.confidence || 0.88),
+    evidence: ['adjective-resolver-2', source]
+  };
+}
+
 function adjectiveDependents(context) {
   const out = [];
   const {tokens} = context;
   for (let i = 0; i < tokens.length - 1; i += 1) {
-    const head = tokens[i];
-    const dependent = tokens[i + 1];
-    if (head.sentence !== dependent.sentence || !isNominal(head) || !isAdjective(dependent)) continue;
-    if (dependent.morph.segments.conjunction || dependent.morph.segments.preposition) continue;
-    // اختلاف التعريف قرينة خبر أو حال، لا نعت مباشر.
-    if (Boolean(head.morph.definite) !== Boolean(dependent.morph.definite)) continue;
-
-    const target = effectiveAgreement(tokenFeatures(head));
-    const actual = tokenFeatures(dependent);
+    const relation = resolveAdjectiveRelation(context, i, i + 1);
+    if (!relation) continue;
+    const {head, dependent, target, actual, headCase, dependentCase} = relation;
     const mismatch = featuresMatch(target, actual, ['gender', 'number']);
-    const headCase = roleExpectedCase(context, i)?.case || inferSyntacticCase(tokens, i)?.case || observedCase(head);
-    const dependentCase = observedCase(dependent);
     const caseMismatch = headCase && dependentCase && !caseMatches(dependentCase, headCase);
     if (!mismatch.length && !caseMismatch) continue;
 
-    const caseValue = headCase === 'accgen' ? dependentCase : headCase;
+    // «accgen» كافٍ لصيغة المثنى وجمع المذكر: الطالبين المجتهدين.
+    const caseValue = headCase;
     const replacement = inflectAdjectiveToken(dependent, target, caseValue, {forceVisibleCase: Boolean(dependent.visibleCase && caseValue)});
     out.push(findingFromSpan(context, {
       startToken: dependent,
       replacement,
       ruleId: mismatch.length ? 'ADJECTIVE_DEPENDENT_AGREEMENT_V18' : 'ADJECTIVE_DEPENDENT_CASE_V18',
-      type: 'نحوي', classification: 'dependent', confidence: 0.96,
-      explanation: 'النعت يتبع المنعوت في التعريف والإعراب، ويطابقه في الجنس والعدد مع مراعاة أن جمع غير العاقل يعامل مفردًا مؤنثًا.',
-      evidence: ['adjacent-adjective', ...mismatch.map(x => `mismatch:${x}`), target.agreementException || 'regular-agreement'],
+      type: 'نحوي', classification: 'dependent', confidence: Math.min(0.98, 0.94 + 0.04 * relation.confidence),
+      explanation: 'ربط AdjectiveResolver 2.0 النعت بمنعوته؛ فيتبعه في التعريف والإعراب ويطابقه في الجنس والعدد، مع معاملة جمع غير العاقل مفردًا مؤنثًا.',
+      evidence: [...relation.evidence, 'adjacent-adjective', ...mismatch.map(x => `mismatch:${x}`), target.agreementException || 'regular-agreement'],
       safe: false,
-      metadata: {headIndex: i, mismatch, expectedCase: headCase}
+      metadata: {headIndex: i, mismatch, expectedCase: headCase, resolverVersion: '2.0', relationConfidence: relation.confidence}
     }));
   }
   return out;
@@ -3493,7 +3686,7 @@ function contextValidateFinding(context, finding) {
   }
 
   const token = tokenAtOriginalSpan(context, finding);
-  const morphConfidence = token?.morph?.confidence || 0.75;
+  const morphConfidence = Math.min(token?.morph?.confidence || 0.75, token?.morph?.posConfidence || 1);
   const relationConfidence = metadata.relationConfidence
     || (finding.evidence?.some(x => String(x).includes('visible')) ? 0.98 : null)
     || (finding.classification === 'orthographic' || finding.classification === 'orthographic-phrase' ? 0.999 : 0.9);
@@ -3616,7 +3809,7 @@ function createContext(input, options = {}) {
   const merged = mergeOptions(options);
   const normalization = normalizeWithMap(input);
   const rawTokens = tokenize(normalization);
-  const tokens = analyzeTokens(rawTokens);
+  const tokens = contextualPOSDisambiguation(analyzeTokens(rawTokens));
   const context = {
     original: normalization.original,
     text: normalization.text,
@@ -3868,7 +4061,19 @@ function generateV184GoldCorpus() {
   return tests;
 }
 
-const GOLD_CORPUS = Object.freeze([...BASE_GOLD_CORPUS, ...generateV184GoldCorpus()]);
+const V185_GOLD_REGRESSIONS = Object.freeze([
+  // «ثلاث كتب» خطأ معياري؛ المسموح هو تصحيح العدد وحده، لا تحويل «كتب» إلى فعل.
+  {id: 'v185-pos-thalath-kutub', text: 'ثلاث كتب', rules: ['NUMBER_POLARITY_V18'], replacements: ['ثلاثة']},
+  {id: 'v185-adjective-oblique', text: 'الطالبين المجتهدان', rules: ['ADJECTIVE_DEPENDENT_CASE_V18'], replacements: ['المجتهدين']},
+  {id: 'v185-subject-feminine-plural', text: 'يكتب المعلماتُ', rules: ['WEAK_VERB_AGREEMENT_V18'], replacements: ['تكتب']},
+  {id: 'v185-five-nouns-coordination', text: 'جاء أبيك وأخيك', rules: ['FIVE_NOUNS_CASE_V18', 'FIVE_NOUNS_CASE_V18'], replacements: ['أبوك', 'وأخوك']}
+]);
+
+const GOLD_CORPUS = Object.freeze([
+  ...BASE_GOLD_CORPUS,
+  ...generateV184GoldCorpus(),
+  ...V185_GOLD_REGRESSIONS
+]);
 
 const BASE_NO_FALSE_POSITIVE_CORPUS = Object.freeze([
   ['nfp-weak-vso-m', 'قال الطالب.'],
@@ -4030,9 +4235,33 @@ function generateV184NoFalsePositiveCorpus() {
   return tests;
 }
 
+const V185_NO_FALSE_POSITIVE_REGRESSIONS = Object.freeze([
+  ['v185-nfp-three-books', 'ثلاثة كتب'],
+  ['v185-nfp-kutub-genitive', 'كتبٍ'],
+  ['v185-nfp-kutuban-accusative', 'كتبًا'],
+  ['v185-nfp-kataba-or-kutub', 'كتب الطالب'],
+  ['v185-nfp-students-wrote', 'الطلاب كتبوا'],
+  ['v185-nfp-feminine-teachers', 'المعلماتُ'],
+  ['v185-nfp-oblique-adjective', 'الطالبين المجتهدين'],
+  ['v185-nfp-five-nouns-fragment', 'أبيك وأخيك']
+]);
+
 const NO_FALSE_POSITIVE_CORPUS = Object.freeze([
   ...BASE_NO_FALSE_POSITIVE_CORPUS,
-  ...generateV184NoFalsePositiveCorpus()
+  ...generateV184NoFalsePositiveCorpus(),
+  ...V185_NO_FALSE_POSITIVE_REGRESSIONS
+]);
+
+const POS_DEPENDENCY_REGRESSION_CORPUS = Object.freeze([
+  {id: 'pos-three-books-correct', text: 'ثلاثة كتب', expectedPOS: ['number', 'noun'], expectedRules: []},
+  {id: 'pos-three-books-wrong-number', text: 'ثلاث كتب', expectedPOS: ['number', 'noun'], expectedRules: ['NUMBER_POLARITY_V18']},
+  {id: 'pos-kutub-genitive', text: 'كتبٍ', expectedPOS: ['noun'], expectedRules: []},
+  {id: 'pos-kutuban-accusative', text: 'كتبًا', expectedPOS: ['noun'], expectedRules: []},
+  {id: 'pos-kataba-or-kutub', text: 'كتب الطالب', expectedPOS: ['ambiguous', 'noun'], expectedRules: []},
+  {id: 'pos-students-wrote', text: 'الطلاب كتبوا', expectedPOS: ['noun', 'verb'], expectedRules: []},
+  {id: 'pos-feminine-teachers', text: 'المعلماتُ', expectedPOS: ['noun'], expectedRules: []},
+  {id: 'pos-oblique-adjective', text: 'الطالبين المجتهدين', expectedPOS: ['noun', 'adj'], expectedRules: []},
+  {id: 'pos-five-nouns-fragment', text: 'أبيك وأخيك', expectedPOS: ['noun', 'noun'], expectedRules: []}
 ]);
 
 
@@ -4076,6 +4305,7 @@ function validateData() {
   add('syntax-core-stages', ruleIds.includes('fiveNouns') && ruleIds.includes('relativeClauses'), ruleIds.join(', '));
   add('gold-corpus-300', GOLD_CORPUS.length >= 300, `${GOLD_CORPUS.length} اختبارًا ذهبيًا`);
   add('no-false-positive-corpus-300', NO_FALSE_POSITIVE_CORPUS.length >= 300, `${NO_FALSE_POSITIVE_CORPUS.length} جملة صحيحة`);
+  add('pos-dependency-regressions', POS_DEPENDENCY_REGRESSION_CORPUS.length >= 9, `${POS_DEPENDENCY_REGRESSION_CORPUS.length} حالات POS/Dependency حرجة`);
 
   const stats = weakVerbStats();
   add('weak-verb-coverage', stats.weakOrIrregularLemmas >= 20, JSON.stringify(stats));
@@ -4084,7 +4314,11 @@ function validateData() {
   return {valid: failures.length === 0, checks, failures, stats};
 }
 
-function validate({goldCorpus = GOLD_CORPUS, noFalsePositiveCorpus = NO_FALSE_POSITIVE_CORPUS} = {}) {
+function validate({
+  goldCorpus = GOLD_CORPUS,
+  noFalsePositiveCorpus = NO_FALSE_POSITIVE_CORPUS,
+  posDependencyCorpus = POS_DEPENDENCY_REGRESSION_CORPUS
+} = {}) {
   const data = validateData();
   const goldResults = [];
   const goldFailures = [];
@@ -4126,12 +4360,32 @@ function validate({goldCorpus = GOLD_CORPUS, noFalsePositiveCorpus = NO_FALSE_PO
     }
   }
 
+  const posResults = [];
+  const posFailures = [];
+  for (const test of posDependencyCorpus) {
+    try {
+      const context = createContext(test.text, {safeMode: true});
+      const actualPOS = context.tokens.map(token => token.morph.pos);
+      const result = analyze(test.text, {safeMode: true});
+      const actualRules = result.findings.map(item => item.ruleId);
+      const posOk = sameMultiset(actualPOS.map((value, index) => `${index}:${value}`), test.expectedPOS.map((value, index) => `${index}:${value}`));
+      const rulesOk = sameMultiset(actualRules, test.expectedRules || []);
+      const row = {id: test.id, text: test.text, ok: posOk && rulesOk, expectedPOS: test.expectedPOS, actualPOS, expectedRules: test.expectedRules || [], actualRules, posOk, rulesOk};
+      posResults.push(row);
+      if (!row.ok) posFailures.push(row);
+    } catch (error) {
+      const row = {id: test.id, text: test.text, ok: false, error: error.stack || error.message};
+      posResults.push(row); posFailures.push(row);
+    }
+  }
+
   return {
     version: META.version,
-    valid: data.valid && goldFailures.length === 0 && nfpFailures.length === 0,
+    valid: data.valid && goldFailures.length === 0 && nfpFailures.length === 0 && posFailures.length === 0,
     data,
     gold: {total: goldResults.length, failures: goldFailures, results: goldResults},
-    noFalsePositives: {total: nfpResults.length, failures: nfpFailures, results: nfpResults}
+    noFalsePositives: {total: nfpResults.length, failures: nfpFailures, results: nfpResults},
+    posDependency: {total: posResults.length, failures: posFailures, results: posResults}
   };
 }
 
@@ -4139,13 +4393,27 @@ function validate({goldCorpus = GOLD_CORPUS, noFalsePositiveCorpus = NO_FALSE_PO
   function check(text, options){ return analyze(text, options); }
   function correct(text, options){ return analyze(text, options).corrected; }
   function suggest(text, options){ return analyze(text, options).suggestions; }
+  function inspectPOS(text, options){
+    const context = createContext(text, options);
+    return context.tokens.map(token => ({
+      index: token.index, surface: token.surface, core: token.morph.core,
+      pos: token.morph.pos, confidence: token.morph.posConfidence,
+      ambiguous: Boolean(token.morph.posAmbiguous), evidence: token.morph.posEvidence || [],
+      alternatives: token.morph.candidates.map(candidate => ({pos: candidate.pos, lemma: candidate.lemma, confidence: candidate.confidence}))
+    }));
+  }
   function inspectSyntax(text, options){
     const context = createContext(text, options);
     return {
       version: META.version,
       clauses: context.syntax.clauses,
       roles: context.syntax.roles,
-      tokens: context.tokens.map(token => ({index: token.index, surface: token.surface, core: token.morph.core, pos: token.morph.pos, role: context.syntax.roles[token.index] || null}))
+      tokens: context.tokens.map(token => ({
+        index: token.index, surface: token.surface, core: token.morph.core,
+        pos: token.morph.pos, posConfidence: token.morph.posConfidence,
+        posAmbiguous: Boolean(token.morph.posAmbiguous), posEvidence: token.morph.posEvidence || [],
+        role: context.syntax.roles[token.index] || null
+      }))
     };
   }
   function lexiconStats(){
@@ -4163,11 +4431,11 @@ function validate({goldCorpus = GOLD_CORPUS, noFalsePositiveCorpus = NO_FALSE_PO
 
   const ArabicProofreaderV18 = Object.freeze({
     META, CONFIG, DEFAULT_OPTIONS,
-    analyze, check, correct, suggest, parse, inspectWord, inspectSyntax, validate, validateData,
+    analyze, check, correct, suggest, parse, inspectWord, inspectPOS, inspectSyntax, validate, validateData,
     conjugateVerb, verbAnalyses, weakVerbStats, lexiconStats,
     normalize, normalizeWithMap, normalizeForComparison,
     pipelineDescription,
-    GOLD_CORPUS, NO_FALSE_POSITIVE_CORPUS
+    GOLD_CORPUS, NO_FALSE_POSITIVE_CORPUS, POS_DEPENDENCY_REGRESSION_CORPUS
   });
   return ArabicProofreaderV18;
 
