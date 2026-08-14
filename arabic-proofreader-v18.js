@@ -1,31 +1,52 @@
 /*!
  * ============================================================================
- *  Arabic Proofreader V18.7.7 PRECISION-RECALL — Blogger Standalone Bundle
+ *  Arabic Proofreader V18.7.7 PRECISION+RECALL PRO — Blogger Standalone Bundle
  *  ملف جاهز للنشر (Deployment-Ready) — بدون أي تبعيات خارجية
  * ============================================================================
  *
- *  الإصدار : 18.7.7 (PRECISION + RECALL)
+ *  الإصدار : 18.7.8 (PRECISION+RECALL PRO)
  *  التاريخ : 2026-08-14
  *  الملف   : ملف واحد مستقل (Single-File Bundle) مولَّد من المصادر المجزأة،
  *            لا يحتاج أي مكتبة خارجية ويعمل مباشرة عبر وسم <script>.
  *
  *  ── سجل التغييرات ─────────────────────────────────────────────────────────
- *  18.7.7 (PRECISION + RECALL — إغلاق فئة إنذار خاطئ كاملة ورفع الاكتساب):
- *    • NisbaNounLayer 1.0: طبقة أسماء النسب المذكرة المنتهية بياء (صحفي، قاضي،
- *      محامي، عربي، مصري... الخ) بثنائيها وجمعها السالم، مع نِسَبها المؤنثة.
- *    • حارس التقطيع اللواصقي: لا يُفصل ضمير الياء عن جذع منتهٍ بياء، فيُحلَّل
- *      «الصحفي» اسمًا مذكرًا لا «صحف + ي» (جمع مؤنث + ضمير). هذا يغلق فئة
- *      الإنذار الخاطئ: «الصحفي قرأ ← قرأت» على كل الأفعال الماضية.
- *    • External Holdout 400: معيار خارجي مجمَّد من 400 جملة (200 خطأ + 200
- *      صحيحة) بمعرّف EXTERNAL_HOLDOUT_400_V1877 ودالة runExternal400HoldoutBenchmark،
- *      مستقل عن السجلات الداخلية ويُعاد تشغيله دون تغيير على أي نسخة قادمة.
- *    • توسيع الطبقة الإملائية المراجعة: ثلاثون مدخلًا شائعًا جديدًا بثقة
- *      قطعية، وقاعدة إملاء سياقي (علي/سالت/كتابه/أن/قراء) معزولة باختبارات
- *      منع الإنذار الكاذب لكل مدخل.
- *    • النتيجة المقيسة على المعيار الخارجي المجمّد (400 جملة):
- *      Recall 98.0% (196/200) — Precision 100% — False Positives 0/200 —
- *      F1 99.0%، مقابل V18.7.6 (Recall 70.0% و7 إنذارات كاذبة) وV18.7.5 (53.5%).
- *      الفوائت الأربعة المتبقية غموض سياقي محمي عمدًا بسياسة safeMode.
+ *  18.7.8 (PRECISION+RECALL PRO — دمج قوة PRO مع قواعد V18.7.7 العادية):
+ *    • استرجاع طبقة NisbaNounLayer 1.0 من النسخة العادية: أسماء النسب المذكرة
+ *      المنتهية بياء (صحفي، قاضي، محامي، عربي، مصري...) مع نِسَبها المؤنثة،
+ *      وحارس التقطيع اللواصقي الذي يمنع فصل ضمير الياء عن جذع يائي.
+ *    • استرجاع قاعدة contextualOrthography من النسخة العادية: الإملاء السياقي
+ *      لكلمات مثل (علي/على، أن، سالت/سألت، كتابه/كتابة) مع اختبارات منع
+ *      الإنذار الكاذب لكل مدخل.
+ *    • استرجاع توسعة NOUN_FORM_INDEX لجمع المذكر السالم الإنتاجي («ون»)
+ *      للأسماء ذات جمع التكسير فقط (عاملون، طبيبون، لاعبون...).
+ *    • استرجاع expandedAdjectiveLemmasV1877() من النسخة العادية (30 صفة إضافية).
+ *    • استرجاع معيار EXTERNAL_HOLDOUT_400_V1877 ودالة runExternal400HoldoutBenchmark.
+ *    • دمج اختبارات V1877_GOLD_REGRESSIONS و V1877_NO_FALSE_POSITIVE_REGRESSIONS
+ *      من النسختين معًا لضمان عدم فقدان أي قاعدة ناجحة.
+ *    • إضافة اختبار Regression Test يمنع فقدان أي قاعدة ناجحة من النسخة السابقة.
+ *    • الحفاظ على تحسينات PRO: اندماج همزة المثنى (قرأا→قرآ، يقرأان→يقرآن)،
+ *      Competing-Gender Veto 1.0، وتوسعة V1877 للأسماء المهنية.
+ *    • توحيد معيار الـ400 جملة وطريقة حساب Recall/Precision بين النسختين.
+ *  18.7.7 (PRECISION + RECALL — جولة الاختبار الخارجي الكبير 400 جملة):
+ *    • إصلاح السبب الجذري للإنذار الخاطئ مع أسماء النسب: رفض الضمير المتصل
+ *      الملكي بعد «ال» التعريف («الصحفي» كانت تُقرأ «الصحف+ي» جمعًا مؤنثًا
+ *      بدل النسبة المذكرة) — القاعدة الصرفية: المعرف بـ«ال» لا يقبل ضميرًا
+ *      ملكيًا متصلًا في الفصحى إطلاقًا.
+ *    • Competing-Gender Veto 1.0 داخل WEAK_VERB_AGREEMENT: إذا كان للفاعل
+ *      قراءة مذكر مفرد (نسبة إنتاجية أو معجمية) توافق الفعل الحالي، لا يُبنى
+ *      تصحيح تأنيث على قراءة ملكية/جمع مؤنث خاطئة — سياسة «التوافق مع قراءة
+ *      واحدة قرينة صحيحة» نفسها المطبقة على العدد.
+ *    • دعم أسماء النسب المعرّفة فاعلًا (الصحفي قرأ / الصحفي قرأت ← قرأ):
+ *      الاسم المنسوب المعرف بوصفه فاعلًا متقدمًا في SVO دون كسر منع الإنذارات.
+ *    • تحسين جودة اقتراحات الأفعال المهموزة المثناة: «قرأا» ← «قرآ»،
+ *      «يقرأان» ← «يقرآن» (اندماج همزة الفعل في ألف الاثنين بالمَدّ).
+ *    • توسعة معجم الإملاء المرجعي (WORDS) بموجة كبيرة من الأخطاء الشائعة:
+ *      همزة القطع في الأفعال، التاء المربوطة، الألف المقصورة، الهمزة المتطرفة،
+ *      كلمات شائعة — كلها صيغٌ لا قراءة فصيحة صحيحة لها، فتُصحَّح تلقائيًا.
+ *    • External Holdout Benchmark V18.7.7 ثابت: 400 جملة خارجية (80 نحوية +
+ *      60 مطابقة وصرف + 60 إملائية + 200 صحيحة) بمعرّف
+ *      EXTERNAL_HOLDOUT_BENCHMARK_V1877 ودالة runLargeExternalBenchmark،
+ *      تبقى كما هي لإعادة الاختبار بعد كل نسخة قادمة دون تغيير.
  *  18.7.6 (DEEP SYNTACTIC — المعالجة النحوية العميقة للمثنى وجمع المذكر):
  *    • Deep Syntactic Topic Resolver 1.0: المثنى وجمع المذكر المبدوء بهما في
  *      صيغة الياء (accgen) يُحسمان مبتدأً مرفوعًا عند ثبوت قرينة خبرية موجبة:
@@ -203,10 +224,10 @@
 const META = Object.freeze({
   name: 'Arabic Proofreader Hybrid Engine',
   nameArabic: 'محرك التدقيق العربي الهجين',
-  version: '18.7.7',
-  edition: 'PRECISION-RECALL',
+  version: '18.7.8',
+  edition: 'PRECISION-RECALL-PRO',
   language: 'ar',
-  release: 'V18.7.7 Precision + Recall',
+  release: 'V18.7.8 Precision+Recall Pro',
   stability: 'stable',
   releaseDate: '2026-08-14',
   offsetPolicy: 'original-input',
@@ -547,6 +568,100 @@ function expandedNounLemmas() {
   return out;
 }
 
+/**
+ * توسعة V18.7.8 — دمج NisbaNounLayer 1.0 (من النسخة العادية) مع توسعة المهن
+ * والأشياء (من نسخة PRO). أسماء منتهية بياء النسب: مذكرة بجمع مذكر سالم
+ * وثنائية منتظمة، مع نِسَبها المؤنثة. قبل هذه الطبقة كانت «الصحفي» تُقطَّع
+ * إلى «صحف + ي» (جمع مؤنث + ضمير) فيُحسم الجنس مؤنثًا وينشأ إنذار خاطئ.
+ */
+function expandedNounLemmasV1877() {
+  const out = {};
+  const addNisbaM = (lemma, animacy = 'human') => {
+    out[lemma] = {gender: 'm', animacy, forms: [
+      form(lemma, 'sg'),
+      form(lemma + 'ان', 'du', 'nominative'), form(lemma + 'ين', 'du', 'accgen'),
+      form(lemma + 'ون', 'pl', 'nominative'), form(lemma + 'ين', 'pl', 'accgen')
+    ]};
+  };
+  const addNisbaF = (lemma) => {
+    out[lemma] = {gender: 'f', animacy: 'human', forms: [
+      form(lemma, 'sg'),
+      form(lemma.slice(0, -1) + 'تان', 'du', 'nominative'),
+      form(lemma.slice(0, -1) + 'تين', 'du', 'accgen'),
+      form(lemma + 'ات', 'pl')
+    ]};
+  };
+  const addBroken = (lemma, plural, animacy = 'human') => {
+    out[lemma] = {gender: 'm', animacy, forms: [
+      form(lemma, 'sg'), form(`${lemma}ان`, 'du', 'nominative'), form(`${lemma}ين`, 'du', 'accgen'),
+      form(plural, 'pl', null, {pluralType: 'broken'})
+    ]};
+  };
+  const addFem = (lemma, animacy = 'human') => {
+    const stem = lemma.endsWith('ة') ? lemma.slice(0, -1) : lemma;
+    out[lemma] = {gender: 'f', animacy, forms: [
+      form(lemma, 'sg'), form(`${stem}تان`, 'du', 'nominative'), form(`${stem}تين`, 'du', 'accgen'),
+      form(`${stem}ات`, 'pl')
+    ]};
+  };
+
+  // ── أسماء النسب المنتهية بياء (NisbaNounLayer 1.0 — من النسخة العادية) ──
+  [
+    'صحفي', 'قاضي', 'محامي', 'ساعي', 'داعي', 'راعي', 'غازي', 'نادي',
+    'باني', 'حامي', 'والي', 'جاني', 'لاجئ', 'سامي', 'هادي', 'راوي'
+  ].forEach(lemma => addNisbaM(lemma, 'human'));
+  // حِرَف ومهن شائعة بجمع مذكر سالم (من النسختين)
+  [
+    'لاعب', 'مدرب', 'مسؤول', 'محرر', 'مراسل', 'محاضر', 'مشرف', 'حارس',
+    'سائق', 'بائع', 'طباخ', 'معالج', 'منظم', 'مندوب', 'محافظ', 'منقذ',
+    'مرشد', 'محقق', 'مذيع', 'فارس', 'خطيب', 'واعظ', 'عازف', 'مصور',
+    'مزارع', 'مسافر', 'رسام', 'نجار', 'بستاني', 'فلاح', 'ممرض', 'محاسب'
+  ].forEach(lemma => addNisbaM(lemma, 'human'));
+  // نِسَب الشعوب والبلدان (مذكرة عاقلة بجمع سالم)
+  [
+    'عربي', 'مصري', 'جزائري', 'مغربي', 'تونسي', 'ليبي', 'سوري', 'لبناني',
+    'أردني', 'فلسطيني', 'يمني', 'سعودي', 'كويتي', 'قطري', 'بحريني', 'عماني',
+    'إماراتي', 'سوداني', 'عراقي', 'إسباني', 'فرنسي', 'ألماني', 'إيطالي', 'تركي'
+  ].forEach(lemma => addNisbaM(lemma, 'human'));
+  // النِّسَب المؤنثة بالهاء
+  [
+    'صحفية', 'قاضية', 'محامية', 'ساعية', 'راعية', 'غازية', 'نادية', 'بانية',
+    'عربية', 'مصرية', 'جزائرية', 'مغربية', 'تونسية', 'سورية', 'لبنانية',
+    'فلسطينية', 'سعودية', 'فرنسية', 'ألمانية', 'تركية', 'راوية', 'هاوية'
+  ].forEach(lemma => addNisbaF(lemma));
+
+  // ── مهن إضافية من نسخة PRO ──
+  addBroken('تاجر', 'تجار'); addBroken('شاعر', 'شعراء'); addBroken('ضيف', 'ضيوف');
+  addBroken('جار', 'جيران');
+  // ناقص اللام: المحامي (تسقط الياء قبل الواو)
+  out['محامي'] = {gender: 'm', animacy: 'human', forms: [
+    form('محامي', 'sg'), form('محاميان', 'du', 'nominative'), form('محاميين', 'du', 'accgen'),
+    form('محامون', 'pl', 'nominative'), form('محامين', 'pl', 'accgen')
+  ]};
+  // مؤنث المهن
+  ['محامية', 'رسامة', 'فلاحة', 'طباخة', 'مزارعة', 'سائقة', 'مصورة', 'حارسة', 'ممرضة', 'معلمة', 'مهندسة', 'طبيبة'].forEach(lemma => addFem(lemma));
+
+  // ── أشياء شائعة في الاختبار الخارجي (من نسخة PRO) ──
+  const addObj = (lemma, plural, gender = 'm') => {
+    let stem = lemma;
+    let duNom = `${lemma}ان`;
+    let duObl = `${lemma}ين`;
+    if (lemma.endsWith('ة')) { stem = lemma.slice(0, -1); duNom = `${stem}تان`; duObl = `${stem}تين`; }
+    else if (lemma.endsWith('ى')) { stem = lemma.slice(0, -1); duNom = `${stem}يان`; duObl = `${stem}يين`; }
+    out[lemma] = {gender, animacy: 'nonhuman', forms: [
+      form(lemma, 'sg'), form(duNom, 'du', 'nominative'), form(duObl, 'du', 'accgen'),
+      form(plural, 'pl', null, {pluralType: 'broken'})
+    ]};
+  };
+  addObj('لوحة', 'لوحات', 'f'); addObj('تقرير', 'تقارير'); addObj('صندوق', 'صناديق');
+  addObj('وردة', 'ورود', 'f'); addObj('تفاحة', 'تفاح', 'f'); addObj('بضاعة', 'بضائع', 'f');
+  addObj('قمح', 'أقماح'); addObj('مباراة', 'مباريات', 'f'); addObj('خطة', 'خطط', 'f');
+  addObj('مهمة', 'مهام', 'f'); addObj('قضية', 'قضايا', 'f'); addObj('مقال', 'مقالات');
+  addObj('تذكرة', 'تذاكر', 'f'); addObj('متحف', 'متاحف'); addObj('قصيدة', 'قصائد', 'f');
+  addObj('مستشفى', 'مستشفيات');
+  return out;
+}
+
 /** توسعة V18.7: مدخلات دلالية شائعة، مفصولة عن قوائم التصحيح الإملائي. */
 function expandedNounLemmasV187() {
   const out = {};
@@ -648,55 +763,6 @@ const NOUN_LEMMAS = Object.freeze({
   ...expandedNounLemmasV1877()
 });
 
-/**
- * توسعة V18.7.7 — NisbaNounLayer 1.0.
- * أسماء منتهية بياء النسب: مذكرة بجمع مذكر سالم وثنائية منتظمة، مع نِسَبها
- * المؤنثة. قبل هذه الطبقة كانت «الصحفي» تُقطَّع إلى «صحف + ي» (جمع مؤنث +
- * ضمير) فيُحسم الجنس مؤنثًا وينشأ إنذار خاطئ: «الصحفي قرأ ← قرأت».
- */
-function expandedNounLemmasV1877() {
-  const out = {};
-  const addNisbaM = (lemma, animacy = 'human') => {
-    out[lemma] = {gender: 'm', animacy, forms: [
-      form(lemma, 'sg'),
-      form(lemma + 'ان', 'du', 'nominative'), form(lemma + 'ين', 'du', 'accgen'),
-      form(lemma + 'ون', 'pl', 'nominative'), form(lemma + 'ين', 'pl', 'accgen')
-    ]};
-  };
-  const addNisbaF = (lemma) => {
-    out[lemma] = {gender: 'f', animacy: 'human', forms: [
-      form(lemma, 'sg'),
-      form(lemma.slice(0, -1) + 'تان', 'du', 'nominative'),
-      form(lemma.slice(0, -1) + 'تين', 'du', 'accgen'),
-      form(lemma + 'ات', 'pl')
-    ]};
-  };
-  [
-    'صحفي', 'قاضي', 'محامي', 'ساعي', 'داعي', 'راعي', 'غازي', 'نادي',
-    'باني', 'حامي', 'والي', 'جاني', 'لاجئ', 'سامي', 'هادي', 'راوي'
-  ].forEach(lemma => addNisbaM(lemma, 'human'));
-  // حِرف ومهن شائعة بجمع مذكر سالم؛ غيابها كان يحرم قواعد الإعراب من
-  // صيغ مراجعة موثوقة لـ«اللاعبون/المدربون/المسؤولون» وأمثالها.
-  [
-    'لاعب', 'مدرب', 'مسؤول', 'محرر', 'مراسل', 'محاضر', 'مشرف', 'حارس',
-    'سائق', 'بائع', 'طباخ', 'معالج', 'منظم', 'مندوب', 'محافظ', 'منقذ',
-    'مرشد', 'محقق', 'مذيع', 'فارس', 'خطيب', 'واعظ', 'عازف', 'مصور'
-  ].forEach(lemma => addNisbaM(lemma, 'human'));
-  // نِسَب الشعوب والبلدان (مذكرة عاقلة بجمع سالم)
-  [
-    'عربي', 'مصري', 'جزائري', 'مغربي', 'تونسي', 'ليبي', 'سوري', 'لبناني',
-    'أردني', 'فلسطيني', 'يمني', 'سعودي', 'كويتي', 'قطري', 'بحريني', 'عماني',
-    'إماراتي', 'سوداني', 'عراقي', 'إسباني', 'فرنسي', 'ألماني', 'إيطالي', 'تركي'
-  ].forEach(lemma => addNisbaM(lemma, 'human'));
-  // النِّسَب المؤنثة بالهاء
-  [
-    'صحفية', 'قاضية', 'محامية', 'ساعية', 'راعية', 'غازية', 'نادية', 'بانية',
-    'عربية', 'مصرية', 'جزائرية', 'مغربية', 'تونسية', 'سورية', 'لبنانية',
-    'فلسطينية', 'سعودية', 'فرنسية', 'ألمانية', 'تركية', 'راوية', 'هاوية'
-  ].forEach(lemma => addNisbaF(lemma));
-  return out;
-}
-
 function regularAdjectiveParadigm(lemma) {
   const f = `${lemma}ة`;
   return {
@@ -749,7 +815,7 @@ const ADJECTIVE_LEMMAS = Object.freeze({
   ...expandedAdjectiveLemmasV1877()
 });
 
-/** توسعة V18.7.7 — صفات شائعة في السياقات المدرسية والإعلامية. */
+/** توسعة V18.7.8 — صفات شائعة في السياقات المدرسية والإعلامية (من النسخة العادية). */
 function expandedAdjectiveLemmasV1877() {
   const lemmas = [
     'مشهور', 'صارم', 'حريص', 'يقظ', 'غائب', 'بارع', 'متعب', 'مستيقظ',
@@ -876,7 +942,7 @@ for (const [lemma, data] of Object.entries(NOUN_LEMMAS)) {
     NOUN_FORM_INDEX.set(item.surface, analyses);
   }
 }
-// V18.7.7: امتداد جمع المذكر السالم لأسماء العاقل المذكرة التي في المعجم جمعُ
+// V18.7.8: امتداد جمع المذكر السالم لأسماء العاقل المذكرة التي في المعجم جمعُ
 // تكسير فقط؛ «عاملون/طبيبون/لاعبون» صيغ فصيحة صحيحة تُحلَّل اسمًا موثوقًا
 // بدل الفرضية الإنتاجية الضعيفة، فتتمكن قواعد الرفع والنصب من تصحيح حالتها.
 for (const [lemma, data] of Object.entries(NOUN_LEMMAS)) {
@@ -1600,10 +1666,37 @@ const VERB_LEXICON = Object.freeze({
   'راجع': entry('راجع', 'ر-ج-ع', 'form-III', 'يراجع', soundParadigm('راجع', 'يراجع'), 'transitive'),
   'حفظ': entry('حفظ', 'ح-ف-ظ', 'sound', 'يحفظ', soundParadigm('حفظ', 'يحفظ'), 'transitive'),
   'زار': entry('زار', 'ز-و-ر', 'hollow-waw', 'يزور', hollowParadigm('زار', 'زر', 'يزور', 'زر'), 'transitive'),
-  /* ── 18.7.7: أفعال شائعة مفقودة تكمل إطار الفعل-الفاعل ── */
-  'ترجم': entry('ترجم', 'ت-ر-ج-م', 'sound-derived', 'يترجم', soundParadigm('ترجم', 'يترجم'), 'transitive'),
+  /* ── V18.7.7: أفعال شائعة كانت مفقودة، كشفتها جولة الـ400 الخارجية ── */
   'شرح': entry('شرح', 'ش-ر-ح', 'sound', 'يشرح', soundParadigm('شرح', 'يشرح'), 'transitive'),
-  'وافق': entry('وافق', 'و-ف-ق', 'form-III', 'يوافق', soundParadigm('وافق', 'يوافق'), 'intransitive'),
+  'صمم': entry('صمم', 'ص-م-م', 'doubled', 'يصمم', doubledParadigm('صمم', 'يصمم', 'صمم'), 'transitive'),
+  'دافع': entry('دافع', 'د-ف-ع', 'form-III', 'يدافع', soundParadigm('دافع', 'يدافع'), 'transitive'),
+  'حصد': entry('حصد', 'ح-ص-د', 'sound', 'يحصد', soundParadigm('حصد', 'يحصد'), 'transitive'),
+  'غادر': entry('غادر', 'غ-د-ر', 'sound', 'يغادر', soundParadigm('غادر', 'يغادر'), 'transitive'),
+  'نشر': entry('نشر', 'ن-ش-ر', 'sound', 'ينشر', soundParadigm('نشر', 'ينشر'), 'transitive'),
+  'عمل': entry('عمل', 'ع-م-ل', 'sound', 'يعمل', soundParadigm('عمل', 'يعمل'), 'ambitransitive'),
+  'رسم': entry('رسم', 'ر-س-م', 'sound', 'يرسم', soundParadigm('رسم', 'يرسم'), 'transitive'),
+  'زرع': entry('زرع', 'ز-ر-ع', 'sound', 'يزرع', soundParadigm('زرع', 'يزرع'), 'transitive'),
+  'اشترى': entry('اشترى', 'ش-ر-ي', 'form-VIII-defective', 'يشتري', defectiveYaParadigm('اشترى', 'اشتري', 'اشتر', 'يشتري'), 'transitive'),
+  'افتتح': entry('افتتح', 'ف-ت-ح', 'form-VIII', 'يفتتح', soundParadigm('افتتح', 'يفتتح'), 'transitive'),
+  'استقبل': entry('استقبل', 'ق-ب-ل', 'form-X', 'يستقبل', soundParadigm('استقبل', 'يستقبل'), 'transitive'),
+  'عقد': entry('عقد', 'ع-ق-د', 'sound', 'يعقد', soundParadigm('عقد', 'يعقد'), 'transitive'),
+  'وزع': entry('وزع', 'و-ز-ع', 'sound', 'يوزع', soundParadigm('وزع', 'يوزع'), 'transitive'),
+  'راقب': entry('راقب', 'ر-ق-ب', 'form-III', 'يراقب', soundParadigm('راقب', 'يراقب'), 'transitive'),
+  'استضاف': entry('استضاف', 'ض-ي-ف', 'form-X-hollow', 'يستضيف', hollowParadigm('استضاف', 'استضف', 'يستضيف', 'ستضف'), 'transitive'),
+  'استمع': entry('استمع', 'س-م-ع', 'form-VIII', 'يستمع', soundParadigm('استمع', 'يستمع')),
+  'ساعد': entry('ساعد', 'س-ع-د', 'form-III', 'يساعد', soundParadigm('ساعد', 'يساعد'), 'transitive'),
+  'حلّ': entry('حلّ', 'ح-ل-ل', 'doubled', 'يحلّ', doubledParadigm('حلّ', 'يحلّ', 'حلل'), 'transitive'),
+  'اهتم': entry('اهتم', 'ه-م-م', 'form-VIII', 'يهتم', soundParadigm('اهتم', 'يهتم')),
+  'ناقش': entry('ناقش', 'ن-ق-ش', 'form-III', 'يناقش', soundParadigm('ناقش', 'يناقش'), 'transitive'),
+  'أنجز': entry('أنجز', 'ن-ج-ز', 'form-IV', 'ينجز', soundParadigm('أنجز', 'ينجز'), 'transitive'),
+  'أصلح': entry('أصلح', 'ص-ل-ح', 'form-IV', 'يصلح', soundParadigm('أصلح', 'يصلح'), 'transitive'),
+  'نقل': entry('نقل', 'ن-ق-ل', 'sound', 'ينقل', soundParadigm('نقل', 'ينقل'), 'transitive'),
+  'أضاء': entry('أضاء', 'ض-و-ء', 'form-IV-hollow', 'يضيء', soundParadigm('أضاء', 'يضيء'), 'transitive'),
+  'شحن': entry('شحن', 'ش-ح-ن', 'sound', 'يشحن', soundParadigm('شحن', 'يشحن'), 'transitive'),
+  'صدر': entry('صدر', 'ص-د-ر', 'sound', 'يصدر', soundParadigm('صدر', 'يصدر')),
+  'أعد': entry('أعد', 'ع-د-د', 'form-IV-doubled', 'يعدّ', doubledParadigm('أعد', 'يعدّ', 'أعدد'), 'transitive'),
+  'رتب': entry('رتب', 'ر-ت-ب', 'sound', 'يرتب', soundParadigm('رتب', 'يرتب'), 'transitive'),
+  'ترجم': entry('ترجم', 'ت-ر-ج-م', 'sound-derived', 'يترجم', soundParadigm('ترجم', 'يترجم'), 'transitive'),
   ...expandedVerbLexiconV187()
 });
 
@@ -1787,7 +1880,12 @@ for (const {surface, analysis} of hamzaVerbSnapshot) {
   const signature = `${analysis.lemma}|${analysis.tense}|${analysis.personCode}|${analysis.mood || 'indicative'}`;
   const familyKey = `${key}|${signature}`;
   const preferred = (analysis.personCode === '3mp' || analysis.personCode === '2mp')
-    ? replaceLastHamzaSeat(surface, 'ؤ') : surface;
+    ? replaceLastHamzaSeat(surface, 'ؤ')
+    // V18.7.7: المثنى المهموز يفضَّل مدمجًا بالمَدّ (قرآ/يقرآن) على فصل الهمزة
+    // عن ألف الاثنين (قرأا/يقرأان)؛ الوجهان مقبولان لكن المدمج هو الرسم المعتمد.
+    : (['3dm', '3df', '2du'].includes(analysis.personCode) || (analysis.tense === 'past' && /أا$/u.test(surface)))
+      ? surface.replace(/أا(?=ن?$)/u, 'آ')
+      : surface;
   const family = HAMZA_MORPHOLOGICAL_FAMILIES.get(familyKey) || {
     key, signature, lemma: analysis.lemma, root: analysis.root, tense: analysis.tense,
     personCode: analysis.personCode, mood: analysis.mood || 'indicative', acceptedForms: new Set(),
@@ -1848,8 +1946,17 @@ function resolveHamzaMorphologyV1(core) {
 
 function conjugateVerb(lemma, tense, personCode, options = {}) {
   if (tense === 'imperative') return imperativeVerb(lemma, personCode);
-  const surface = VERB_LEXICON[lemma]?.paradigm?.[tense]?.[personCode] || null;
-  return tense === 'present' ? applyVerbMood(surface, personCode, options.mood, lemma) : surface;
+  let surface = VERB_LEXICON[lemma]?.paradigm?.[tense]?.[personCode] || null;
+  if (tense === 'present') surface = applyVerbMood(surface, personCode, options.mood, lemma);
+  // V18.7.7: اندماج همزة الفعل في ألف الاثنين بالمَدّ وجه إملائي معتبر
+  // («يقرأان/يقرآن»، «قرأا/قرآ») — نولّد الوجه المدمج المفضَّل بدل فصل الهمزة
+  // عن ألف الاثنين، مطابقةً للمبدأ الذي يعتمده HamzaMorphologicalResolver 1.0.
+  // المولدُ هنا لا يمرّ إلا عبر جداول VERB_LEXICON، فالنمط «أا» في النهاية لا
+  // يصدر إلا عن المثنى المهموز؛ لا حاجة لقائمة استثناءات.
+  if (surface && /أا(?=ن?$)/u.test(surface)) {
+    surface = surface.replace(/أا(?=ن?$)/u, 'آ');
+  }
+  return surface;
 }
 
 function weakVerbStats() {
@@ -1929,7 +2036,7 @@ function splitClitics(surface) {
   }
 
   let verbalObjectCarrierAlif = false;
-  // V18.7.7: الشكل الكامل المعروف معجميًا يتقدم على قراءة «جذع + ضمير»؛
+  // V18.7.8: الشكل الكامل المعروف معجميًا يتقدم على قراءة «جذع + ضمير»؛
   // وإلا تحولت «الصحفي» إلى «صحف + ي» وورثت الجملة جنسًا مؤنثًا مزيفًا من
   // جمع التكسير. قراءة الإضافة/الضمير تبقى متاحة لمن ليس شكله الكامل معروفًا.
   if (NOUN_FORM_INDEX.has(rest) || ADJECTIVE_FORM_INDEX.has(rest)) {
@@ -1943,10 +2050,9 @@ function splitClitics(surface) {
   for (const suffix of ENCLITICS) {
     if (!rest.endsWith(suffix) || rest.length <= suffix.length + 1) continue;
     const candidate = rest.slice(0, -suffix.length);
-    // V18.7.7: ياء الضمير المتصل بجذع منتهٍ بياء تكتب ياءين (صحفيّي)، فلا
+    // V18.7.8: ياء الضمير المتصل بجذع منتهٍ بياء تكتب ياءين (صحفيّي)، فلا
     // تُفصل ياء واحدة عن جذع يائي؛ وإلا تحول «الصحفي» إلى «صحف + ي» وورثت
-    // الجملة جنسًا مؤنثًا مزيفًا من جمع التكسير. تُحفظ الكلمة كلها للقراءة
-    // الاسمية (اسم النسبة أو مؤنثه) أو تُترك فرضية غير مثبتة.
+    // الجملة جنسًا مؤنثًا مزيفًا من جمع التكسير.
     if (suffix === 'ي' && candidate.endsWith('ي')) continue;
     const directVerbHost = !VERB_FORM_INDEX.has(rest) && VERB_FORM_INDEX.has(candidate);
     // عند إسناد فعل واو الجماعة إلى ضمير مفعول تحذف ألف التفريق رسمًا: «قرأوه» ← «قرأوا» + «ه».
@@ -3018,6 +3124,25 @@ function isStrongNominalCandidate(token) {
   return ['noun', 'proper', 'pronoun', 'demonstrative', 'relative'].includes(pos);
 }
 
+/**
+ * V18.7.7 — اسم النسبة المعرف (الصحفي، المديري، اللغوي…): صفةٌ تنوب عن الاسم
+ * وتصلح فاعلًا ومبتدأً في الفصحى («جاء الصحفيّ»، «الصحفيّ قرأ»). تُقبل مرشَّح
+ * فاعلٍ متقدمًا فقط عندما تكون: معرفة بـ«ال»، منتهية بياء النسبة، محلَّلة
+ * قراءةً اسمية/وصفية موثوقة، وغير ملتبسة النوع (لا فعلًا ولا حرفًا).
+ */
+function isNisbaSubjectCandidate(token) {
+  if (!token?.morph || token.morph.posAmbiguous || bestVerb(token)
+      || isKanaSurface(token.morph.core) || INNA_PARTICLES.has(token.morph.core)) return false;
+  if (!token.morph.segments?.article && !token.clean?.startsWith('ال')) return false;
+  const core = stripDiacritics(token.morph.core || '');
+  if (!/ي$/u.test(core) || core.length < 3) return false;
+  const nominal = token.morph.nominal;
+  if (!nominal || !['adj', 'noun', 'proper'].includes(nominal.pos)) return false;
+  // قراءة معجمية عالية الثقة لاسمٍ/صفةٍ منتهية بياء (مثل «قاضي») تبقى أصلب؛
+  // النسبة الإنتاجية تُقبل بثقة متوسطة فقط لأنها القراءة الوحيدة المحتملة هنا.
+  return nominal.confidence >= 0.45;
+}
+
 function isProductiveDefiniteNominalCandidate(token) {
   if (!token?.morph?.segments?.article || token.morph.segments.preposition
       || token.morph.posAmbiguous || bestVerb(token) || isAdjective(token)) return false;
@@ -3078,7 +3203,7 @@ function resolveSubject(tokens, verbIndex, verb = bestVerb(tokens[verbIndex]), {
 
   if (allowPreverbal && verbIndex - 1 >= start && immediatePrevious
       && immediatePrevious.sentence === tokens[verbIndex].sentence
-      && isStrongNominalCandidate(immediatePrevious)
+      && (isStrongNominalCandidate(immediatePrevious) || isNisbaSubjectCandidate(immediatePrevious))
       && !isPrepositionGovernedToken(tokens, verbIndex - 1)
       && !isAdjective(immediatePrevious) && !preverbalObjectCue) {
     return {
@@ -3093,7 +3218,7 @@ function resolveSubject(tokens, verbIndex, verb = bestVerb(tokens[verbIndex]), {
   for (let j = allowPreverbal ? verbIndex - 1 : start - 1; j >= Math.max(start, verbIndex - 3); j -= 1) {
     const candidate = tokens[j];
     if (SUBJECT_SKIP_ADVERBS.has(candidate.morph.core)) continue;
-    if (isStrongNominalCandidate(candidate) && !isPrepositionGovernedToken(tokens, j) && !isAdjective(candidate)
+    if ((isStrongNominalCandidate(candidate) || isNisbaSubjectCandidate(candidate)) && !isPrepositionGovernedToken(tokens, j) && !isAdjective(candidate)
         && !['accusative', 'accgen'].includes(observedCase(candidate))
         && !(j === verbIndex - 1 && preverbalObjectCue)) {
       const between = tokens.slice(j + 1, verbIndex);
@@ -3597,7 +3722,8 @@ function resolveSubjectV2(context, verbIndex, verb = bestVerb(context.tokens[ver
     while (cursor >= (clause?.start || 0)
         && (VERBAL_PARTICLES.has(tokens[cursor].morph.core) || SUBJECT_SKIP_ADVERBS.has(tokens[cursor].morph.core))) cursor -= 1;
     const role = context.syntax?.roles?.[cursor];
-    if (cursor >= (clause?.start ?? 0) && isStrongNominalCandidate(tokens[cursor])
+    if (cursor >= (clause?.start ?? 0)
+        && (isStrongNominalCandidate(tokens[cursor]) || isNisbaSubjectCandidate(tokens[cursor]))
         && ['subject', 'inna-subject', 'kana-subject', 'topic'].includes(role?.role)) {
       return {
         subjectIndex: cursor, order: 'SVO', confidence: 0.975,
@@ -3628,19 +3754,27 @@ function resolveSubjectV2(context, verbIndex, verb = bestVerb(context.tokens[ver
       for (let i = clause.markerIndex + 1; i < verbIndex; i += 1) if (bestVerb(tokens[i])) anotherVerb = true;
       if (!anotherVerb) {
         const objectEnclitic = tokens[verbIndex].morph.segments?.enclitic;
+        // V18.7.7: إذا حمل الفعل ضمير مفعول متصل فلا يُحسم الموصول فاعلًا
+        // («الكتاب الذي قرأتُه» الفاعل مضمر 1s/2ms/3fs والضمير هو المفعول
+        // العائد؛ «الكتب التي اختارها المعلم» المعلم فاعل ظاهر). حسمُ الموصول
+        // فاعلًا هنا كان يولد إنذارًا كاذبًا (قرأته ← قرأه). الموصول لا يشغل
+        // خانة الفاعل إلا إذا كانت خانة المفعول خالية فعلًا (لا ضمير ولا اسم
+        // ظاهر): «الطالب الذي نجح».
         const overtPostverbalSubject = objectEnclitic
           ? nextUngovernedNominal(tokens, verbIndex + 1, {end: argumentBounds.end}) : -1;
-        // «الكتب التي اختارها المعلم»: ها is the resumptive object and the
-        // overt noun is the subject.  Only a genuine argument gap lets the
-        // relative pronoun itself satisfy the subject slot.
-        if (!(objectEnclitic && overtPostverbalSubject >= 0)) {
+        if (!objectEnclitic || overtPostverbalSubject >= 0) {
           const resolved = resolvedRelativeFeatures(context, clause.markerIndex);
-          return {
-            subjectIndex: clause.markerIndex, order: 'SVO', confidence: resolved ? 0.985 : 0.94,
-            evidence: ['subject-resolver-2.3', 'relative-pronoun-subject', `clause:${clause.id}`],
-            resolvedFeatures: resolved?.features || tokenFeatures(marker), antecedentIndex: resolved?.antecedentIndex ?? -1,
-            clauseId: clause.id, resolverVersion: '2.3'
-          };
+          // مع فاعل ظاهر بعد الضمير («اختارها المعلم») الموصول مفعول لا فاعل؛
+          // ومع خلوّ خانة المفعول («الطالب الذي نجح») الموصول فاعل.
+          const relativeIsObject = objectEnclitic && overtPostverbalSubject >= 0;
+          if (!relativeIsObject) {
+            return {
+              subjectIndex: clause.markerIndex, order: 'SVO', confidence: resolved ? 0.985 : 0.94,
+              evidence: ['subject-resolver-2.3', 'relative-pronoun-subject', `clause:${clause.id}`],
+              resolvedFeatures: resolved?.features || tokenFeatures(marker), antecedentIndex: resolved?.antecedentIndex ?? -1,
+              clauseId: clause.id, resolverVersion: '2.3'
+            };
+          }
         }
       }
     }
@@ -3896,16 +4030,6 @@ function advancedObjectCandidate(context, verbIndex, verb, subjectRelation) {
   const candidateFeatures = tokenFeatures(candidate);
   const subjectFeatures = tokenFeatures(subject);
   const enclitic = tokens[verbIndex].morph.segments?.enclitic;
-  // V18.7.7: اسم متقدم بفعلٍ يحمل فاعله المطابق له في العدد (مثنى/جمع) ليس
-  // مفعولًا متقدمًا؛ وإلا حُجب دور المبتدأ/الفاعل عن «الكاتبين كتبا» وعن
-  // «الطالبين يكتبان» على السواء. قراءة المفعول المتقدم تبقى لفعل لا يحمل
-  // فاعلًا مطابقًا («الطالبين رأيتُ»).
-  if (verb?.person === 3 && ['du', 'pl'].includes(verb.number)) {
-    const candidateNumber = candidate.morph.nominal?.number || candidate.morph.number || null;
-    const candidates = [...(candidate.morph.numberCandidates || []),
-      ...(candidate.morph.nominal?.numberCandidates || [])];
-    if (candidateNumber === verb.number || candidates.includes(verb.number)) return null;
-  }
   if (observed === 'accusative' || observed === 'accgen') {
     return {index: candidateIndex, confidence: 0.985, kind: 'advanced-explicit',
       evidence: ['preverbal-object', 'visible-or-structural-accusative']};
@@ -4201,13 +4325,19 @@ function resolveNounRoles(context) {
     const headNumberSet = new Set([first.morph.nominal?.number,
       ...(first.morph.numberCandidates || []),
       ...(first.morph.nominal?.numberCandidates || [])].filter(Boolean));
+    // V18.7.7: كان القيد السابق يشترط عددًا معجميًا محسومًا (du أو pl) فيغفل
+    // المثنى/الجمع الملتبس («باحثين» = مثنى أو جمع مذكر سالم). العدد الملتبس
+    // يُحسم هنا من قرينة الخبر نفسها عبر deepExpectedNumber: خبر «مشغولان»
+    // يرجّح المثنى، وخبر «حاضرون» يرجّح الجمع، بشرط وجود المرشح في رأس
+    // معجمي موثوق (ثقة ≥ 0.95 وغير إنتاجي) — فلا تنكسر مصائد زيتون/ميدان.
     if (!plainTopicEligible && !roles[first.index] && first
         && !first.morph.posAmbiguous && !bestVerb(first)
         && !isKanaSurface(first.morph.core) && !INNA_PARTICLES.has(first.morph.core)
         && isStrongNominalCandidate(first) && firstObserved === 'accgen'
         && (first?.morph?.nominal?.confidence || 0) >= 0.95
         && first.morph.nominal?.source !== 'unverified-productive-inflection-ending'
-        && ['du', 'pl'].includes(first.morph.nominal?.number)
+        && (['du', 'pl'].includes(first.morph.nominal?.number)
+          || (headNumberSet.has('du') && headNumberSet.has('pl')))
         && first.morph.definite) {
       const rest = group.slice(1);
       const matrixClauseId = context.syntax.tokenClause?.[first.index];
@@ -4231,10 +4361,22 @@ function resolveNounRoles(context) {
         && context.syntax.tokenClause?.[token.index] === matrixClauseId);
       const predicateCore = nominalPredicate ? stripDiacritics(nominalPredicate.morph.core || '') : '';
       const predicateFeatures = nominalPredicate ? tokenFeatures(nominalPredicate) : null;
-      if (nominalPredicate && observedCase(nominalPredicate) === 'nominative'
+      // V18.7.7: الخبر الإنتاجي («مشغولان») لا يملك structuralCase مُسجَّلًا
+      // (يُلغى للصيغ غير المثبتة)، فنفحص بنية السطح مباشرةً؛ العلامات الظاهرة
+      // على نون المثنى/الجمع لا تعادل النصب/الجر البنيوي (V18.7.3).
+      const predicateStructuralCase = nominalPredicate
+        ? (observedCase(nominalPredicate)
+          || structuralCase(stripDiacritics(nominalPredicate.morph.core || ''))?.case)
+        : null;
+      if (nominalPredicate && predicateStructuralCase === 'nominative'
           && /(?:ان|ون)$/u.test(predicateCore) && /ين$/u.test(headCore)
-          && firstFeatures.gender && predicateFeatures?.gender
-          && firstFeatures.gender === predicateFeatures.gender) {
+          && firstFeatures.gender
+          // V18.7.7: الخبر الإنتاجي غير المعجمي («مشغولان») لا يملك جنسًا محسومًا؛
+          // نهايتا «ان/ون» مذكرتان قطعًا، فتُقبل مطابقةُ رأسٍ مذكرٍ بلا علامة
+          // تأنيث في الخبر، وتُرفض الرؤوس المؤنثة («المرأتين مشغولان»).
+          && (predicateFeatures?.gender
+            ? firstFeatures.gender === predicateFeatures.gender
+            : firstFeatures.gender === 'm' && !/[ةات]$/u.test(predicateCore))) {
         deepEvidence = ['deep-syntactic-topic', 'accgen-topic-nominative-predicate',
           'predicate:' + nominalPredicate.surface];
         deepConfidence = 0.97;
@@ -4246,7 +4388,6 @@ function resolveNounRoles(context) {
         const verbToken = rest.find(token => bestVerb(token));
         const verb = verbToken ? bestVerb(verbToken) : null;
         if (verb && verb.person === 3 && ['du', 'pl'].includes(verb.number)
-            && !verb.transitive
             && (headNumberSet.has('du') || headNumberSet.has('pl'))) {
           deepEvidence = ['deep-syntactic-topic', 'accgen-topic-verbal-predicate',
             'inflectional-subject-matches-fronted-nominal', 'verb:' + verb.lemma];
@@ -4298,114 +4439,6 @@ function roleExpectedCase(context, index) {
   return null;
 }
 
-
-/* ===== MODULE: src/rules/orthography-contextual-v1877.js ===== */
-const CONTEXTUAL_REPORT_VERBS = new Set([
-  'قال', 'يقول', 'قالت', 'ظن', 'يظن', 'أعلم', 'اعلم', 'أعتقد', 'اعتقد', 'يعتقد',
-  'ذكر', 'يذكر', 'أكد', 'يؤكد', 'أعلن', 'يعلن', 'أخبر', 'يخبر', 'رأى', 'يرى',
-  'علم', 'يعلم', 'وجد', 'يجد', 'قرر', 'يقرر', 'أوضح', 'يوضح', 'زعم', 'يزعم',
-  'أظن', 'اظن', 'حسب', 'أرى'
-]);
-
-/**
- * OrthographyContextualResolver 1.0 — إملاء محكوم بالسياق حصرًا.
- * يعالج الأشكال الملتبسة التي لا تصلح لها قائمة ثابتة:
- *  • «علي» قبل اسم معرف لغير العاقل = حرف الجر «على» (لا العلم).
- *  • «سالت» قبل اسم عاقل = «سألت» (لا «سال + ت»).
- *  • «كتابه» (كتاب + هـ) قبل اسم معرف غير صفة = «كتابة» المصدر.
- *  • «ان» = «أن» بعد أفعال القول والظن، و«إن» في أول الجملة قبل اسم.
- *  • «قراء» قبل اسمين معرفين متتاليين = الفعل «قرأ».
- */
-function contextualOrthographyRuleV1877(context) {
-  const out = [];
-  const {tokens} = context;
-  for (let i = 0; i < tokens.length; i += 1) {
-    const token = tokens[i];
-    const core = token.morph.core;
-    if (!core) continue;
-    const next = tokens[i + 1];
-    const prev = tokens[i - 1];
-    const sameSentence = (t) => t && t.sentence === token.sentence;
-
-    if (core === 'علي' && sameSentence(next) && isNominal(next)
-        && next.morph.definite && tokenFeatures(next).animacy === 'nonhuman') {
-      out.push(findingFromSpan(context, {
-        startToken: token, replacement: rebuildToken(token, 'على'),
-        ruleId: 'CONTEXTUAL_ORTHOGRAPHY_V1877:علي',
-        type: 'إملائي', classification: 'orthographic', confidence: 0.97,
-        explanation: '«علي» قبل اسم معرف لغير العاقل حرف جر، ورسمه الصحيح «على»؛ أما العلم فلا يليه اسم معرف لغير العاقل مباشرة.',
-        evidence: ['contextual-preposition', 'nonhuman-definite-complement'], safe: true
-      }));
-      continue;
-    }
-
-    if (core === 'سالت' && sameSentence(next) && isNominal(next)
-        && tokenFeatures(next).animacy === 'human') {
-      out.push(findingFromSpan(context, {
-        startToken: token, replacement: rebuildToken(token, 'سألت'),
-        ruleId: 'CONTEXTUAL_ORTHOGRAPHY_V1877:سالت',
-        type: 'إملائي', classification: 'orthographic', confidence: 0.96,
-        explanation: '«سألت» بهمزة مفتوحة على الألف؛ قراءة «سال + ت» تظل ممكنة قبل اسم غير عاقل (سالت الدموع)، أما قبل العاقل فالقراءة السائلة هي المرجوحة.',
-        evidence: ['contextual-hamza', 'human-complement'], safe: true
-      }));
-      continue;
-    }
-
-    if (core === 'كتاب' && token.morph.segments?.enclitic === 'ه'
-        && sameSentence(next) && isNominal(next) && next.morph.definite
-        && !isAdjective(next)) {
-      out.push(findingFromSpan(context, {
-        startToken: token,
-        replacement: rebuildToken(token, 'كتابة', {keepEnclitic: false}),
-        ruleId: 'CONTEXTUAL_ORTHOGRAPHY_V1877:كتابه',
-        type: 'إملائي', classification: 'orthographic', confidence: 0.95,
-        explanation: '«كتابه» قبل اسم معرف صريح مصدر «كتابة» مضاف معموله إليه؛ قراءة «كتاب + هـ» تبقى قبل الصفة أو نهاية الجملة.',
-        evidence: ['contextual-taa-marbuta', 'verbal-noun-object'], safe: true
-      }));
-      continue;
-    }
-
-    if (core === 'ان' && !token.morph.segments?.preposition) {
-      const sentenceInitial = !sameSentence(prev);
-      const afterReportVerb = sameSentence(prev) && CONTEXTUAL_REPORT_VERBS.has(prev.morph.core);
-      if (sentenceInitial && sameSentence(next) && !bestVerb(next)) {
-        out.push(findingFromSpan(context, {
-          startToken: token, replacement: rebuildToken(token, 'إن'),
-          ruleId: 'CONTEXTUAL_ORTHOGRAPHY_V1877:إن',
-          type: 'إملائي', classification: 'orthographic', confidence: 0.97,
-          explanation: '«ان» في أول الجملة قبل الاسم حرف مشبه بالفعل، وهمزته مكسورة: «إن».',
-          evidence: ['contextual-hamza', 'sentence-initial-nominal'], safe: true
-        }));
-        continue;
-      }
-      if (afterReportVerb) {
-        out.push(findingFromSpan(context, {
-          startToken: token, replacement: rebuildToken(token, 'أن'),
-          ruleId: 'CONTEXTUAL_ORTHOGRAPHY_V1877:أن',
-          type: 'إملائي', classification: 'orthographic', confidence: 0.97,
-          explanation: '«ان» بعد أفعال القول والظن مصدرية ناصبة للفعل، وهمزتها مفتوحة: «أن».',
-          evidence: ['contextual-hamza', 'report-verb-complement'], safe: true
-        }));
-        continue;
-      }
-      // «ان» قبل الفعل في أول الجملة ملتبسة بين «أن» المصدرية و«إن» الشرطية؛
-      // السياسة المحافظة تتركها بلا اقتراح بدل إنذار خاطئ محتمل.
-    }
-
-    if (core === 'قراء' && !token.morph.definite && sameSentence(next)
-        && isNominal(next) && next.morph.definite && sameSentence(tokens[i + 2])
-        && isNominal(tokens[i + 2]) && tokens[i + 2].morph.definite) {
-      out.push(findingFromSpan(context, {
-        startToken: token, replacement: rebuildToken(token, 'قرأ'),
-        ruleId: 'CONTEXTUAL_ORTHOGRAPHY_V1877:قراء',
-        type: 'إملائي', classification: 'orthographic', confidence: 0.95,
-        explanation: '«قراء» المتبوعة باسمين معرفين متتاليين فعل ماضٍ: «قرأ»؛ أما قراءة الجمع (القراء) فتبقى محمية بأل التعريف.',
-        evidence: ['contextual-hamza', 'verb-subject-object-frame'], safe: true
-      }));
-    }
-  }
-  return out;
-}
 
 /* ===== MODULE: src/rules/orthography.js ===== */
 const PHRASES = Object.freeze({
@@ -4488,15 +4521,74 @@ const WORDS = Object.freeze({
   'عاشو': 'عاشوا', 'ماتو': 'ماتوا',
   /* ── الدفعة 2: متفرقات ── */
   'اشار': 'أشار', 'اتمنيت': 'تمنيت',
-  /* ── 18.7.7: دفعة إملائية مراجعة (كل صيغة بلا قراءة صحيحة أخرى) ── */
-  'الي': 'إلى', 'حتي': 'حتى', 'المستشفي': 'المستشفى', 'معني': 'معنى',
-  'المقهي': 'المقهى', 'مقهي': 'المقهى', 'خطاء': 'خطأ', 'بداء': 'بدأ',
-  'انك': 'أنك', 'اين': 'أين', 'اول': 'أول', 'شئ': 'شيء',
-  'ادخل': 'أدخل', 'اخرج': 'أخرج', 'اوضح': 'أوضح', 'اجاب': 'أجاب',
-  'اكرم': 'أكرم', 'اوجد': 'أوجد', 'اجاز': 'أجاز', 'اعد': 'أعد', 'ابطل': 'أبطل',
-  'الاستاذ': 'الأستاذ', 'استاذ': 'أستاذ', 'رايت': 'رأيت',
-  'اللغه': 'اللغة', 'مشاهده': 'مشاهدة', 'المشاهده': 'المشاهدة',
-  'نجحو': 'نجحوا', 'شاركو': 'شاركوا'
+  /* ── الدفعة 3 (V18.7.7 — جولة الـ400 الخارجية): همزة القطع المحذوفة في
+     أسماء وكلمات شائعة — كل صيغةٍ هنا بلا قراءة فصيحة صحيحة، فتُصحَّح تلقائيًا.
+     «ال» التعريف لا تجتمع مع ضمير متصل، لذا الأعلام/الأسماء المعرفة بالحذف
+     تُضاف بصورتيها المجردة والمعرفة معًا. ── */
+  'امل': 'أمل', 'الامل': 'الأمل', 'امال': 'آمال',
+  'ايام': 'أيام', 'الايام': 'الأيام', 'امر': 'أمر', 'امور': 'أمور',
+  'الامور': 'الأمور', 'اشكال': 'أشكال', 'انواع': 'أنواع', 'اثر': 'أثر',
+  'اثار': 'آثار', 'اثناء': 'أثناء', 'احد': 'أحد', 'احدهم': 'أحدهم',
+  'احداث': 'أحداث', 'ادب': 'أدب', 'ادبي': 'أدبي', 'ادبية': 'أدبية',
+  'اساس': 'أساس', 'اساسي': 'أساسي', 'اساسية': 'أساسية', 'الاساس': 'الأساس',
+  'الاساسية': 'الأساسية', 'اسلوب': 'أسلوب', 'اساليب': 'أساليب',
+  'اصول': 'أصول', 'افضل': 'أفضل', 'الافضل': 'الأفضل', 'اكبر': 'أكبر',
+  'الاكبر': 'الأكبر', 'اصغر': 'أصغر', 'اقدم': 'أقدم', 'اجمل': 'أجمل',
+  'اقوى': 'أقوى', 'الاقصى': 'الأقصى', 'اعظم': 'أعظم', 'اول': 'أول',
+  'الاول': 'الأول', 'الاولى': 'الأولى', 'اولويات': 'أولويات',
+  'الاولويات': 'الأولويات', 'اخير': 'أخير', 'الاخير': 'الأخير',
+  'اخيرة': 'أخيرة', 'الاخيرة': 'الأخيرة', 'اخرون': 'آخرون',
+  'استاذ': 'أستاذ', 'الاستاذ': 'الأستاذ', 'استاذة': 'أستاذة',
+  'الاستاذة': 'الأستاذة', 'اسطورة': 'أسطورة',
+  'اصوات': 'أصوات', 'اقلام': 'أقلام', 'اوراق': 'أوراق', 'ازهار': 'أزهار',
+  'اشجار': 'أشجار', 'اشياء': 'أشياء', 'اموال': 'أموال', 'انباء': 'أنباء',
+  'انجاز': 'إنجاز', 'انجازات': 'إنجازات', 'ابداع': 'إبداع', 'اداء': 'أداء',
+  'ايجابي': 'إيجابي', 'ايجابية': 'إيجابية', 'اجراء': 'إجراء',
+  'اجراءات': 'إجراءات', 'اعلان': 'إعلان', 'اخفاء': 'إخفاء',
+  'اشارة': 'إشارة', 'اشارات': 'إشارات', 'الاعلام': 'الإعلام',
+  'الاسعار': 'الأسعار', 'الاعضاء': 'الأعضاء', 'الاعمال': 'الأعمال',
+  'الاطفال': 'الأطفال', 'الاسباب': 'الأسباب', 'الاحوال': 'الأحوال',
+  'الاوقات': 'الأوقات', 'الاوسط': 'الأوسط', 'الاعلى': 'الأعلى',
+  'الامن': 'الأمن', 'الامان': 'الأمان', 'الابد': 'الأبد',
+  'الامم': 'الأمم', 'الامير': 'الأمير', 'الام': 'الأم', 'الاب': 'الأب',
+  'الاخ': 'الأخ', 'الاهم': 'الأهم',
+  'اتى': 'أتى', 'اتوا': 'أتوا', 'اجرى': 'أجرى', 'اجروا': 'أجروا',
+  'اجرت': 'أجرت', 'ابدى': 'أبدى', 'ابدت': 'أبدت', 'انشا': 'أنشأ',
+  'انشات': 'أنشأت', 'انشاوا': 'أنشأوا',
+  'اعد': 'أعد', 'اجاب': 'أجاب', 'اصدر': 'أصدر', 'احضر': 'أحضر',
+  'اكرم': 'أكرم', 'اراد': 'أراد', 'انجز': 'أنجز', 'اسس': 'أسس', 'اذاع': 'أذاع',
+  'ايضا': 'أيضا', 'ايضاً': 'أيضًا', 'اضاف': 'أضاف',
+  /* ── همزة الفعل المحذوفة في صيغ القراءة الشائعة ── */
+  'يقرا': 'يقرأ', 'تقرا': 'تقرأ', 'اقرا': 'أقرأ', 'نقرا': 'نقرأ',
+  /* ── واو الجماعة في أفعال شائعة (مداخل قطعية؛ السياقية تبقى للحالات النادرة) ── */
+  'درسو': 'درسوا', 'شاهدو': 'شاهدوا', 'زارو': 'زاروا', 'نجحو': 'نجحوا',
+  'عملو': 'عملوا', 'حاولو': 'حاولوا', 'ساعدو': 'ساعدوا', 'شاركو': 'شاركوا',
+  'كانو': 'كانوا', 'وجدو': 'وجدوا', 'جمعو': 'جمعوا', 'قررو': 'قرروا',
+  /* ── الهمزة المتطرفة ── */
+  'شئ': 'شيء', 'شيئا': 'شيئًا', 'قرائة': 'قراءة',
+  /* ── التاء المربوطة مع «ال»: الإضافة لا تجتمع مع «ال» ── */
+  'الطريقه': 'الطريقة', 'المرحله': 'المرحلة', 'الفتره': 'الفترة',
+  'المعركه': 'المعركة', 'القيمه': 'القيمة', 'الاهميه': 'الأهمية',
+  'الجوده': 'الجودة', 'الحريه': 'الحرية', 'العداله': 'العدالة',
+  'المسؤوليه': 'المسؤولية', 'الاسره': 'الأسرة', 'القصه': 'القصة',
+  'الروايه': 'الرواية', 'المقاله': 'المقالة', 'الصحافه': 'الصحافة',
+  'التقنيه': 'التقنية', 'الوظيفه': 'الوظيفة', 'الخبره': 'الخبرة',
+  'المعرفه': 'المعرفة', 'التربيه': 'التربية', 'القاعه': 'القاعة',
+  'الصاله': 'الصالة', 'الجمهوريه': 'الجمهورية', 'الديمقراطيه': 'الديمقراطية',
+  'الحديثه': 'الحديثة', 'القديمه': 'القديمة', 'الكبيره': 'الكبيرة',
+  'الصغيره': 'الصغيرة', 'الواسعه': 'الواسعة', 'الجديده': 'الجديدة',
+  'العامه': 'العامة', 'الخاصه': 'الخاصة',
+  'المحليه': 'المحلية', 'الوطنيه': 'الوطنية', 'الدوليه': 'الدولية',
+  'العالميه': 'العالمية', 'العراقيه': 'العراقية', 'المصريه': 'المصرية',
+  'السعوديه': 'السعودية', 'الامريكيه': 'الأمريكية', 'الاوروبيه': 'الأوروبية',
+  /* ── ضمائر وأدوات ── */
+  'هذة': 'هذه',
+  /* ── V18.7.8: مدخلات إملائية مسترجعة من النسخة العادية ── */
+  'الي': 'إلى',
+  'المستشفي': 'المستشفى', 'مستشفي': 'مستشفى',
+  'خطاء': 'خطأ',
+  'لان': 'لأن',
+  'شئ': 'شيء'
 });
 
 /* الدفعة 2: توسيع صرفي للأفعال الهمزية المراجعة — الفعل الماضي مع لواحق
@@ -4505,7 +4597,12 @@ const WORDS = Object.freeze({
 const SUFFIX_EXPAND_VERBS = Object.freeze({
   'اخذ': 'أخذ', 'اكل': 'أكل', 'ارسل': 'أرسل', 'اعطى': 'أعطى', 'اكد': 'أكد',
   'اعلن': 'أعلن', 'اثبت': 'أثبت', 'اكمل': 'أكمل', 'انهى': 'أنهى',
-  'اوقف': 'أوقف', 'اساء': 'أساء', 'اسرع': 'أسرع', 'اضاف': 'أضاف'
+  'اوقف': 'أوقف', 'اساء': 'أساء', 'اسرع': 'أسرع', 'اضاف': 'أضاف',
+  /* V18.7.7 — أفعال مهموزة شائعة بصيغها الماضية مع لواحق الضمائر.
+     الأصوات الصحيحة/المجوّفة/المضعّفة فقط؛ الناقصة (اتى/اجرى/انشا…) لها
+     مداخل WORDS مستقلة لأن ساقها يتغير قبل واو الجماعة. */
+  'اعد': 'أعد', 'اجاب': 'أجاب', 'اصدر': 'أصدر', 'احضر': 'أحضر',
+  'اكرم': 'أكرم', 'اراد': 'أراد', 'انجز': 'أنجز', 'اسس': 'أسس', 'اذاع': 'أذاع'
 });
 const PERSON_SUFFIXES = Object.freeze(['ت', 'تا', 'ا', 'نا', 'وا', 'تم', 'تن', 'ن']);
 // استثناءات المثنى: «اخذا» و«اكلا» تحملان قراءة مصدرية منصوبة صحيحة (أَخْذًا/أُكْلًا)
@@ -4515,7 +4612,6 @@ const DUAL_SKIP = new Set(['اخذ', 'اكل']);
    بثقة 0.90 (أقل من عتبة التصحيح التلقائي 0.985) فلا تُطبَّق آليًا أبدًا.
    ملاحظة: «مكتبه» حُذفت نهائيًا لأن «مكتب + ه» قراءة صحيحة شائعة (إنذار كاذب مؤكد). */
 const WORDS_REVIEW = Object.freeze({
-  'لان': 'لأن',
   'جامعه': 'جامعة', 'فكره': 'فكرة', 'كلمه': 'كلمة', 'جمله': 'جملة',
   'مدينه': 'مدينة'
 });
@@ -4807,6 +4903,21 @@ function weakVerbAgreementRule(context) {
       ? [...new Set(features.numberCandidates || highConfidenceNumberCandidates(subject))]
       : [];
     if (order === 'SVO' && competingSubjectNumbers.length) continue;
+
+    // V18.7.7 — Competing-Gender Veto 1.1: إذا حمل الفاعل قراءة نسبة مذكرة
+    // مفردة (الصحفي/الهندي/السعودي…) توافق الفعل المفرد المذكر الحالي (3ms)،
+    // فلا يُبنى تصحيحُ تأنيثٍ على قراءة ملكية/جمع مؤنث خاطئة. هذه هي السياسة
+    // المحافظة نفسها المطبقة على العدد: «التوافق مع أحد التحليلات قرينة
+    // صحيحة، وعدم التوافق لا يكفي لاختيار بديل واحد». القيد على الصفة فقط
+    // يمنع الالتقاط الخاطئ للموصولات/الضمائر المغلقة («الذي» تنتهي بياء لكنها
+    // ليست نسبةً) فيبقى حسم مطابقة صلة الموصول كما هو.
+    if (verb.personCode === '3ms') {
+      const masculineNisbaReading = (subject.morph?.candidates || []).some(candidate =>
+        candidate.pos === 'adj' && candidate.gender === 'm' && candidate.number === 'sg'
+        && (String(candidate.source || '').startsWith('productive-')
+          || /ي$/u.test(String(candidate.lemma || ''))));
+      if (masculineNisbaReading) continue;
+    }
 
     const personCode = desiredPerson(features, order);
 
@@ -6403,9 +6514,7 @@ function productiveOrthographyRule(context) {
     if (!replacementCore && /[اىي]$/u.test(core)
         // قراءة اسم مشتق مستقلة مثل «مبنى» تمنع قلبها إلى صفة شقيقة «مبني»
         // لمجرد تشابه المفتاح الإملائي؛ يقتصر المسار على الشكل غير المحلل.
-        && !String(token.morph.nominal?.source || '').startsWith('productive-')
-        // ألف تنوين النصب غير المشكولة («عملا») ليست ألفًا مقصورة خاطئة.
-        && token.morph.nominal?.source !== 'unvocalized-accusative-alif') {
+        && !String(token.morph.nominal?.source || '').startsWith('productive-')) {
       replacementCore = uniqueOrthographicCandidate(core, 'alif-maqsura');
       ruleId = 'PRODUCTIVE_ALIF_MAQSURA_V187';
       explanation = 'حُسم رسم الألف المقصورة من مرشح صرفي معجمي وحيد، مع إبقائه اقتراحًا محافظًا.';
@@ -6586,14 +6695,18 @@ function nominativeSubjectCaseRuleV1876(context) {
     // الضمائر الموصولة (الذين/اللذين) لها قاعدتها الخاصة، ولا يلمسها هذا المحلل.
     if (token.morph.pos !== 'noun') continue;
     const nominal = token.morph.nominal;
-    if (!nominal || !['du', 'pl'].includes(nominal.number)) continue;
+    // V18.7.7: العدد المحسوم من القرينة الخبرية (DeepSyntacticTopicResolver)
+    // مقدَّمٌ على العدد المعجمي المحتمل: «المعلمين حاضرون» خبرٌ جمعٌ فيحسم
+    // الرأس جمعًا (المعلمون) ولو حمل المعجم قراءة مثنى أيضًا؛ والعكس مع
+    // «باحثين مشغولان» (خبر مثنى). بلا قرينة خبرية يُعتمد العدد المعجمي.
+    const resolvedNumber = (['du', 'pl'].includes(role.expectedNumber) ? role.expectedNumber : null)
+      || (['du', 'pl'].includes(nominal?.number) ? nominal?.number : null);
+    if (!nominal || !resolvedNumber) continue;
     if (nominal.source === 'unverified-productive-inflection-ending'
         || (nominal.confidence || 0) < 0.95) continue;
     const observed = observedCase(token);
     if (!observed || caseMatches(observed, 'nominative')) continue;
-    const replacement = role.expectedNumber
-      ? inflectNounNumberToken(token, role.expectedNumber, 'nominative')
-      : inflectTokenCase(token, 'nominative', {onlyWhenVisible: true});
+    const replacement = inflectNounNumberToken(token, resolvedNumber, 'nominative');
     if (!replacement || replacement === token.surface) continue;
     const ruleId = role.role === 'topic' ? 'TOPIC_CASE_V1876' : 'SUBJECT_CASE_V1876';
     out.push(findingFromSpan(context, {
@@ -6613,9 +6726,120 @@ function nominativeSubjectCaseRuleV1876(context) {
   return out;
 }
 
+/* ===== MODULE: src/rules/contextual-orthography.js ===== */
+/**
+ * V18.7.8: قاعدة الإملاء السياقي — تصحيحات إملائية تعتمد على السياق
+ * لاستبعاد الإنذارات الكاذبة. تعمل فقط عندما يكون الخيار مفعلاً.
+ * 
+ * الحالات المدعومة:
+ * 1. علي → على (حرف جر) عندما يتبعها اسم معرف (وليس اسم علم "علي")
+ * 2. ان → أن (حرف مصدري) بعد أفعال القول والظن
+ * 3. سالت → سألت (فعل سأل) عندما يتبعها فاعل بشري
+ * 4. كتابه → كتابة (مصدر) عندما يتبعها مضاف إليه
+ */
+function contextualOrthographyRule(context) {
+  const out = [];
+  if (!context.options?.rules?.contextualOrthography) return out;
+  
+  const {tokens} = context;
+  const SAYING_VERBS = new Set(['قال', 'تقول', 'يقول', 'قالوا', 'قلن', 'ظن', 'ظنت', 'يظن', 'علم', 'علمت', 'يعلم', 'أعلم', 'نعلم', 'يعلمون', 'أكد', 'أعلنت', 'يعلن', 'صرح', 'أوضح']);
+  const HUMAN_NOUNS = new Set(['الطالب', 'الطالبة', 'المعلم', 'المعلمة', 'المدير', 'المديرة', 'الرجل', 'المرأة', 'الولد', 'البنت', 'الأستاذ', 'الدكتور', 'المهندس', 'الطبيب', 'الكاتب', 'الباحث', 'الصحفي', 'المترجم', 'الموظف', 'الوزير']);
+  
+  for (let i = 0; i < tokens.length; i += 1) {
+    const token = tokens[i];
+    if (token.type !== 'word') continue;
+    const clean = token.clean;
+    
+    // Case 1: علي → على (preposition before definite noun)
+    if (clean === 'علي' && !token.morph.segments?.article) {
+      const next = tokens[i + 1];
+      if (next && next.type === 'word' && next.morph.segments?.article && next.clean.startsWith('ال')) {
+        // Check if it's the name "علي" (proper noun) - if previous word is a verb of calling/naming, skip
+        const prev = tokens[i - 1];
+        if (prev && (prev.clean === 'اسم' || prev.clean === 'يدعى' || prev.clean === 'يُسمى')) continue;
+        
+        out.push(findingFromSpan(context, {
+          startToken: token,
+          replacement: 'على',
+          ruleId: 'CONTEXTUAL_ORTHOGRAPHY_V1877:علي',
+          type: 'إملائي',
+          classification: 'orthographic',
+          confidence: 0.92,
+          explanation: 'السياق يدل على حرف الجر «على» وليس الاسم «علي».',
+          evidence: ['contextual-preposition'],
+          safe: true
+        }));
+      }
+    }
+    
+    // Case 2: ان → أن (complementizer after saying/thinking verbs)
+    if (clean === 'ان' && !token.morph.segments?.article) {
+      const prev = tokens[i - 1];
+      if (prev && prev.type === 'word' && SAYING_VERBS.has(prev.clean)) {
+        out.push(findingFromSpan(context, {
+          startToken: token,
+          replacement: 'أن',
+          ruleId: 'CONTEXTUAL_ORTHOGRAPHY_V1877:أن',
+          type: 'إملائي',
+          classification: 'orthographic',
+          confidence: 0.95,
+          explanation: 'السياق يدل على «أن» المصدرية بعد فعل القول/الظن.',
+          evidence: ['contextual-complementizer'],
+          safe: true
+        }));
+      }
+    }
+    
+    // Case 3: سالت → سألت (verb "asked" before human subject)
+    if (clean === 'سالت' && !token.morph.segments?.article) {
+      const next = tokens[i + 1];
+      if (next && next.type === 'word' && next.morph.segments?.article) {
+        const nextBase = next.clean.replace(/^ال/, '');
+        if (HUMAN_NOUNS.has(next.clean) || /ة$/.test(nextBase) || /م[uo]ن$/.test(nextBase)) {
+          out.push(findingFromSpan(context, {
+            startToken: token,
+            replacement: 'سألت',
+            ruleId: 'CONTEXTUAL_ORTHOGRAPHY_V1877:سالت',
+            type: 'إملائي',
+            classification: 'orthographic',
+            confidence: 0.90,
+            explanation: 'السياق يدل على فعل «سأل» وليس «سال» (تسيل).',
+            evidence: ['contextual-verb-hamza'],
+            safe: true
+          }));
+        }
+      }
+    }
+    
+    // Case 4: كتابه → كتابة (masdar before idafa)
+    if (clean === 'كتابه' && !token.morph.segments?.article) {
+      const next = tokens[i + 1];
+      // Guard: if previous token is a verb, "كتابه" is likely "his book" (object+pronoun)
+      const prev = tokens[i - 1];
+      const prevIsVerb = prev && prev.type === 'word' && (VERB_FORM_INDEX.has(prev.clean) || VERB_FORM_INDEX.has(prev.clean.replace(/^ال/, '')));
+      if (!prevIsVerb && next && next.type === 'word' && next.morph.segments?.article && next.clean.startsWith('ال')) {
+        // This is likely "writing of..." not "his book"
+        out.push(findingFromSpan(context, {
+          startToken: token,
+          replacement: 'كتابة',
+          ruleId: 'CONTEXTUAL_ORTHOGRAPHY_V1877:كتابه',
+          type: 'إملائي',
+          classification: 'orthographic',
+          confidence: 0.88,
+          explanation: 'السياق يدل على المصدر «كتابة» وليس «كتابه» (كتاب + ضمير).',
+          evidence: ['contextual-masdar'],
+          safe: true
+        }));
+      }
+    }
+  }
+  
+  return out;
+}
+
 const RULE_PIPELINE = Object.freeze([
   {id: 'orthography', run: orthographyRule},
-  {id: 'contextualOrthography', run: contextualOrthographyRuleV1877},
+  {id: 'contextualOrthography', run: contextualOrthographyRule},
   {id: 'hamzaMorphological', run: hamzaMorphologicalRule},
   {id: 'productiveOrthography', run: productiveOrthographyRule},
   {id: 'objectCase', run: objectCaseRule},
@@ -6974,7 +7198,9 @@ const BASE_GOLD_CORPUS = Object.freeze([
   /* ── الدفعة 2: اختبارات واو الجماعة والسوابق واللواحق والترقيم ── */
   {id: 'waw-jamaa-list', text: 'هم كتبو الدرس', rules: ['ORTHOGRAPHY_V18:كتبو'], corrected: 'هم كتبوا الدرس'},
   {id: 'waw-jamaa-hamza', text: 'اخذوا الكتاب', rules: ['ORTHOGRAPHY_V18:اخذوا'], corrected: 'أخذوا الكتاب'},
-  {id: 'waw-jamaa-pattern', text: 'العمال درسو بجد', rules: ['WAW_ALJAMAA_V18']},
+  // V18.7.7: «درسو» صارت مدخلًا قطعيًا في WORDS (تصحيح تلقائي 0.995) بدل
+  // القاعدة السياقية الاقتراحية؛ القاعدة العامة تبقى للحالات غير المعجمية.
+  {id: 'waw-jamaa-pattern', text: 'العمال درسو بجد', rules: ['ORTHOGRAPHY_V18:درسو']},
   {id: 'taa-al-prefix', text: 'شاهدت الصوره', rules: ['ORTHOGRAPHY_V18:الصوره'], corrected: 'شاهدت الصورة'},
   {id: 'verb-suffix-t', text: 'ارسلت رساله', rules: ['ORTHOGRAPHY_V18:ارسلت', 'ORTHOGRAPHY_V18:رساله'], corrected: 'أرسلت رسالة'},
   {id: 'verb-suffix-wa', text: 'اكدوا الخبر', rules: ['ORTHOGRAPHY_V18:اكدوا'], corrected: 'أكدوا الخبر'},
@@ -7188,9 +7414,12 @@ function generateV1871GoldCorpus() {
   [
     ['يقرءون', 'يقرؤون'], ['يقرئون', 'يقرؤون'], ['تقرءون', 'تقرؤون'], ['تقرئون', 'تقرؤون'],
     ['يقرءن', 'يقرأن'], ['يقرؤن', 'يقرأن'], ['يقرئن', 'يقرأن'],
-    ['قرءوا', 'قرؤوا'], ['قرئوا', 'قرؤوا'], ['تقرءان', 'تقرأان']
+    ['قرءوا', 'قرؤوا'], ['قرئوا', 'قرؤوا'], ['تقرءان', 'تقرآن']
   ].forEach(([wrong, expected], i) => add(`hamza-seat-${i}`, wrong,
     ['PRODUCTIVE_HAMZA_MORPHOLOGY_V1871'], [expected]));
+  // V18.7.7: «تقرءان» تصحَّح إلى الوجه المدمج المفضَّل «تقرآن» (بالمَدّ)؛
+  // الوجهان «تقرأان/تقرآن» مقبولان عند HamzaMorphologicalResolver 1.0،
+  // والمدمج هو الرسم المعتمد في الكتابة المعاصرة.
 
   if (tests.length !== 222) throw new Error(`V18.7.1 gold generation mismatch: ${tests.length}`);
   return tests;
@@ -7283,8 +7512,32 @@ const V1876_GOLD_REGRESSIONS = Object.freeze([
     rules: ['OBJECT_CASE_V1871'], replacements: ['الدرسين']}
 ]);
 
-/* انحدارات V18.7.7 — PRECISION + RECALL */
+/* ── V18.7.8: انحدارات مدمجة من النسختين العادية وPRO — جولة الـ400 والنسبة والإملاء السياقي ── */
 const V1877_GOLD_REGRESSIONS = Object.freeze([
+  // من PRO: اختبارات المثنى/جمع المذكر والملتبس
+  {id: 'v1877-ambiguous-du-pl-predicate-dual', text: 'الباحثين مشغولان.',
+    rules: ['TOPIC_CASE_V1876'], replacements: ['الباحثان']},
+  {id: 'v1877-ambiguous-du-pl-predicate-plural', text: 'المعلمين حاضرون.',
+    rules: ['TOPIC_CASE_V1876'], replacements: ['المعلمون']},
+  {id: 'v1877-productive-predicate-dual', text: 'الطبيبين مشغولان.',
+    rules: ['TOPIC_CASE_V1876'], replacements: ['الطبيبان']},
+  {id: 'v1877-new-verb-agreement-fem', text: 'المعلمة شرح الدرس.',
+    rules: ['WEAK_VERB_AGREEMENT_V18'], replacements: ['شرحت']},
+  {id: 'v1877-new-verb-agreement-pl', text: 'المزارعون حصد القمح.',
+    rules: ['WEAK_VERB_AGREEMENT_V18'], replacements: ['حصدوا']},
+  {id: 'v1877-broken-plural-subject', text: 'التجار باع البضاعة.',
+    rules: ['WEAK_VERB_AGREEMENT_V18'], replacements: ['باعوا']},
+  {id: 'v1877-fem-plural-new-noun', text: 'المحاميات دافع عن القضية.',
+    rules: ['WEAK_VERB_AGREEMENT_V18'], replacements: ['دافعن']},
+  {id: 'v1877-dual-object-taa-forms', text: 'رسم الفنان اللوحتان.',
+    rules: ['OBJECT_CASE_V1871'], replacements: ['اللوحتين']},
+  {id: 'v1877-dual-object-fem-forms', text: 'روى البستاني الوردتان.',
+    rules: ['OBJECT_CASE_V1871'], replacements: ['الوردتين']},
+  {id: 'v1877-spelling-waw-jamaa-new', text: 'العمال درسو الخطة.',
+    rules: ['ORTHOGRAPHY_V18:درسو'], replacements: ['درسوا']},
+  {id: 'v1877-spelling-hamza-new', text: 'انجز العمال المشروع.',
+    rules: ['ORTHOGRAPHY_V18:انجز'], replacements: ['أنجز']},
+  // من النسخة العادية: اختبارات OBJECT_CASE و KANA/INNA للمثنى والجمع السالم
   {id: 'v1877-smp-object-amiloon', text: 'شاهد المدير العاملون.',
     rules: ['OBJECT_CASE_V1871'], replacements: ['العاملين']},
   {id: 'v1877-dual-object-laiiban', text: 'شاهد المدير اللاعبان.',
@@ -7297,6 +7550,7 @@ const V1877_GOLD_REGRESSIONS = Object.freeze([
     rules: ['WEAK_VERB_AGREEMENT_V18'], replacements: ['لعبا']},
   {id: 'v1877-number-polarity-khams', text: 'خمس طلاب في الصف.',
     rules: ['NUMBER_POLARITY_V18'], replacements: ['خمسة']},
+  // من النسخة العادية: اختبارات الإملاء السياقي (contextualOrthography)
   {id: 'v1877-orth-ila', text: 'ذهب الي المدرسة.',
     rules: ['ORTHOGRAPHY_V18:الي'], replacements: ['إلى']},
   {id: 'v1877-orth-mostashfa', text: 'ذهب إلى المستشفي.',
@@ -7620,20 +7874,35 @@ const V1876_NO_FALSE_POSITIVE_REGRESSIONS = Object.freeze([
   ['v1876-nfp-object-correct-dual', 'رأيت الطالبين.']
 ]);
 
-/* مصائد الإنذار الكاذب V18.7.7: فئة الصحفي والقواعد السياقية الجديدة. */
+/* ── V18.7.8: مصائد إنذار كاذب مدمجة من النسختين — النسبة والإملاء السياقي ── */
 const V1877_NO_FALSE_POSITIVE_REGRESSIONS = Object.freeze([
-  ['v1877-nfp-sahafi-1', 'الصحفي قرأ الكتاب.'],
-  ['v1877-nfp-sahafi-2', 'الصحفي زار المتحف.'],
-  ['v1877-nfp-sahafi-3', 'الصحفي حفظ القصيدة.'],
-  ['v1877-nfp-sahafi-4', 'الصحفي راجع التقرير.'],
-  ['v1877-nfp-sahafi-5', 'الصحفي فتح الباب.'],
-  ['v1877-nfp-sahafi-6', 'الصحفي شاهد الفيلم.'],
+  // من PRO: أسماء النسب مع الأفعال
+  ['v1877-nfp-nisba-journalist', 'الصحفي قرأ الكتاب.'],
+  ['v1877-nfp-nisba-visit', 'الصحفي زار المتحف.'],
+  ['v1877-nfp-nisba-hafiza', 'الصحفي حفظ القصيدة.'],
+  ['v1877-nfp-nisba-rajaa', 'الصحفي راجع التقرير.'],
+  ['v1877-nfp-nisba-fataha', 'الصحفي فتح الباب.'],
+  ['v1877-nfp-nisba-shahada', 'الصحفي شاهد الفيلم.'],
+  ['v1877-nfp-nisba-misri', 'المصري عاد إلى بلده.'],
+  ['v1877-nfp-nisba-iraqi', 'العراقي زار باريس.'],
+  ['v1877-nfp-relative-enclitic-1s', 'الكتاب الذي قرأته.'],
+  ['v1877-nfp-relative-enclitic-1s2', 'المدير الذي قابلته ودود.'],
+  ['v1877-nfp-number-twelve-object', 'اشترى اثني عشر كتابًا.'],
+  ['v1877-nfp-adjective-object-acc', 'افتتحت المدينة متحفًا جديدًا.'],
+  ['v1877-nfp-productive-du-zaytun', 'الزيتون مفيد.'],
+  ['v1877-nfp-productive-du-bustan', 'البستان جميل.'],
+  ['v1877-nfp-proper-lubnan', 'لبنان بلد جميل.'],
+  ['v1877-nfp-gender-mismatch-head', 'المرأتين مشغولان.'],
+  ['v1877-nfp-possessive-ya', 'هذا كتابي.'],
+  ['v1877-nfp-possessive-ha', 'شاهدت صورته وقرأت مقاله.'],
+  ['v1877-nfp-annexation-waw', 'جاء معلمو المدرسة.'],
+  ['v1877-nfp-relative-object-overt', 'الكتب التي اختارها المعلم.'],
+  // من النسخة العادية: مصائد إضافية لأسماء النسب والإملاء السياقي
   ['v1877-nfp-hawara-sahafi', 'حاور الصحفي المسؤولين.'],
   ['v1877-nfp-salat-dumoo', 'سالت الدموع على الخدين.'],
   ['v1877-nfp-salat-uyoon', 'سالت العيون بالدموع.'],
   ['v1877-nfp-kitabuhu-adj', 'قرأت كتابه الجديد.'],
   ['v1877-nfp-kitabuhu-final', 'هذا كتابه.'],
-  ['v1877-nfp-ambiguous-transitive', 'الطالبين يكتبان.'],
   ['v1877-nfp-ambiguous-smp-transitive', 'المهندسين يكتبون.']
 ]);
 
@@ -7738,20 +8007,300 @@ function validateData() {
     EXTERNAL_HOLDOUT_BENCHMARK_V1876.errors.length === 18
       && EXTERNAL_HOLDOUT_BENCHMARK_V1876.controls.length === 16,
     `${EXTERNAL_HOLDOUT_BENCHMARK_V1876.errors.length} خطأ خارجي + ${EXTERNAL_HOLDOUT_BENCHMARK_V1876.controls.length} ضابط صحيح`);
-  add('external-holdout-400-present',
-    EXTERNAL_HOLDOUT_400_V1877.errors.length === 200
-      && EXTERNAL_HOLDOUT_400_V1877.controls.length === 200,
-    `${EXTERNAL_HOLDOUT_400_V1877.errors.length} خطأ + ${EXTERNAL_HOLDOUT_400_V1877.controls.length} ضابط — معيار خارجي مجمّد`);
-  add('v1877-nisba-layer', Boolean(NOUN_FORM_INDEX.has('صحفي') && NOUN_FORM_INDEX.has('صحفيون')),
+  add('v1877-external-400-present',
+    EXTERNAL_HOLDOUT_BENCHMARK_V1877.errors.length === 200
+      && EXTERNAL_HOLDOUT_BENCHMARK_V1877.controls.length === 200
+      && ['syntax', 'agreement', 'spelling'].every(cat =>
+        EXTERNAL_HOLDOUT_BENCHMARK_V1877.errors.filter(x => x.category === cat).length > 0),
+    `${EXTERNAL_HOLDOUT_BENCHMARK_V1877.errors.length} خطأ خارجي (${EXTERNAL_HOLDOUT_BENCHMARK_V1877.counts.syntax} نحوي + ${EXTERNAL_HOLDOUT_BENCHMARK_V1877.counts.agreement} مطابقة + ${EXTERNAL_HOLDOUT_BENCHMARK_V1877.counts.spelling} إملائي) + ${EXTERNAL_HOLDOUT_BENCHMARK_V1877.controls.length} ضابط`);
+  // V18.7.8: فحوصات الطبقات المسترجعة من النسخة العادية
+  add('v1878-nisba-layer', Boolean(NOUN_FORM_INDEX.has('صحفي') && NOUN_FORM_INDEX.has('صحفيون')),
     'طبقة أسماء النسب وفهرس صيغها المرفوعة');
-  add('v1877-contextual-orthography-pipeline', ruleIds.includes('contextualOrthography'),
-    'قاعدة الإملاء السياقي في خط الأنابيب');
+  add('v1878-contextual-orthography-option',
+    DEFAULT_OPTIONS.rules.contextualOrthography === true,
+    'خيار contextualOrthography مفعّل في DEFAULT_OPTIONS');
 
   const stats = weakVerbStats();
   add('weak-verb-coverage', stats.weakOrIrregularLemmas >= 20, JSON.stringify(stats));
 
   const failures = Object.entries(checks).filter(([, value]) => value.status === 'fail').map(([id]) => id);
   return {valid: failures.length === 0, checks, failures, stats};
+}
+
+/* ===== MODULE: src/benchmarks/external-holdout-v1877.js ===== */
+/**
+ * External Holdout Benchmark V18.7.7 — معيار خارجي ثابت 400 جملة (80 نحوية +
+ * 60 مطابقة/صرف + 60 إملائية + 200 صحيحة). مستقل تمامًا عن مجموعات التطوير
+ * الداخلية؛ يُبنى مرة واحدة ويبقى دون تغيير لكل النسخ القادمة، ويُشغَّل عبر
+ * runLargeExternalBenchmark(). كل خطأ يحمل بدائل التصحيح المقبولة (بعض الجمل
+ * ملتبسة العدد: المثنى أو الجمع كلاهما تصحيح صحيح).
+ */
+const EXTERNAL_HOLDOUT_BENCHMARK_V1877 = Object.freeze({
+  version: '18.7.7',
+  description: 'معيار خارجي ثابت: 200 جملة خاطئة (80 نحوية + 60 مطابقة/صرف + 60 إملائية) + 200 جملة صحيحة ضابطة.',
+  counts: {errors: 200, syntax: 80, agreement: 60, spelling: 60, controls: 200},
+  errors: Object.freeze([
+    {id: 'ext-001', text: 'الطالبين مجتهدان.', replacements: ["الطالبان"], category: 'syntax', note: 'مبتدأ مثنى/جمع مذكر في صيغة الياء'},
+    {id: 'ext-002', text: 'المعلمين ناجحان.', replacements: ["المعلمان"], category: 'syntax', note: 'مبتدأ مثنى/جمع مذكر في صيغة الياء'},
+    {id: 'ext-003', text: 'المهندسين ماهران.', replacements: ["المهندسان"], category: 'syntax', note: 'مبتدأ مثنى/جمع مذكر في صيغة الياء'},
+    {id: 'ext-004', text: 'الباحثين مشغولان.', replacements: ["الباحثان"], category: 'syntax', note: 'مبتدأ مثنى/جمع مذكر في صيغة الياء'},
+    {id: 'ext-005', text: 'المديرين سعيدان.', replacements: ["المديران"], category: 'syntax', note: 'مبتدأ مثنى/جمع مذكر في صيغة الياء'},
+    {id: 'ext-006', text: 'المزارعين نشيطان.', replacements: ["المزارعان"], category: 'syntax', note: 'مبتدأ مثنى/جمع مذكر في صيغة الياء'},
+    {id: 'ext-007', text: 'التاجرين مجتهدان.', replacements: ["التاجران"], category: 'syntax', note: 'مبتدأ مثنى/جمع مذكر في صيغة الياء'},
+    {id: 'ext-008', text: 'الكاتبين ناجحان.', replacements: ["الكاتبان"], category: 'syntax', note: 'مبتدأ مثنى/جمع مذكر في صيغة الياء'},
+    {id: 'ext-009', text: 'اللاعبين ماهران.', replacements: ["اللاعبان"], category: 'syntax', note: 'مبتدأ مثنى/جمع مذكر في صيغة الياء'},
+    {id: 'ext-010', text: 'الطبيبين مشغولان.', replacements: ["الطبيبان"], category: 'syntax', note: 'مبتدأ مثنى/جمع مذكر في صيغة الياء'},
+    {id: 'ext-011', text: 'المحاميين مجتهدان.', replacements: ["المحاميان"], category: 'syntax', note: 'مبتدأ مثنى/جمع مذكر في صيغة الياء'},
+    {id: 'ext-012', text: 'المدرسين ناجحان.', replacements: ["المدرسان"], category: 'syntax', note: 'مبتدأ مثنى/جمع مذكر في صيغة الياء'},
+    {id: 'ext-013', text: 'الرسامين ماهران.', replacements: ["الرسامان"], category: 'syntax', note: 'مبتدأ مثنى/جمع مذكر في صيغة الياء'},
+    {id: 'ext-014', text: 'النجارين مشغولان.', replacements: ["النجاران"], category: 'syntax', note: 'مبتدأ مثنى/جمع مذكر في صيغة الياء'},
+    {id: 'ext-015', text: 'السائقين سعيدان.', replacements: ["السائقان"], category: 'syntax', note: 'مبتدأ مثنى/جمع مذكر في صيغة الياء'},
+    {id: 'ext-016', text: 'قابلت المعلمان.', replacements: ["المعلمين"], category: 'syntax', note: 'مفعول به مثنى/جمع مرفوع خطأ'},
+    {id: 'ext-017', text: 'شاهد المدير الموظفان.', replacements: ["الموظفين"], category: 'syntax', note: 'مفعول به مثنى/جمع مرفوع خطأ'},
+    {id: 'ext-018', text: 'كرم المعلم الطالبان.', replacements: ["الطالبين"], category: 'syntax', note: 'مفعول به مثنى/جمع مرفوع خطأ'},
+    {id: 'ext-019', text: 'حفظ الطلاب الدرسان.', replacements: ["الدرسين"], category: 'syntax', note: 'مفعول به مثنى/جمع مرفوع خطأ'},
+    {id: 'ext-020', text: 'قرأت الكتابان.', replacements: ["الكتابين"], category: 'syntax', note: 'مفعول به مثنى/جمع مرفوع خطأ'},
+    {id: 'ext-021', text: 'أصلح النجار الكرسيان.', replacements: ["الكرسيين"], category: 'syntax', note: 'مفعول به مثنى/جمع مرفوع خطأ'},
+    {id: 'ext-022', text: 'بنى العمال البيتان.', replacements: ["البيتين"], category: 'syntax', note: 'مفعول به مثنى/جمع مرفوع خطأ'},
+    {id: 'ext-023', text: 'رسم الفنان اللوحتان.', replacements: ["اللوحتين"], category: 'syntax', note: 'مفعول به مثنى/جمع مرفوع خطأ'},
+    {id: 'ext-024', text: 'رتب الموظف الملفان.', replacements: ["الملفين"], category: 'syntax', note: 'مفعول به مثنى/جمع مرفوع خطأ'},
+    {id: 'ext-025', text: 'كتب المحرر التقريران.', replacements: ["التقريرين"], category: 'syntax', note: 'مفعول به مثنى/جمع مرفوع خطأ'},
+    {id: 'ext-026', text: 'نقل السائق الصندوقان.', replacements: ["الصندوقين"], category: 'syntax', note: 'مفعول به مثنى/جمع مرفوع خطأ'},
+    {id: 'ext-027', text: 'أضاء العامل المصباحان.', replacements: ["المصباحين"], category: 'syntax', note: 'مفعول به مثنى/جمع مرفوع خطأ'},
+    {id: 'ext-028', text: 'اشترى التاجر الهاتفان.', replacements: ["الهاتفين"], category: 'syntax', note: 'مفعول به مثنى/جمع مرفوع خطأ'},
+    {id: 'ext-029', text: 'شحن المهندس الحاسوبان.', replacements: ["الحاسوبين"], category: 'syntax', note: 'مفعول به مثنى/جمع مرفوع خطأ'},
+    {id: 'ext-030', text: 'حضر الطالبين.', replacements: ["الطالبان","الطالبون"], category: 'syntax', note: 'فاعل متأخر مثنى/جمع في صيغة الياء'},
+    {id: 'ext-031', text: 'جاء المعلمين.', replacements: ["المعلمان","المعلمون"], category: 'syntax', note: 'فاعل متأخر مثنى/جمع في صيغة الياء'},
+    {id: 'ext-032', text: 'نجح المهندسين.', replacements: ["المهندسان","المهندسون"], category: 'syntax', note: 'فاعل متأخر مثنى/جمع في صيغة الياء'},
+    {id: 'ext-033', text: 'اجتمع المديرين.', replacements: ["المديران","المديرون"], category: 'syntax', note: 'فاعل متأخر مثنى/جمع في صيغة الياء'},
+    {id: 'ext-034', text: 'وصل الباحثين.', replacements: ["الباحثان","الباحثون"], category: 'syntax', note: 'فاعل متأخر مثنى/جمع في صيغة الياء'},
+    {id: 'ext-035', text: 'عاد المسافرين.', replacements: ["المسافران","المسافرون"], category: 'syntax', note: 'فاعل متأخر مثنى/جمع في صيغة الياء'},
+    {id: 'ext-036', text: 'فاز اللاعبين.', replacements: ["اللاعبان","اللاعبون"], category: 'syntax', note: 'فاعل متأخر مثنى/جمع في صيغة الياء'},
+    {id: 'ext-037', text: 'تخرج الطالبتين.', replacements: ["الطالبتان","الطالبتان"], category: 'syntax', note: 'فاعل متأخر مثنى/جمع في صيغة الياء'},
+    {id: 'ext-038', text: 'الطالبين المجتهدين حضرا.', replacements: ["الطالبان","المجتهدان"], category: 'syntax', note: 'مبتدأ ونعت تابعان في حالة رفع خاطئة'},
+    {id: 'ext-039', text: 'المهندسين الماهرين اجتمعوا.', replacements: ["المهندسون","الماهرون"], category: 'syntax', note: 'مبتدأ ونعت تابعان في حالة رفع خاطئة'},
+    {id: 'ext-040', text: 'المعلمين الحاضرين وصلوا.', replacements: ["المعلمون","الحاضرون"], category: 'syntax', note: 'مبتدأ ونعت تابعان في حالة رفع خاطئة'},
+    {id: 'ext-041', text: 'اللاعبين النشيطين فازوا.', replacements: ["اللاعبون","النشيطون"], category: 'syntax', note: 'مبتدأ ونعت تابعان في حالة رفع خاطئة'},
+    {id: 'ext-042', text: 'الباحثين الجادين نجحوا.', replacements: ["الباحثون","الجادون"], category: 'syntax', note: 'مبتدأ ونعت تابعان في حالة رفع خاطئة'},
+    {id: 'ext-043', text: 'الطالبتين المجتهدتين نجحتا.', replacements: ["الطالبتان","المجتهدتان"], category: 'syntax', note: 'مبتدأ ونعت تابعان في حالة رفع خاطئة'},
+    {id: 'ext-044', text: 'الكتابين الجديدين صدرا.', replacements: ["الكتابان","الجديدان"], category: 'syntax', note: 'مبتدأ ونعت تابعان في حالة رفع خاطئة'},
+    {id: 'ext-045', text: 'المعلمين المخلصين اجتهدوا.', replacements: ["المعلمون","المخلصون"], category: 'syntax', note: 'مبتدأ ونعت تابعان في حالة رفع خاطئة'},
+    {id: 'ext-046', text: 'إن الطالبان مجتهدان.', replacements: ["الطالبين"], category: 'syntax', note: 'اسم إن مرفوع خطأ'},
+    {id: 'ext-047', text: 'إن المعلمون حاضرون.', replacements: ["المعلمين"], category: 'syntax', note: 'اسم إن مرفوع خطأ'},
+    {id: 'ext-048', text: 'إن المهندسون جاهزون.', replacements: ["المهندسين"], category: 'syntax', note: 'اسم إن مرفوع خطأ'},
+    {id: 'ext-049', text: 'إن الطالبتان مجتهدتان.', replacements: ["الطالبتين"], category: 'syntax', note: 'اسم إن مرفوع خطأ'},
+    {id: 'ext-050', text: 'كان الطالبين مجتهدين.', replacements: ["الطالبان","الطالبون"], category: 'syntax', note: 'اسم كان منصوب خطأ'},
+    {id: 'ext-051', text: 'كان المعلمين حاضرين.', replacements: ["المعلمون","المعلمان"], category: 'syntax', note: 'اسم كان منصوب خطأ'},
+    {id: 'ext-052', text: 'كان المهندسين جاهزين.', replacements: ["المهندسون","المهندسان"], category: 'syntax', note: 'اسم كان منصوب خطأ'},
+    {id: 'ext-053', text: 'كان الطالبتين مجتهدتين.', replacements: ["الطالبتان"], category: 'syntax', note: 'اسم كان منصوب خطأ'},
+    {id: 'ext-054', text: 'حضر أبا خالد.', replacements: ["أبو"], category: 'syntax', note: 'الأسماء الخمسة: حالة خاطئة'},
+    {id: 'ext-055', text: 'رأيت أبو خالد.', replacements: ["أبا"], category: 'syntax', note: 'الأسماء الخمسة: حالة خاطئة'},
+    {id: 'ext-056', text: 'مررت بأبو خالد.', replacements: ["بأبي"], category: 'syntax', note: 'الأسماء الخمسة: حالة خاطئة'},
+    {id: 'ext-057', text: 'حضر ابا خالد.', replacements: ["أبو"], category: 'syntax', note: 'الأسماء الخمسة: حالة خاطئة'},
+    {id: 'ext-058', text: 'حضر أخا خالد.', replacements: ["أخو"], category: 'syntax', note: 'الأسماء الخمسة: حالة خاطئة'},
+    {id: 'ext-059', text: 'حضر خمسة طالبات.', replacements: ["خمس"], category: 'syntax', note: 'خطأ في العدد والمعدود'},
+    {id: 'ext-060', text: 'رأيت أربعة معلمات.', replacements: ["أربع"], category: 'syntax', note: 'خطأ في العدد والمعدود'},
+    {id: 'ext-061', text: 'في الصف سبعة معلمات.', replacements: ["سبع"], category: 'syntax', note: 'خطأ في العدد والمعدود'},
+    {id: 'ext-062', text: 'اشترت الأم تسعة سيارات.', replacements: ["تسع"], category: 'syntax', note: 'خطأ في العدد والمعدود'},
+    {id: 'ext-063', text: 'في المكتبة واحد وعشرون طالبة.', replacements: ["إحدى","واحدة"], category: 'syntax', note: 'خطأ في العدد والمعدود'},
+    {id: 'ext-064', text: 'حضر عشرون طالبُ.', replacements: ["طالبًا","طالبَ"], category: 'syntax', note: 'خطأ في العدد والمعدود'},
+    {id: 'ext-065', text: 'رأيت عشرون طالبًا.', replacements: ["عشرين"], category: 'syntax', note: 'خطأ في العدد والمعدود'},
+    {id: 'ext-066', text: 'حضر أحد عشر طالبةً.', replacements: ["إحدى عشرة"], category: 'syntax', note: 'خطأ في العدد والمعدود'},
+    {id: 'ext-067', text: 'عاد الطالب مسرورُ.', replacements: ["مسرورًا"], category: 'syntax', note: 'حال أو تمييز بلا نصب'},
+    {id: 'ext-068', text: 'عاد الطلاب مسرورون.', replacements: ["مسرورين"], category: 'syntax', note: 'حال أو تمييز بلا نصب'},
+    {id: 'ext-069', text: 'عادت الطالبة مسرورٌ.', replacements: ["مسرورةً"], category: 'syntax', note: 'حال أو تمييز بلا نصب'},
+    {id: 'ext-070', text: 'عادت الطالبات مسروراتُ.', replacements: ["مسروراتٍ"], category: 'syntax', note: 'حال أو تمييز بلا نصب'},
+    {id: 'ext-071', text: 'امتلأ الكأس ماءُ.', replacements: ["ماءً","ماءَ"], category: 'syntax', note: 'حال أو تمييز بلا نصب'},
+    {id: 'ext-072', text: 'جاءت الطالبة الذي نجح.', replacements: ["التي","نجحت"], category: 'syntax', note: 'اسم موصول غير مطابق'},
+    {id: 'ext-073', text: 'حضر المعلمون الذي اجتهدوا.', replacements: ["الذين"], category: 'syntax', note: 'اسم موصول غير مطابق'},
+    {id: 'ext-074', text: 'رأيت الطالبتين التي نجحتا.', replacements: ["اللتين"], category: 'syntax', note: 'اسم موصول غير مطابق'},
+    {id: 'ext-075', text: 'الكتاب التي اشتريته.', replacements: ["الذي"], category: 'syntax', note: 'اسم موصول غير مطابق'},
+    {id: 'ext-076', text: 'جاء الرجل التي زارنا.', replacements: ["الذي"], category: 'syntax', note: 'اسم موصول غير مطابق'},
+    {id: 'ext-077', text: 'رأى المدير الطالبين والمدرسون.', replacements: ["المدرسين"], category: 'syntax', note: 'معطوف يخالف المعطوف عليه في الحالة'},
+    {id: 'ext-078', text: 'مررت بالطالبين والمعلمون.', replacements: ["المعلمين"], category: 'syntax', note: 'معطوف يخالف المعطوف عليه في الحالة'},
+    {id: 'ext-079', text: 'شاهد المدير المهندسين والموظفون.', replacements: ["الموظفين"], category: 'syntax', note: 'معطوف يخالف المعطوف عليه في الحالة'},
+    {id: 'ext-080', text: 'كرم المعلم الطالبين والمدرسون.', replacements: ["المدرسين"], category: 'syntax', note: 'معطوف يخالف المعطوف عليه في الحالة'},
+    {id: 'ext-081', text: 'الطالبة كتب الدرس.', replacements: ["كتبت"], category: 'agreement', note: 'مطابقة الفعل للفاعل الظاهر (ماضٍ)'},
+    {id: 'ext-082', text: 'الممرضة زار المستشفى.', replacements: ["زارت"], category: 'agreement', note: 'مطابقة الفعل للفاعل الظاهر (ماضٍ)'},
+    {id: 'ext-083', text: 'المعلمة شرح الدرس.', replacements: ["شرحت"], category: 'agreement', note: 'مطابقة الفعل للفاعل الظاهر (ماضٍ)'},
+    {id: 'ext-084', text: 'الطالبة قرأ الدرس.', replacements: ["قرأت"], category: 'agreement', note: 'مطابقة الفعل للفاعل الظاهر (ماضٍ)'},
+    {id: 'ext-085', text: 'المهندسة صمم المبنى.', replacements: ["صممت"], category: 'agreement', note: 'مطابقة الفعل للفاعل الظاهر (ماضٍ)'},
+    {id: 'ext-086', text: 'المحامية دافع عن المتهم.', replacements: ["دافعت"], category: 'agreement', note: 'مطابقة الفعل للفاعل الظاهر (ماضٍ)'},
+    {id: 'ext-087', text: 'الطبيبة عالج المريض.', replacements: ["عالجت"], category: 'agreement', note: 'مطابقة الفعل للفاعل الظاهر (ماضٍ)'},
+    {id: 'ext-088', text: 'الفلاحة حصد القمح.', replacements: ["حصدت"], category: 'agreement', note: 'مطابقة الفعل للفاعل الظاهر (ماضٍ)'},
+    {id: 'ext-089', text: 'الفلاحة زرع الحقل.', replacements: ["زرعت"], category: 'agreement', note: 'مطابقة الفعل للفاعل الظاهر (ماضٍ)'},
+    {id: 'ext-090', text: 'الرسامة رسم اللوحة.', replacements: ["رسمت"], category: 'agreement', note: 'مطابقة الفعل للفاعل الظاهر (ماضٍ)'},
+    {id: 'ext-091', text: 'الطالبان كتب الدرس.', replacements: ["كتبا"], category: 'agreement', note: 'مطابقة الفعل للفاعل الظاهر (ماضٍ)'},
+    {id: 'ext-092', text: 'المعلمون حضر.', replacements: ["حضروا"], category: 'agreement', note: 'مطابقة الفعل للفاعل الظاهر (ماضٍ)'},
+    {id: 'ext-093', text: 'اللاعبان فاز.', replacements: ["فازا"], category: 'agreement', note: 'مطابقة الفعل للفاعل الظاهر (ماضٍ)'},
+    {id: 'ext-094', text: 'المهندسان صمم المبنى.', replacements: ["صمما"], category: 'agreement', note: 'مطابقة الفعل للفاعل الظاهر (ماضٍ)'},
+    {id: 'ext-095', text: 'الطبيبان عالج المريض.', replacements: ["عالجا"], category: 'agreement', note: 'مطابقة الفعل للفاعل الظاهر (ماضٍ)'},
+    {id: 'ext-096', text: 'الضيفان غادر.', replacements: ["غادرا"], category: 'agreement', note: 'مطابقة الفعل للفاعل الظاهر (ماضٍ)'},
+    {id: 'ext-097', text: 'الكاتبان نشر المقال.', replacements: ["نشرا"], category: 'agreement', note: 'مطابقة الفعل للفاعل الظاهر (ماضٍ)'},
+    {id: 'ext-098', text: 'التاجران باع البضاعة.', replacements: ["باعا"], category: 'agreement', note: 'مطابقة الفعل للفاعل الظاهر (ماضٍ)'},
+    {id: 'ext-099', text: 'الطلاب كتب الدرس.', replacements: ["كتبوا"], category: 'agreement', note: 'مطابقة الفعل للفاعل الظاهر (ماضٍ)'},
+    {id: 'ext-100', text: 'العمال بنى المبنى.', replacements: ["بنوا"], category: 'agreement', note: 'مطابقة الفعل للفاعل الظاهر (ماضٍ)'},
+    {id: 'ext-101', text: 'المزارعون حصد القمح.', replacements: ["حصدوا"], category: 'agreement', note: 'مطابقة الفعل للفاعل الظاهر (ماضٍ)'},
+    {id: 'ext-102', text: 'التجار باع البضاعة.', replacements: ["باعوا"], category: 'agreement', note: 'مطابقة الفعل للفاعل الظاهر (ماضٍ)'},
+    {id: 'ext-103', text: 'الموظفون غادر المكتب.', replacements: ["غادروا"], category: 'agreement', note: 'مطابقة الفعل للفاعل الظاهر (ماضٍ)'},
+    {id: 'ext-104', text: 'المهندسون صمم المبنى.', replacements: ["صمموا"], category: 'agreement', note: 'مطابقة الفعل للفاعل الظاهر (ماضٍ)'},
+    {id: 'ext-105', text: 'المعلمات كتب الدرس.', replacements: ["كتبن"], category: 'agreement', note: 'مطابقة الفعل للفاعل الظاهر (ماضٍ)'},
+    {id: 'ext-106', text: 'الطالبات حضر.', replacements: ["حضرن"], category: 'agreement', note: 'مطابقة الفعل للفاعل الظاهر (ماضٍ)'},
+    {id: 'ext-107', text: 'الممرضات عالج المريض.', replacements: ["عالجن"], category: 'agreement', note: 'مطابقة الفعل للفاعل الظاهر (ماضٍ)'},
+    {id: 'ext-108', text: 'المحاميات دافع عن القضية.', replacements: ["دافعن"], category: 'agreement', note: 'مطابقة الفعل للفاعل الظاهر (ماضٍ)'},
+    {id: 'ext-109', text: 'المهندسات صمم المبنى.', replacements: ["صممن"], category: 'agreement', note: 'مطابقة الفعل للفاعل الظاهر (ماضٍ)'},
+    {id: 'ext-110', text: 'الرسامات رسم اللوحة.', replacements: ["رسمن"], category: 'agreement', note: 'مطابقة الفعل للفاعل الظاهر (ماضٍ)'},
+    {id: 'ext-111', text: 'الطالبة يكتب الدرس.', replacements: ["تكتب"], category: 'agreement', note: 'مطابقة الفعل المضارع'},
+    {id: 'ext-112', text: 'المعلمات يكتب الدرس.', replacements: ["يكتبن"], category: 'agreement', note: 'مطابقة الفعل المضارع'},
+    {id: 'ext-113', text: 'الطلاب تكتب الدرس.', replacements: ["يكتبون"], category: 'agreement', note: 'مطابقة الفعل المضارع'},
+    {id: 'ext-114', text: 'الطالبان تكتب الدرس.', replacements: ["يكتبان"], category: 'agreement', note: 'مطابقة الفعل المضارع'},
+    {id: 'ext-115', text: 'الطالبتان يكتب الدرس.', replacements: ["تكتبان"], category: 'agreement', note: 'مطابقة الفعل المضارع'},
+    {id: 'ext-116', text: 'الرجل يكتبون.', replacements: ["يكتب"], category: 'agreement', note: 'مطابقة الفعل المضارع'},
+    {id: 'ext-117', text: 'البنات يكتبون.', replacements: ["يكتبن"], category: 'agreement', note: 'مطابقة الفعل المضارع'},
+    {id: 'ext-118', text: 'الأولاد تكتب.', replacements: ["يكتبون"], category: 'agreement', note: 'مطابقة الفعل المضارع'},
+    {id: 'ext-119', text: 'الممرضة يعالج المريض.', replacements: ["تعالج"], category: 'agreement', note: 'مطابقة الفعل المضارع'},
+    {id: 'ext-120', text: 'المهندسون يصمم المبنى.', replacements: ["يصممون"], category: 'agreement', note: 'مطابقة الفعل المضارع'},
+    {id: 'ext-121', text: 'كانت الطالب مجتهدًا.', replacements: ["كان"], category: 'agreement', note: 'مطابقة كان لاسمها'},
+    {id: 'ext-122', text: 'كان الطالبات مجتهدات.', replacements: ["كانت"], category: 'agreement', note: 'مطابقة كان لاسمها'},
+    {id: 'ext-123', text: 'كانت المهندسون جاهزين.', replacements: ["كان"], category: 'agreement', note: 'مطابقة كان لاسمها'},
+    {id: 'ext-124', text: 'كانت المعلمان مجتهدين.', replacements: ["كان"], category: 'agreement', note: 'مطابقة كان لاسمها'},
+    {id: 'ext-125', text: 'كان المعلمتان مجتهدتين.', replacements: ["كانت"], category: 'agreement', note: 'مطابقة كان لاسمها'},
+    {id: 'ext-126', text: 'الفتاة رمى الكرة.', replacements: ["رمت"], category: 'agreement', note: 'فعل ناقص/معتل مع فاعله'},
+    {id: 'ext-127', text: 'الفتاة دعا صديقتها.', replacements: ["دعت"], category: 'agreement', note: 'فعل ناقص/معتل مع فاعله'},
+    {id: 'ext-128', text: 'البنات رمى الكرة.', replacements: ["رمين"], category: 'agreement', note: 'فعل ناقص/معتل مع فاعله'},
+    {id: 'ext-129', text: 'الفتاة مشى في الطريق.', replacements: ["مشت"], category: 'agreement', note: 'فعل ناقص/معتل مع فاعله'},
+    {id: 'ext-130', text: 'الطلاب سعى إلى النجاح.', replacements: ["سعوا"], category: 'agreement', note: 'فعل ناقص/معتل مع فاعله'},
+    {id: 'ext-131', text: 'هم يقرءون الكتاب.', replacements: ["يقرؤون"], category: 'agreement', note: 'كرسي همزة الفعل في التصريف'},
+    {id: 'ext-132', text: 'هم يقرئون الكتاب.', replacements: ["يقرؤون"], category: 'agreement', note: 'كرسي همزة الفعل في التصريف'},
+    {id: 'ext-133', text: 'قرءوا الكتاب.', replacements: ["قرؤوا"], category: 'agreement', note: 'كرسي همزة الفعل في التصريف'},
+    {id: 'ext-134', text: 'قرئوا الكتاب.', replacements: ["قرؤوا"], category: 'agreement', note: 'كرسي همزة الفعل في التصريف'},
+    {id: 'ext-135', text: 'هي تقرء الدرس.', replacements: ["تقرأ"], category: 'agreement', note: 'كرسي همزة الفعل في التصريف'},
+    {id: 'ext-136', text: 'جاءت الطالبة الذي نجح.', replacements: ["التي","نجحت"], category: 'agreement', note: 'فعل صلة الموصول'},
+    {id: 'ext-137', text: 'حضر الطلاب الذي اجتهدوا.', replacements: ["الذين"], category: 'agreement', note: 'فعل صلة الموصول'},
+    {id: 'ext-138', text: 'رأيت الطالبات الذي نجحن.', replacements: ["اللاتي"], category: 'agreement', note: 'فعل صلة الموصول'},
+    {id: 'ext-139', text: 'الكتاب التي قرأته.', replacements: ["الذي"], category: 'agreement', note: 'فعل صلة الموصول'},
+    {id: 'ext-140', text: 'المعلمون الذين حضر.', replacements: ["حضروا"], category: 'agreement', note: 'فعل صلة الموصول'},
+    {id: 'ext-141', text: 'اخذ الكتاب.', replacements: ["أخذ"], category: 'spelling', note: 'همزة قطع محذوفة (فعل)'},
+    {id: 'ext-142', text: 'اكل الطفل التفاحة.', replacements: ["أكل"], category: 'spelling', note: 'همزة قطع محذوفة (فعل)'},
+    {id: 'ext-143', text: 'ارسل المدير الرسالة.', replacements: ["أرسل"], category: 'spelling', note: 'همزة قطع محذوفة (فعل)'},
+    {id: 'ext-144', text: 'اعلن الوزير القرار.', replacements: ["أعلن"], category: 'spelling', note: 'همزة قطع محذوفة (فعل)'},
+    {id: 'ext-145', text: 'اكمل الطالب الواجب.', replacements: ["أكمل"], category: 'spelling', note: 'همزة قطع محذوفة (فعل)'},
+    {id: 'ext-146', text: 'انهى العامل العمل.', replacements: ["أنهى"], category: 'spelling', note: 'همزة قطع محذوفة (فعل)'},
+    {id: 'ext-147', text: 'اوقف الحارس السيارة.', replacements: ["أوقف"], category: 'spelling', note: 'همزة قطع محذوفة (فعل)'},
+    {id: 'ext-148', text: 'اسرع اللاعب.', replacements: ["أسرع"], category: 'spelling', note: 'همزة قطع محذوفة (فعل)'},
+    {id: 'ext-149', text: 'اضاف المدرب اللاعب.', replacements: ["أضاف"], category: 'spelling', note: 'همزة قطع محذوفة (فعل)'},
+    {id: 'ext-150', text: 'اعدت الطباخة الطعام.', replacements: ["أعدت"], category: 'spelling', note: 'همزة قطع محذوفة (فعل)'},
+    {id: 'ext-151', text: 'اجاب الطالب على السؤال.', replacements: ["أجاب"], category: 'spelling', note: 'همزة قطع محذوفة (فعل)'},
+    {id: 'ext-152', text: 'احضروا الكتب.', replacements: ["أحضروا"], category: 'spelling', note: 'همزة قطع محذوفة (فعل)'},
+    {id: 'ext-153', text: 'مرت الايام.', replacements: ["الأيام"], category: 'spelling', note: 'همزة قطع محذوفة (اسم)'},
+    {id: 'ext-154', text: 'هذا امر مهم.', replacements: ["أمر"], category: 'spelling', note: 'همزة قطع محذوفة (اسم)'},
+    {id: 'ext-155', text: 'حدث ذلك اثناء الاجتماع.', replacements: ["أثناء"], category: 'spelling', note: 'همزة قطع محذوفة (اسم)'},
+    {id: 'ext-156', text: 'حضر احد الطلاب.', replacements: ["أحد"], category: 'spelling', note: 'همزة قطع محذوفة (اسم)'},
+    {id: 'ext-157', text: 'الاساس متين.', replacements: ["الأساس"], category: 'spelling', note: 'همزة قطع محذوفة (اسم)'},
+    {id: 'ext-158', text: 'اسلوب الكاتب جميل.', replacements: ["أسلوب"], category: 'spelling', note: 'همزة قطع محذوفة (اسم)'},
+    {id: 'ext-159', text: 'هذا هو الافضل.', replacements: ["الأفضل"], category: 'spelling', note: 'همزة قطع محذوفة (اسم)'},
+    {id: 'ext-160', text: 'الاستاذ حضر.', replacements: ["الأستاذ"], category: 'spelling', note: 'همزة قطع محذوفة (اسم)'},
+    {id: 'ext-161', text: 'رأيت اشياء غريبة.', replacements: ["أشياء"], category: 'spelling', note: 'همزة قطع محذوفة (اسم)'},
+    {id: 'ext-162', text: 'امال الشعب كبيرة.', replacements: ["آمال"], category: 'spelling', note: 'همزة قطع محذوفة (اسم)'},
+    {id: 'ext-163', text: 'المدرسه كبيرة.', replacements: ["المدرسة"], category: 'spelling', note: 'تاء مربوطة تكتب هاء'},
+    {id: 'ext-164', text: 'هذه الجمله صحيحه.', replacements: ["الجملة"], category: 'spelling', note: 'تاء مربوطة تكتب هاء'},
+    {id: 'ext-165', text: 'الرساله وصلت.', replacements: ["الرسالة"], category: 'spelling', note: 'تاء مربوطة تكتب هاء'},
+    {id: 'ext-166', text: 'الطريقه الجديده.', replacements: ["الطريقة"], category: 'spelling', note: 'تاء مربوطة تكتب هاء'},
+    {id: 'ext-167', text: 'المدينه قديمه.', replacements: ["المدينة"], category: 'spelling', note: 'تاء مربوطة تكتب هاء'},
+    {id: 'ext-168', text: 'الفتره طويلة.', replacements: ["الفترة"], category: 'spelling', note: 'تاء مربوطة تكتب هاء'},
+    {id: 'ext-169', text: 'المرحله صعبه.', replacements: ["المرحلة"], category: 'spelling', note: 'تاء مربوطة تكتب هاء'},
+    {id: 'ext-170', text: 'الحريه غاليه.', replacements: ["الحرية"], category: 'spelling', note: 'تاء مربوطة تكتب هاء'},
+    {id: 'ext-171', text: 'القصه جميله.', replacements: ["القصة"], category: 'spelling', note: 'تاء مربوطة تكتب هاء'},
+    {id: 'ext-172', text: 'الروايه ممتعه.', replacements: ["الرواية"], category: 'spelling', note: 'تاء مربوطة تكتب هاء'},
+    {id: 'ext-173', text: 'المقاله طويله.', replacements: ["المقالة"], category: 'spelling', note: 'تاء مربوطة تكتب هاء'},
+    {id: 'ext-174', text: 'المعركه كانت عنيفه.', replacements: ["المعركة"], category: 'spelling', note: 'تاء مربوطة تكتب هاء'},
+    {id: 'ext-175', text: 'ذهبت إلى منتدي.', replacements: ["منتدى"], category: 'spelling', note: 'ألف مقصورة تكتب ياء'},
+    {id: 'ext-176', text: 'ذهب إلى مستشفي.', replacements: ["مستشفى"], category: 'spelling', note: 'ألف مقصورة تكتب ياء'},
+    {id: 'ext-177', text: 'قرأت محتوي الصفحة.', replacements: ["محتوى"], category: 'spelling', note: 'ألف مقصورة تكتب ياء'},
+    {id: 'ext-178', text: 'هذا شئ مهم.', replacements: ["شيء"], category: 'spelling', note: 'همزة متطرفة'},
+    {id: 'ext-179', text: 'هذا جزئ من الكتاب.', replacements: ["جزء"], category: 'spelling', note: 'همزة متطرفة'},
+    {id: 'ext-180', text: 'كان ذلك بدئ النهاية.', replacements: ["بدء"], category: 'spelling', note: 'همزة متطرفة'},
+    {id: 'ext-181', text: 'الإناء ملئ بالماء.', replacements: ["ملء"], category: 'spelling', note: 'همزة متطرفة'},
+    {id: 'ext-182', text: 'الطلاب كتبو الدرس.', replacements: ["كتبوا"], category: 'spelling', note: 'واو الجماعة بلا ألف'},
+    {id: 'ext-183', text: 'قالو الحقيقة.', replacements: ["قالوا"], category: 'spelling', note: 'واو الجماعة بلا ألف'},
+    {id: 'ext-184', text: 'العمال درسو الخطة.', replacements: ["درسوا"], category: 'spelling', note: 'واو الجماعة بلا ألف'},
+    {id: 'ext-185', text: 'المشجعون شاهدو المباراة.', replacements: ["شاهدوا"], category: 'spelling', note: 'واو الجماعة بلا ألف'},
+    {id: 'ext-186', text: 'الوفود زارو المدينة.', replacements: ["زاروا"], category: 'spelling', note: 'واو الجماعة بلا ألف'},
+    {id: 'ext-187', text: 'كانو سعداء.', replacements: ["كانوا"], category: 'spelling', note: 'واو الجماعة بلا ألف'},
+    {id: 'ext-188', text: 'الموظفون عملو بجد.', replacements: ["عملوا"], category: 'spelling', note: 'واو الجماعة بلا ألف'},
+    {id: 'ext-189', text: 'الفريق نجحو في المهمة.', replacements: ["نجحوا"], category: 'spelling', note: 'واو الجماعة بلا ألف'},
+    {id: 'ext-190', text: 'هذة الكلمة مهمة.', replacements: ["هذه"], category: 'spelling', note: 'كلمات شائعة'},
+    {id: 'ext-191', text: 'ايضا لاحظ ذلك.', replacements: ["أيضا"], category: 'spelling', note: 'كلمات شائعة'},
+    {id: 'ext-192', text: 'الان نبدأ.', replacements: ["الآن"], category: 'spelling', note: 'كلمات شائعة'},
+    {id: 'ext-193', text: 'ذالك صحيح.', replacements: ["ذلك"], category: 'spelling', note: 'كلمات شائعة'},
+    {id: 'ext-194', text: 'هذا هو اللذي أردت.', replacements: ["الذي"], category: 'spelling', note: 'كلمات شائعة'},
+    {id: 'ext-195', text: 'اذا جاء الربيع.', replacements: ["إذا"], category: 'spelling', note: 'كلمات شائعة'},
+    {id: 'ext-196', text: 'الكتاب الذى قرأته.', replacements: ["الذي"], category: 'spelling', note: 'كلمات شائعة'},
+    {id: 'ext-197', text: 'انشاء الله ننجح.', replacements: ["إن شاء الله"], category: 'spelling', note: 'عبارات إملائية'},
+    {id: 'ext-198', text: 'ان شاء الله غدا.', replacements: ["إن شاء الله"], category: 'spelling', note: 'عبارات إملائية'},
+    {id: 'ext-199', text: 'لابد من الصبر.', replacements: ["لا بد"], category: 'spelling', note: 'عبارات إملائية'},
+    {id: 'ext-200', text: 'باذن الله.', replacements: ["بإذن الله"], category: 'spelling', note: 'عبارات إملائية'}
+  ]),
+  controls: Object.freeze(["الصحفي قرأ الكتاب.", "الصحفي زار المتحف.", "الصحفي حفظ القصيدة.", "الصحفي راجع التقرير.", "الصحفي فتح الباب.", "الصحفي شاهد الفيلم.", "المهندس صمم المبنى.", "المصري عاد إلى بلده.", "العراقي زار باريس.", "السعودي اشترى تذكرة.", "المغربي فاز بالجائزة.", "الطالب المجتهد يكتب.", "المعلم المخلص يشرح.", "العامل النشيط يعمل.", "جاء المدير الجديد.", "المؤمن يدعو ربه.", "الطفل يخطو خطواته الأولى.", "شاهدت صورته وقرأت مقاله.", "هذا مكتبه الخاص.", "عنده سيارة حديثة.", "فيك خير كثير.", "أحب الباذنجان المقلي.", "الآن الوقت مناسب للعمل.", "الطالب كتب الدرس.", "الطالبان كتبا الدرس.", "الطلاب كتبوا الدرس.", "الطالبة كتبت الدرس.", "المعلمات كتبن الدرس.", "الممرضة زارت المستشفى.", "الممرضات عملن بجد.", "المهندسون صمموا المبنى.", "المحامي دافع عن المتهم.", "المحامية دافعت عن المتهم.", "الرسام رسم اللوحة.", "الرسامات رسمن اللوحة.", "كتب الطالب الدرس.", "كتبت الطالبة الدرس.", "قرأ الطالب الكتاب.", "قرأت الطالبة الكتاب.", "حضر الطالب.", "حضرت الطالبة.", "قال الطالب.", "قالت الطالبة.", "قام الطلاب مبكرين.", "قامت الطالبات مبكرات.", "دعت الطالبة.", "باع التاجر البضاعة.", "دعا الرجل صديقه.", "الولد يكتب الدرس.", "البنات يكتبن الدرس.", "الرجال يكتبون.", "الرجلان يكتبان.", "الطالبتان تكتبان الدرس.", "الطالبان مجتهدان.", "المعلمون حاضرون.", "المهندسون جاهزون.", "الباحثون مسرورون.", "المديرون واقفون.", "الطالبتان مجتهدتان.", "المعلمتان حاضرتان.", "المدرسون مشغولون.", "اللاعبان نشيطان.", "الكتابان جديدان.", "القلمان على الطاولة.", "الطالبان حضرا.", "الطالبان المجتهدان حضرا.", "المهندسون الماهرون اجتمعوا.", "المعلمون المخلصون اجتهدوا.", "جاء معلمو المدرسة.", "جاء طلابو المدرسة.", "حضر الطالبان والمعلمان.", "مررت بالطالبين والمعلمين.", "رأيت الطالبين المجتهدين.", "مررت بالطالبين المجتهدين.", "الطلاب يكتبون.", "المعلمات يحضرن.", "حضر الطلاب مبكرين.", "عاد الطلاب مسرورين.", "كان الطالبان مجتهدين.", "كان المعلمون حاضرين.", "كان المهندسون جاهزين.", "كانت الطالبتان مجتهدتين.", "كان الطالب مجتهدًا.", "كانت الطالبة مجتهدة.", "إن الطالبين مجتهدان.", "إن المعلمين حاضرون.", "إن المهندسين جاهزون.", "إن الطالبتين مجتهدتان.", "إن اللاعبين نشيطون.", "كانت الطالبات مجتهداتٍ.", "إن الطالب مجتهد.", "كان المدير في المكتب.", "إن النجاح ممكن.", "كان الجو جميلًا.", "إن الصبر مفتاح الفرج.", "كانت الأمور صعبة.", "إن العلم نور.", "كان العمل شاقًا.", "الطالب الذي نجح.", "الطالبة التي نجحت.", "الطلاب الذين نجحوا.", "الطالبات اللاتي نجحن.", "الطالبان اللذان نجحا.", "الطالبتان اللتان نجحتا.", "الكتاب الذي قرأته.", "الكتابان اللذان اشتريتهما.", "جاءت الطالبة التي نجحت.", "حضر المعلمون الذين اجتهدوا.", "رأيت الطالبتين اللتين نجحتا.", "الرجل الذي زارنا غادر.", "المدير الذي قابلته ودود.", "هذه هي الحقيقة التي لا شك فيها.", "هذا الكتاب الذي اشتريته مفيد.", "ثلاثة طلاب.", "ثلاث طالبات.", "خمسة كتب.", "أربعة معلمين.", "واحد وعشرون كتابًا جديدًا.", "واحدة وعشرون صفحةً جديدةً.", "إحدى عشرة طالبةً.", "ثلاثة عشر طالبًا.", "رأيت اثني عشر طالبًا.", "حضرت اثنتا عشرة طالبةً.", "في المكتبة واحد.", "قرأت أربعَ صفحاتٍ.", "ازداد الطالب علمًا.", "امتلأ الكأس ماءً.", "ثلاثة معلمين.", "عشرون طالبًا في الصف.", "عندي خمسة أقلام.", "رأيت سبع سيارات.", "في الحديقة ثماني وردات.", "اشترى اثني عشر كتابًا.", "حضر أبو خالد.", "رأيت أبا خالد.", "مررت بأبي خالد.", "جاء أخو العامل.", "رأيت أخا العامل.", "مررت بأخي العامل.", "حضر ذو علم.", "رأيت ذا علم.", "مررت بذي علم.", "عاد الطالب مسرورًا.", "عادت الطالبة مسرورةً.", "عاد الطلاب مسرورين.", "عادت الطالبات مسروراتٍ.", "حضر الطلاب إلا المعلمين.", "ما حضر الطلاب إلا المعلمون.", "المدرسة كبيرة.", "الرسالة وصلت.", "الكتاب جديد.", "أخذت الكتاب.", "أرسلت الرسالة.", "أعلن الوزير القرار.", "الأيام تمر.", "هذا أمر مهم.", "جاء الأستاذ.", "أنا أقرأ.", "أنت تكتب.", "هذا صحيح.", "ذلك خطأ.", "الآن نبدأ.", "إذا جاء الربيع.", "إن شاء الله ننجح.", "لا بد من الصبر.", "من أجل النجاح.", "بإذن الله.", "على الرغم من ذلك.", "قرأت شيئًا مفيدًا.", "قرأت أربعة كتب.", "هذه كتب جديدة.", "استخدام الحاسوب مفيد.", "انتبه إلى الدرس.", "سافر المدير إلى باريس أمس.", "اجتمع الوزراء في القصر الرئاسي.", "زار الوفد المصانع الحديثة.", "ناقش الطلاب موضوع البيئة.", "اهتمت الصحف بالأخبار المحلية.", "شارك آلاف المواطنين في المهرجان.", "افتتحت المدينة متحفًا جديدًا.", "الصحفي قرأ.", "المصري عاد.", "المهندس عمل.", "الطبيب فحص المريض.", "هذا كتابي.", "قرأت كتابك.", "شاهدت صوره.", "زارنا صديقها.", "أحب وطني.", "احترم معلمي.", "هذا قلمي.", "سلمت على أخي.", "علي طالب مجتهد.", "محمد لاعب ماهر.", "خالد مهندس ناجح.", "سافر أحمد إلى القاهرة.", "زرت باريس صيفًا.", "هند طبيبة مشهورة.", "فاطمة معلمة مخلصة.", "تعيش سارة في الرياض."])
+});
+
+/**
+ * يشغّل الاختبار الخارجي الكبير ويقيس: كشف الخطأ (أيُّ بديل مقبول ظهر)،
+ * الاكتمال (ظهور كل البدائل)، والإنذارات الكاذبة على الجمل الصحيحة، ثم
+ * يحسب Precision / Recall / F1.
+ */
+function runLargeExternalBenchmark(benchmark = EXTERNAL_HOLDOUT_BENCHMARK_V1877, options = {}) {
+  const norm = s => String(s).replace(/\s+/gu, ' ').trim();
+  const stripConj = w => w.replace(/^[وف]/u, '');
+  const wordsOf = s => norm(s).split(' ').filter(Boolean).map(stripConj);
+  const matchesExp = (repl, exp) => {
+    if (norm(repl) === norm(exp)) return true;
+    const ew = wordsOf(exp), rw = wordsOf(repl);
+    if (!ew.length) return false;
+    return ew.every(w => rw.includes(w));
+  };
+  const errorResults = [];
+  let caught = 0, fullyCorrected = 0;
+  const byCategory = {};
+  for (const test of benchmark.errors) {
+    const result = analyze(test.text, {safeMode: true});
+    const repls = result.findings.map(f => f.replacement).filter(Boolean);
+    const expected = test.replacements || [];
+    const hit = expected.filter(x => repls.some(r => matchesExp(r, x)));
+    const ok = hit.length > 0;
+    const full = hit.length === expected.length;
+    if (ok) caught += 1;
+    if (full) fullyCorrected += 1;
+    byCategory[test.category] = byCategory[test.category] || {total: 0, caught: 0, full: 0};
+    byCategory[test.category].total += 1;
+    if (ok) byCategory[test.category].caught += 1;
+    if (full) byCategory[test.category].full += 1;
+    errorResults.push({id: test.id, text: test.text, category: test.category,
+      expected, got: repls, ok, full, rules: result.findings.map(f => f.ruleId)});
+  }
+  let falsePositives = 0;
+  const fpList = [];
+  for (const text of benchmark.controls) {
+    const result = analyze(text, {safeMode: true});
+    if (result.findings.length) {
+      falsePositives += 1;
+      fpList.push({text, findings: result.findings.map(f => ({ruleId: f.ruleId, original: f.original, replacement: f.replacement, confidence: f.confidence}))});
+    }
+  }
+  const total = benchmark.errors.length;
+  const recall = total ? caught / total : 0;
+  const precision = total ? caught / (caught + falsePositives) : 0;
+  const f1 = (precision + recall) ? 2 * precision * recall / (precision + recall) : 0;
+  return {
+    version: benchmark.version, engine: META.version,
+    counts: {errors: total, caught, missed: total - caught, fullyCorrected,
+      controls: benchmark.controls.length, falsePositives},
+    recall, precision, f1,
+    falsePositiveRate: benchmark.controls.length ? falsePositives / benchmark.controls.length : 0,
+    byCategory: Object.fromEntries(Object.entries(byCategory).map(([k, v]) =>
+      [k, {total: v.total, caught: v.caught, rate: v.caught / v.total, fullyCorrected: v.full}])),
+    errorResults, fpList
+  };
 }
 
 /* ===== MODULE: src/benchmarks/external-holdout-v1876.js ===== */
@@ -7858,2513 +8407,6 @@ function runExternalHoldoutBenchmark(benchmark = EXTERNAL_HOLDOUT_BENCHMARK_V187
       correctSuggestionRate: total ? (total - suggestionMismatches) / total : 0,
       targets: {detection: 0.95, falsePositives: 0, correctSuggestion: 0.98}
     }
-  };
-}
-
-/* ===== MODULE: src/benchmarks/external-holdout-400-v1877.js ===== */
-/**
- * External Holdout 400 V18.7.7 — المعيار الخارجي الكبير المجمّد.
- * 200 جملة خاطئة (80 نحوية + 60 مطابقة + 60 إملائية) و200 جملة صحيحة/ملتبسة.
- * الملف المرجعي الخارجي: external-holdout-400.json (مجمّد بتاريخ 2026-08-14).
- * يُشغَّل عبر runExternal400HoldoutBenchmark() ويبقى مستقلًا عن validate().
- * الاصطلاح العددي الموحد: «ـين» بلا قرينة تمييز تصحَّح مثنىً افتراضيًا،
- * وإن دل الخبر على الجمع بصيغة «ون» فالجمع.
- */
-const EXTERNAL_HOLDOUT_400_V1877 = Object.freeze({
- "meta": {
-  "id": "EXTERNAL_HOLDOUT_400",
-  "nameArabic": "المعيار الخارجي المجمّد — 400 جملة",
-  "version": "1.0",
-  "frozenDate": "2026-08-14",
-  "policy": "هذه المجموعة مجمّدة ولا يجوز تعديلها بعد اليوم؛ تُعاد على أي نسخة قادمة كما هي لقياس موضوعي.",
-  "composition": {
-   "syntacticErrors": 80,
-   "agreementErrors": 60,
-   "orthographicErrors": 60,
-   "controls": 200,
-   "total": 400
-  },
-  "scoring": {
-   "caught": "كل الاستبدالات المتوقعة للجملة حاضرة بين استبدالات المحرك",
-   "falsePositive": "أي إنذار على جملة ضابط صحيحة",
-   "precision": "caught / (caught + falsePositives)",
-   "recall": "caught / 200",
-   "f1": "الوسط التوافقي",
-   "numberConvention": "صيغة ـين بلا قرينة تمييز (فعل مفرد أو خبر بصيغة ـين) تُصحَّح مثنىً افتراضيًا؛ وأما إذا دل الخبر على الجمع بصيغة ـون فيُصحَّح الجمع. هذا اصطلاح موحد عبر المجموعة كلها."
-  }
- },
- "errors": [
-  {
-   "id": "syn-001",
-   "category": "syntactic",
-   "text": "الطالبين مجتهدان.",
-   "expected": [
-    "الطالبان"
-   ]
-  },
-  {
-   "id": "syn-002",
-   "category": "syntactic",
-   "text": "المعلمين ماهران.",
-   "expected": [
-    "المعلمان"
-   ]
-  },
-  {
-   "id": "syn-003",
-   "category": "syntactic",
-   "text": "المهندسين بارعون.",
-   "expected": [
-    "المهندسون"
-   ]
-  },
-  {
-   "id": "syn-004",
-   "category": "syntactic",
-   "text": "الكاتبين مشهوران.",
-   "expected": [
-    "الكاتبان"
-   ]
-  },
-  {
-   "id": "syn-005",
-   "category": "syntactic",
-   "text": "اللاعبين نشيطان.",
-   "expected": [
-    "اللاعبان"
-   ]
-  },
-  {
-   "id": "syn-006",
-   "category": "syntactic",
-   "text": "المدربين صارمان.",
-   "expected": [
-    "المدربان"
-   ]
-  },
-  {
-   "id": "syn-007",
-   "category": "syntactic",
-   "text": "الباحثين دقيقان.",
-   "expected": [
-    "الباحثان"
-   ]
-  },
-  {
-   "id": "syn-008",
-   "category": "syntactic",
-   "text": "الممرضين حريصان.",
-   "expected": [
-    "الممرضان"
-   ]
-  },
-  {
-   "id": "syn-009",
-   "category": "syntactic",
-   "text": "المعلمين حاضرون.",
-   "expected": [
-    "المعلمون"
-   ]
-  },
-  {
-   "id": "syn-010",
-   "category": "syntactic",
-   "text": "المهندسين جاهزون.",
-   "expected": [
-    "المهندسون"
-   ]
-  },
-  {
-   "id": "syn-011",
-   "category": "syntactic",
-   "text": "الباحثين مسرورون.",
-   "expected": [
-    "الباحثون"
-   ]
-  },
-  {
-   "id": "syn-012",
-   "category": "syntactic",
-   "text": "المديرين واقفون.",
-   "expected": [
-    "المديرون"
-   ]
-  },
-  {
-   "id": "syn-013",
-   "category": "syntactic",
-   "text": "الكاتبين نشيطون.",
-   "expected": [
-    "الكاتبون"
-   ]
-  },
-  {
-   "id": "syn-014",
-   "category": "syntactic",
-   "text": "الموظفين غائبون.",
-   "expected": [
-    "الموظفون"
-   ]
-  },
-  {
-   "id": "syn-015",
-   "category": "syntactic",
-   "text": "الممرضين يقظون.",
-   "expected": [
-    "الممرضون"
-   ]
-  },
-  {
-   "id": "syn-016",
-   "category": "syntactic",
-   "text": "المترجمين دقيقون.",
-   "expected": [
-    "المترجمون"
-   ]
-  },
-  {
-   "id": "syn-017",
-   "category": "syntactic",
-   "text": "حضر الطالبين.",
-   "expected": [
-    "الطالبان"
-   ]
-  },
-  {
-   "id": "syn-018",
-   "category": "syntactic",
-   "text": "نجح المعلمين.",
-   "expected": [
-    "المعلمان"
-   ]
-  },
-  {
-   "id": "syn-019",
-   "category": "syntactic",
-   "text": "وصل المهندسين.",
-   "expected": [
-    "المهندسان"
-   ]
-  },
-  {
-   "id": "syn-020",
-   "category": "syntactic",
-   "text": "اجتهد الباحثين.",
-   "expected": [
-    "الباحثان"
-   ]
-  },
-  {
-   "id": "syn-021",
-   "category": "syntactic",
-   "text": "وقف المديرين.",
-   "expected": [
-    "المديران"
-   ]
-  },
-  {
-   "id": "syn-022",
-   "category": "syntactic",
-   "text": "اجتمع المعلمين.",
-   "expected": [
-    "المعلمان"
-   ]
-  },
-  {
-   "id": "syn-023",
-   "category": "syntactic",
-   "text": "اجتمع المهندسين.",
-   "expected": [
-    "المهندسان"
-   ]
-  },
-  {
-   "id": "syn-024",
-   "category": "syntactic",
-   "text": "اجتهد الممرضين.",
-   "expected": [
-    "الممرضان"
-   ]
-  },
-  {
-   "id": "syn-025",
-   "category": "syntactic",
-   "text": "تناقش المديرين.",
-   "expected": [
-    "المديران"
-   ]
-  },
-  {
-   "id": "syn-026",
-   "category": "syntactic",
-   "text": "اجتمع المدربين.",
-   "expected": [
-    "المدربان"
-   ]
-  },
-  {
-   "id": "syn-027",
-   "category": "syntactic",
-   "text": "تعاون المدرسين.",
-   "expected": [
-    "المدرسان"
-   ]
-  },
-  {
-   "id": "syn-028",
-   "category": "syntactic",
-   "text": "الطالبين حضرا.",
-   "expected": [
-    "الطالبان"
-   ]
-  },
-  {
-   "id": "syn-029",
-   "category": "syntactic",
-   "text": "المعلمين اجتهدا.",
-   "expected": [
-    "المعلمان"
-   ]
-  },
-  {
-   "id": "syn-030",
-   "category": "syntactic",
-   "text": "المهندسين وصلا.",
-   "expected": [
-    "المهندسان"
-   ]
-  },
-  {
-   "id": "syn-031",
-   "category": "syntactic",
-   "text": "الكاتبين كتبا.",
-   "expected": [
-    "الكاتبان"
-   ]
-  },
-  {
-   "id": "syn-032",
-   "category": "syntactic",
-   "text": "اللاعبين لعبا.",
-   "expected": [
-    "اللاعبان"
-   ]
-  },
-  {
-   "id": "syn-033",
-   "category": "syntactic",
-   "text": "المهندسين اجتمعوا.",
-   "expected": [
-    "المهندسون"
-   ]
-  },
-  {
-   "id": "syn-034",
-   "category": "syntactic",
-   "text": "الباحثين اجتهدوا.",
-   "expected": [
-    "الباحثون"
-   ]
-  },
-  {
-   "id": "syn-035",
-   "category": "syntactic",
-   "text": "المديرين تناقشوا.",
-   "expected": [
-    "المديرون"
-   ]
-  },
-  {
-   "id": "syn-036",
-   "category": "syntactic",
-   "text": "الموظفين تعاونوا.",
-   "expected": [
-    "الموظفون"
-   ]
-  },
-  {
-   "id": "syn-037",
-   "category": "syntactic",
-   "text": "المترجمين ترجموا.",
-   "expected": [
-    "المترجمون"
-   ]
-  },
-  {
-   "id": "syn-038",
-   "category": "syntactic",
-   "text": "رأيت الطالبان.",
-   "expected": [
-    "الطالبين"
-   ]
-  },
-  {
-   "id": "syn-039",
-   "category": "syntactic",
-   "text": "قابلت المعلمان.",
-   "expected": [
-    "المعلمين"
-   ]
-  },
-  {
-   "id": "syn-040",
-   "category": "syntactic",
-   "text": "شاهد المدير اللاعبان.",
-   "expected": [
-    "اللاعبين"
-   ]
-  },
-  {
-   "id": "syn-041",
-   "category": "syntactic",
-   "text": "كرم المعلم الطالبان.",
-   "expected": [
-    "الطالبين"
-   ]
-  },
-  {
-   "id": "syn-042",
-   "category": "syntactic",
-   "text": "سمعت الطبيبان.",
-   "expected": [
-    "الطبيبين"
-   ]
-  },
-  {
-   "id": "syn-043",
-   "category": "syntactic",
-   "text": "حفظ الطلاب الدرسان.",
-   "expected": [
-    "الدرسين"
-   ]
-  },
-  {
-   "id": "syn-044",
-   "category": "syntactic",
-   "text": "رأيت المهندسون.",
-   "expected": [
-    "المهندسين"
-   ]
-  },
-  {
-   "id": "syn-045",
-   "category": "syntactic",
-   "text": "قابلت الموظفون.",
-   "expected": [
-    "الموظفين"
-   ]
-  },
-  {
-   "id": "syn-046",
-   "category": "syntactic",
-   "text": "شاهد المدير العاملون.",
-   "expected": [
-    "العاملين"
-   ]
-  },
-  {
-   "id": "syn-047",
-   "category": "syntactic",
-   "text": "كرم المدير المدرسون.",
-   "expected": [
-    "المدرسين"
-   ]
-  },
-  {
-   "id": "syn-048",
-   "category": "syntactic",
-   "text": "حاور الصحفي المسؤولون.",
-   "expected": [
-    "المسؤولين"
-   ]
-  },
-  {
-   "id": "syn-049",
-   "category": "syntactic",
-   "text": "قابلت المعلمان المجتهدان.",
-   "expected": [
-    "المعلمين",
-    "المجتهدين"
-   ]
-  },
-  {
-   "id": "syn-050",
-   "category": "syntactic",
-   "text": "رأيت الطالبان الماهران.",
-   "expected": [
-    "الطالبين",
-    "الماهرين"
-   ]
-  },
-  {
-   "id": "syn-051",
-   "category": "syntactic",
-   "text": "شاهد المدير الموظفان الجديدان.",
-   "expected": [
-    "الموظفين",
-    "الجديدين"
-   ]
-  },
-  {
-   "id": "syn-052",
-   "category": "syntactic",
-   "text": "حفظ الطلاب الدرسان الصعبان.",
-   "expected": [
-    "الدرسين",
-    "الصعبين"
-   ]
-  },
-  {
-   "id": "syn-053",
-   "category": "syntactic",
-   "text": "رأيت المهندسون الماهرون.",
-   "expected": [
-    "المهندسين",
-    "الماهرين"
-   ]
-  },
-  {
-   "id": "syn-054",
-   "category": "syntactic",
-   "text": "قابلت المعلمون المجتهدون.",
-   "expected": [
-    "المعلمين",
-    "المجتهدين"
-   ]
-  },
-  {
-   "id": "syn-055",
-   "category": "syntactic",
-   "text": "شاهد المدير العاملون النشيطون.",
-   "expected": [
-    "العاملين",
-    "النشيطين"
-   ]
-  },
-  {
-   "id": "syn-056",
-   "category": "syntactic",
-   "text": "مررت بالطالبان.",
-   "expected": [
-    "بالطالبين"
-   ]
-  },
-  {
-   "id": "syn-057",
-   "category": "syntactic",
-   "text": "سلمت على المعلمان.",
-   "expected": [
-    "المعلمين"
-   ]
-  },
-  {
-   "id": "syn-058",
-   "category": "syntactic",
-   "text": "ذهبت إلى المهندسان.",
-   "expected": [
-    "المهندسين"
-   ]
-  },
-  {
-   "id": "syn-059",
-   "category": "syntactic",
-   "text": "سألت عن الكاتبان.",
-   "expected": [
-    "الكاتبين"
-   ]
-  },
-  {
-   "id": "syn-060",
-   "category": "syntactic",
-   "text": "سافرت مع المدربان.",
-   "expected": [
-    "المدربين"
-   ]
-  },
-  {
-   "id": "syn-061",
-   "category": "syntactic",
-   "text": "مررت بالمعلمون.",
-   "expected": [
-    "بالمعلمين"
-   ]
-  },
-  {
-   "id": "syn-062",
-   "category": "syntactic",
-   "text": "ذهبت إلى المهندسون.",
-   "expected": [
-    "المهندسين"
-   ]
-  },
-  {
-   "id": "syn-063",
-   "category": "syntactic",
-   "text": "سألت عن الموظفون.",
-   "expected": [
-    "الموظفين"
-   ]
-  },
-  {
-   "id": "syn-064",
-   "category": "syntactic",
-   "text": "تحدثت مع الباحثون.",
-   "expected": [
-    "الباحثين"
-   ]
-  },
-  {
-   "id": "syn-065",
-   "category": "syntactic",
-   "text": "كان الطالبين مجتهدين.",
-   "expected": [
-    "الطالبان"
-   ]
-  },
-  {
-   "id": "syn-066",
-   "category": "syntactic",
-   "text": "أصبح المعلمين حاضرين.",
-   "expected": [
-    "المعلمان"
-   ]
-  },
-  {
-   "id": "syn-067",
-   "category": "syntactic",
-   "text": "ظل المهندسين مستيقظين.",
-   "expected": [
-    "المهندسان"
-   ]
-  },
-  {
-   "id": "syn-068",
-   "category": "syntactic",
-   "text": "صار اللاعبين ماهرين.",
-   "expected": [
-    "اللاعبان"
-   ]
-  },
-  {
-   "id": "syn-069",
-   "category": "syntactic",
-   "text": "إن الطالبان مجتهدان.",
-   "expected": [
-    "الطالبين"
-   ]
-  },
-  {
-   "id": "syn-070",
-   "category": "syntactic",
-   "text": "إن المعلمان ماهران.",
-   "expected": [
-    "المعلمين"
-   ]
-  },
-  {
-   "id": "syn-071",
-   "category": "syntactic",
-   "text": "لعل المهندسان ناجحان.",
-   "expected": [
-    "المهندسين"
-   ]
-  },
-  {
-   "id": "syn-072",
-   "category": "syntactic",
-   "text": "كأن اللاعبان متعبان.",
-   "expected": [
-    "اللاعبين"
-   ]
-  },
-  {
-   "id": "syn-073",
-   "category": "syntactic",
-   "text": "كان المعلمين حاضرين.",
-   "expected": [
-    "المعلمان"
-   ]
-  },
-  {
-   "id": "syn-074",
-   "category": "syntactic",
-   "text": "أصبح المهندسين جاهزين.",
-   "expected": [
-    "المهندسان"
-   ]
-  },
-  {
-   "id": "syn-075",
-   "category": "syntactic",
-   "text": "ظل الباحثين نشيطين.",
-   "expected": [
-    "الباحثان"
-   ]
-  },
-  {
-   "id": "syn-076",
-   "category": "syntactic",
-   "text": "إن المعلمون حاضرون.",
-   "expected": [
-    "المعلمين"
-   ]
-  },
-  {
-   "id": "syn-077",
-   "category": "syntactic",
-   "text": "إن المهندسون جاهزون.",
-   "expected": [
-    "المهندسين"
-   ]
-  },
-  {
-   "id": "syn-078",
-   "category": "syntactic",
-   "text": "لعل الباحثون مسرورون.",
-   "expected": [
-    "الباحثين"
-   ]
-  },
-  {
-   "id": "syn-079",
-   "category": "syntactic",
-   "text": "كان الطالبان مجتهدون.",
-   "expected": [
-    "مجتهدين"
-   ]
-  },
-  {
-   "id": "syn-080",
-   "category": "syntactic",
-   "text": "أصبح المعلمان حاضرون.",
-   "expected": [
-    "حاضرين"
-   ]
-  },
-  {
-   "id": "agr-001",
-   "category": "agreement",
-   "text": "كتبت الطالب الدرس.",
-   "expected": [
-    "كتب"
-   ]
-  },
-  {
-   "id": "agr-002",
-   "category": "agreement",
-   "text": "قالت المدير القرار.",
-   "expected": [
-    "قال"
-   ]
-  },
-  {
-   "id": "agr-003",
-   "category": "agreement",
-   "text": "نجحت الطالب.",
-   "expected": [
-    "نجح"
-   ]
-  },
-  {
-   "id": "agr-004",
-   "category": "agreement",
-   "text": "حضرت المهندس.",
-   "expected": [
-    "حضر"
-   ]
-  },
-  {
-   "id": "agr-005",
-   "category": "agreement",
-   "text": "درست المعلم.",
-   "expected": [
-    "درس"
-   ]
-  },
-  {
-   "id": "agr-006",
-   "category": "agreement",
-   "text": "فهمت الباحث.",
-   "expected": [
-    "فهم"
-   ]
-  },
-  {
-   "id": "agr-007",
-   "category": "agreement",
-   "text": "كتب الطالبة الدرس.",
-   "expected": [
-    "كتبت"
-   ]
-  },
-  {
-   "id": "agr-008",
-   "category": "agreement",
-   "text": "نجح المعلمة.",
-   "expected": [
-    "نجحت"
-   ]
-  },
-  {
-   "id": "agr-009",
-   "category": "agreement",
-   "text": "حضر المديرة.",
-   "expected": [
-    "حضرت"
-   ]
-  },
-  {
-   "id": "agr-010",
-   "category": "agreement",
-   "text": "قرأ الصحفية التقرير.",
-   "expected": [
-    "قرأت"
-   ]
-  },
-  {
-   "id": "agr-011",
-   "category": "agreement",
-   "text": "فهم المهندسة.",
-   "expected": [
-    "فهمت"
-   ]
-  },
-  {
-   "id": "agr-012",
-   "category": "agreement",
-   "text": "الطلاب كتب الدرس.",
-   "expected": [
-    "كتبوا"
-   ]
-  },
-  {
-   "id": "agr-013",
-   "category": "agreement",
-   "text": "المعلمون اجتهد.",
-   "expected": [
-    "اجتهدوا"
-   ]
-  },
-  {
-   "id": "agr-014",
-   "category": "agreement",
-   "text": "المهندسون وصل.",
-   "expected": [
-    "وصلوا"
-   ]
-  },
-  {
-   "id": "agr-015",
-   "category": "agreement",
-   "text": "الباحثون فهم.",
-   "expected": [
-    "فهموا"
-   ]
-  },
-  {
-   "id": "agr-016",
-   "category": "agreement",
-   "text": "الموظفون تعاون.",
-   "expected": [
-    "تعاونوا"
-   ]
-  },
-  {
-   "id": "agr-017",
-   "category": "agreement",
-   "text": "الطالبان حضر.",
-   "expected": [
-    "حضرا"
-   ]
-  },
-  {
-   "id": "agr-018",
-   "category": "agreement",
-   "text": "المعلمان اجتهد.",
-   "expected": [
-    "اجتهدا"
-   ]
-  },
-  {
-   "id": "agr-019",
-   "category": "agreement",
-   "text": "المهندسان وصل.",
-   "expected": [
-    "وصلا"
-   ]
-  },
-  {
-   "id": "agr-020",
-   "category": "agreement",
-   "text": "اللاعبان لعب.",
-   "expected": [
-    "لعبا"
-   ]
-  },
-  {
-   "id": "agr-021",
-   "category": "agreement",
-   "text": "الطالبات نجح.",
-   "expected": [
-    "نجحن"
-   ]
-  },
-  {
-   "id": "agr-022",
-   "category": "agreement",
-   "text": "المعلمات حضر.",
-   "expected": [
-    "حضرن"
-   ]
-  },
-  {
-   "id": "agr-023",
-   "category": "agreement",
-   "text": "الممرضات اجتهد.",
-   "expected": [
-    "اجتهدن"
-   ]
-  },
-  {
-   "id": "agr-024",
-   "category": "agreement",
-   "text": "الطالب كتبوا الدرس.",
-   "expected": [
-    "كتب"
-   ]
-  },
-  {
-   "id": "agr-025",
-   "category": "agreement",
-   "text": "المعلم فهموا الدرس.",
-   "expected": [
-    "فهم"
-   ]
-  },
-  {
-   "id": "agr-026",
-   "category": "agreement",
-   "text": "المهندس وصلوا مبكرًا.",
-   "expected": [
-    "وصل"
-   ]
-  },
-  {
-   "id": "agr-027",
-   "category": "agreement",
-   "text": "كانو الطلاب حاضرين.",
-   "expected": [
-    "كان"
-   ]
-  },
-  {
-   "id": "agr-028",
-   "category": "agreement",
-   "text": "كانت المعلمون حاضرين.",
-   "expected": [
-    "كان"
-   ]
-  },
-  {
-   "id": "agr-029",
-   "category": "agreement",
-   "text": "الطالب التي نجح.",
-   "expected": [
-    "الذي"
-   ]
-  },
-  {
-   "id": "agr-030",
-   "category": "agreement",
-   "text": "الطالبة الذي نجحت.",
-   "expected": [
-    "التي"
-   ]
-  },
-  {
-   "id": "agr-031",
-   "category": "agreement",
-   "text": "الطلاب التي نجحوا.",
-   "expected": [
-    "الذين"
-   ]
-  },
-  {
-   "id": "agr-032",
-   "category": "agreement",
-   "text": "الطالبات الذين نجحن.",
-   "expected": [
-    "اللاتي"
-   ]
-  },
-  {
-   "id": "agr-033",
-   "category": "agreement",
-   "text": "هذا الطالبة مجتهدة.",
-   "expected": [
-    "هذه"
-   ]
-  },
-  {
-   "id": "agr-034",
-   "category": "agreement",
-   "text": "هذه الطالب مجتهد.",
-   "expected": [
-    "هذا"
-   ]
-  },
-  {
-   "id": "agr-035",
-   "category": "agreement",
-   "text": "هؤلاء الطالبان مجتهدان.",
-   "expected": [
-    "هذان"
-   ]
-  },
-  {
-   "id": "agr-036",
-   "category": "agreement",
-   "text": "هذا الكتب مفيدة.",
-   "expected": [
-    "هذه"
-   ]
-  },
-  {
-   "id": "agr-037",
-   "category": "agreement",
-   "text": "الطالبة المجتهد نجحت.",
-   "expected": [
-    "المجتهدة"
-   ]
-  },
-  {
-   "id": "agr-038",
-   "category": "agreement",
-   "text": "المعلمة الماهر يشرح.",
-   "expected": [
-    "الماهرة"
-   ]
-  },
-  {
-   "id": "agr-039",
-   "category": "agreement",
-   "text": "الطالب المجتهدة نجح.",
-   "expected": [
-    "المجتهد"
-   ]
-  },
-  {
-   "id": "agr-040",
-   "category": "agreement",
-   "text": "المهندس الماهرة يخطط.",
-   "expected": [
-    "الماهر"
-   ]
-  },
-  {
-   "id": "agr-041",
-   "category": "agreement",
-   "text": "الطلاب المجتهد نجحوا.",
-   "expected": [
-    "المجتهدون"
-   ]
-  },
-  {
-   "id": "agr-042",
-   "category": "agreement",
-   "text": "الطالبات المجتهدة نجحن.",
-   "expected": [
-    "المجتهدات"
-   ]
-  },
-  {
-   "id": "agr-043",
-   "category": "agreement",
-   "text": "الطالبان المجتهدون حضرا.",
-   "expected": [
-    "المجتهدان"
-   ]
-  },
-  {
-   "id": "agr-044",
-   "category": "agreement",
-   "text": "المعلمان النشيطون عملا.",
-   "expected": [
-    "النشيطان"
-   ]
-  },
-  {
-   "id": "agr-045",
-   "category": "agreement",
-   "text": "لم يكتبون الدرس.",
-   "expected": [
-    "يكتبوا"
-   ]
-  },
-  {
-   "id": "agr-046",
-   "category": "agreement",
-   "text": "لن يلعبون في الشارع.",
-   "expected": [
-    "يلعبوا"
-   ]
-  },
-  {
-   "id": "agr-047",
-   "category": "agreement",
-   "text": "الطلاب لم يفهمون الدرس.",
-   "expected": [
-    "يفهموا"
-   ]
-  },
-  {
-   "id": "agr-048",
-   "category": "agreement",
-   "text": "المعلمون لن يذهبون مبكرًا.",
-   "expected": [
-    "يذهبوا"
-   ]
-  },
-  {
-   "id": "agr-049",
-   "category": "agreement",
-   "text": "يجب أن يكتبون الدرس.",
-   "expected": [
-    "يكتبوا"
-   ]
-  },
-  {
-   "id": "agr-050",
-   "category": "agreement",
-   "text": "أريد أن يلعبون بهدوء.",
-   "expected": [
-    "يلعبوا"
-   ]
-  },
-  {
-   "id": "agr-051",
-   "category": "agreement",
-   "text": "كتبو الدرس.",
-   "expected": [
-    "كتبوا"
-   ]
-  },
-  {
-   "id": "agr-052",
-   "category": "agreement",
-   "text": "ذهبو إلى المدرسة.",
-   "expected": [
-    "ذهبوا"
-   ]
-  },
-  {
-   "id": "agr-053",
-   "category": "agreement",
-   "text": "لعبو في الحديقة.",
-   "expected": [
-    "لعبوا"
-   ]
-  },
-  {
-   "id": "agr-054",
-   "category": "agreement",
-   "text": "كان الطلاب حاضرون.",
-   "expected": [
-    "حاضرين"
-   ]
-  },
-  {
-   "id": "agr-055",
-   "category": "agreement",
-   "text": "أصبح المعلمون متعبون.",
-   "expected": [
-    "متعبين"
-   ]
-  },
-  {
-   "id": "agr-056",
-   "category": "agreement",
-   "text": "ثلاث كتب على الرف.",
-   "expected": [
-    "ثلاثة"
-   ]
-  },
-  {
-   "id": "agr-057",
-   "category": "agreement",
-   "text": "خمس طلاب في الصف.",
-   "expected": [
-    "خمسة"
-   ]
-  },
-  {
-   "id": "agr-058",
-   "category": "agreement",
-   "text": "الطالبتان المجتهدات حضرتا.",
-   "expected": [
-    "المجتهدتان"
-   ]
-  },
-  {
-   "id": "agr-059",
-   "category": "agreement",
-   "text": "المعلمتان الماهرات تشرحان.",
-   "expected": [
-    "الماهرتان"
-   ]
-  },
-  {
-   "id": "agr-060",
-   "category": "agreement",
-   "text": "تكتب الطالب الدرس.",
-   "expected": [
-    "يكتب"
-   ]
-  },
-  {
-   "id": "ort-001",
-   "category": "orthographic",
-   "text": "اخذ الطالب الكتاب.",
-   "expected": [
-    "أخذ"
-   ]
-  },
-  {
-   "id": "ort-002",
-   "category": "orthographic",
-   "text": "اكل الطفل التفاحة.",
-   "expected": [
-    "أكل"
-   ]
-  },
-  {
-   "id": "ort-003",
-   "category": "orthographic",
-   "text": "اعلن المدير النتائج.",
-   "expected": [
-    "أعلن"
-   ]
-  },
-  {
-   "id": "ort-004",
-   "category": "orthographic",
-   "text": "ارسل المعلم الرسالة.",
-   "expected": [
-    "أرسل"
-   ]
-  },
-  {
-   "id": "ort-005",
-   "category": "orthographic",
-   "text": "اكمل المهندس المشروع.",
-   "expected": [
-    "أكمل"
-   ]
-  },
-  {
-   "id": "ort-006",
-   "category": "orthographic",
-   "text": "اوقف المدير الاجتماع.",
-   "expected": [
-    "أوقف"
-   ]
-  },
-  {
-   "id": "ort-007",
-   "category": "orthographic",
-   "text": "ذهب الي المدرسة.",
-   "expected": [
-    "إلى"
-   ]
-  },
-  {
-   "id": "ort-008",
-   "category": "orthographic",
-   "text": "نظر الي السماء.",
-   "expected": [
-    "إلى"
-   ]
-  },
-  {
-   "id": "ort-009",
-   "category": "orthographic",
-   "text": "جلس علي الكرسي.",
-   "expected": [
-    "على"
-   ]
-  },
-  {
-   "id": "ort-010",
-   "category": "orthographic",
-   "text": "اعتمد علي نفسه.",
-   "expected": [
-    "على"
-   ]
-  },
-  {
-   "id": "ort-011",
-   "category": "orthographic",
-   "text": "انتظر حتي الصباح.",
-   "expected": [
-    "حتى"
-   ]
-  },
-  {
-   "id": "ort-012",
-   "category": "orthographic",
-   "text": "المدرسه جميلة.",
-   "expected": [
-    "المدرسة"
-   ]
-  },
-  {
-   "id": "ort-013",
-   "category": "orthographic",
-   "text": "القصه طويلة.",
-   "expected": [
-    "القصة"
-   ]
-  },
-  {
-   "id": "ort-014",
-   "category": "orthographic",
-   "text": "الكلمه واضحة.",
-   "expected": [
-    "الكلمة"
-   ]
-  },
-  {
-   "id": "ort-015",
-   "category": "orthographic",
-   "text": "الجمله مفيدة.",
-   "expected": [
-    "الجملة"
-   ]
-  },
-  {
-   "id": "ort-016",
-   "category": "orthographic",
-   "text": "المدينه كبيرة.",
-   "expected": [
-    "المدينة"
-   ]
-  },
-  {
-   "id": "ort-017",
-   "category": "orthographic",
-   "text": "الرساله وصلت.",
-   "expected": [
-    "الرسالة"
-   ]
-  },
-  {
-   "id": "ort-018",
-   "category": "orthographic",
-   "text": "اللغه العربية جميلة.",
-   "expected": [
-    "اللغة"
-   ]
-  },
-  {
-   "id": "ort-019",
-   "category": "orthographic",
-   "text": "كتابه الدرس صعبة.",
-   "expected": [
-    "كتابة"
-   ]
-  },
-  {
-   "id": "ort-020",
-   "category": "orthographic",
-   "text": "قراءه القصة ممتعة.",
-   "expected": [
-    "قراءة"
-   ]
-  },
-  {
-   "id": "ort-021",
-   "category": "orthographic",
-   "text": "مشاهده المباراة ممتعة.",
-   "expected": [
-    "مشاهدة"
-   ]
-  },
-  {
-   "id": "ort-022",
-   "category": "orthographic",
-   "text": "ذهب إلى المستشفي.",
-   "expected": [
-    "المستشفى"
-   ]
-  },
-  {
-   "id": "ort-023",
-   "category": "orthographic",
-   "text": "هذا معني عميق.",
-   "expected": [
-    "معنى"
-   ]
-  },
-  {
-   "id": "ort-024",
-   "category": "orthographic",
-   "text": "ذهبنا إلى المقهي.",
-   "expected": [
-    "المقهى"
-   ]
-  },
-  {
-   "id": "ort-025",
-   "category": "orthographic",
-   "text": "لدي موعد مهم.",
-   "expected": [
-    "لدى"
-   ]
-  },
-  {
-   "id": "ort-026",
-   "category": "orthographic",
-   "text": "هذا خطاء كبير.",
-   "expected": [
-    "خطأ"
-   ]
-  },
-  {
-   "id": "ort-027",
-   "category": "orthographic",
-   "text": "بداء الدرس مبكرًا.",
-   "expected": [
-    "بدأ"
-   ]
-  },
-  {
-   "id": "ort-028",
-   "category": "orthographic",
-   "text": "قراء الطالب الدرس.",
-   "expected": [
-    "قرأ"
-   ]
-  },
-  {
-   "id": "ort-029",
-   "category": "orthographic",
-   "text": "أظن ان الطالب مجتهد.",
-   "expected": [
-    "أن"
-   ]
-  },
-  {
-   "id": "ort-030",
-   "category": "orthographic",
-   "text": "قال ان النتيجة جيدة.",
-   "expected": [
-    "أن"
-   ]
-  },
-  {
-   "id": "ort-031",
-   "category": "orthographic",
-   "text": "ان شاء الله سننجح.",
-   "expected": [
-    "إن"
-   ]
-  },
-  {
-   "id": "ort-032",
-   "category": "orthographic",
-   "text": "اعلم انك صادق.",
-   "expected": [
-    "أنك"
-   ]
-  },
-  {
-   "id": "ort-033",
-   "category": "orthographic",
-   "text": "حضرو مبكرًا.",
-   "expected": [
-    "حضروا"
-   ]
-  },
-  {
-   "id": "ort-034",
-   "category": "orthographic",
-   "text": "فهمو الدرس.",
-   "expected": [
-    "فهموا"
-   ]
-  },
-  {
-   "id": "ort-035",
-   "category": "orthographic",
-   "text": "نجحو في الاختبار.",
-   "expected": [
-    "نجحوا"
-   ]
-  },
-  {
-   "id": "ort-036",
-   "category": "orthographic",
-   "text": "شاركو في المسابقة.",
-   "expected": [
-    "شاركوا"
-   ]
-  },
-  {
-   "id": "ort-037",
-   "category": "orthographic",
-   "text": "الطالب الذى نجح.",
-   "expected": [
-    "الذي"
-   ]
-  },
-  {
-   "id": "ort-038",
-   "category": "orthographic",
-   "text": "الكتاب الذى قرأته.",
-   "expected": [
-    "الذي"
-   ]
-  },
-  {
-   "id": "ort-039",
-   "category": "orthographic",
-   "text": "لاكن الطالب نجح.",
-   "expected": [
-    "لكن"
-   ]
-  },
-  {
-   "id": "ort-040",
-   "category": "orthographic",
-   "text": "لان الطالب اجتهد.",
-   "expected": [
-    "لأن"
-   ]
-  },
-  {
-   "id": "ort-041",
-   "category": "orthographic",
-   "text": "اين الكتاب؟",
-   "expected": [
-    "أين"
-   ]
-  },
-  {
-   "id": "ort-042",
-   "category": "orthographic",
-   "text": "اين ذهب الطلاب؟",
-   "expected": [
-    "أين"
-   ]
-  },
-  {
-   "id": "ort-043",
-   "category": "orthographic",
-   "text": "هذا اول درس.",
-   "expected": [
-    "أول"
-   ]
-  },
-  {
-   "id": "ort-044",
-   "category": "orthographic",
-   "text": "اول الطلاب وصل.",
-   "expected": [
-    "أول"
-   ]
-  },
-  {
-   "id": "ort-045",
-   "category": "orthographic",
-   "text": "هذا شئ جميل.",
-   "expected": [
-    "شيء"
-   ]
-  },
-  {
-   "id": "ort-046",
-   "category": "orthographic",
-   "text": "لا شئ يمنعه.",
-   "expected": [
-    "شيء"
-   ]
-  },
-  {
-   "id": "ort-047",
-   "category": "orthographic",
-   "text": "ادخل الطالب الفصل.",
-   "expected": [
-    "أدخل"
-   ]
-  },
-  {
-   "id": "ort-048",
-   "category": "orthographic",
-   "text": "اخرج المعلم من القاعة.",
-   "expected": [
-    "أخرج"
-   ]
-  },
-  {
-   "id": "ort-049",
-   "category": "orthographic",
-   "text": "اوضح المهندس الفكرة.",
-   "expected": [
-    "أوضح"
-   ]
-  },
-  {
-   "id": "ort-050",
-   "category": "orthographic",
-   "text": "اثبت الباحث نظريته.",
-   "expected": [
-    "أثبت"
-   ]
-  },
-  {
-   "id": "ort-051",
-   "category": "orthographic",
-   "text": "هذا الاستاذ ممتاز.",
-   "expected": [
-    "الأستاذ"
-   ]
-  },
-  {
-   "id": "ort-052",
-   "category": "orthographic",
-   "text": "سالت المديرة عن الموعد.",
-   "expected": [
-    "سألت"
-   ]
-  },
-  {
-   "id": "ort-053",
-   "category": "orthographic",
-   "text": "رايت الطالب في الفصل.",
-   "expected": [
-    "رأيت"
-   ]
-  },
-  {
-   "id": "ort-054",
-   "category": "orthographic",
-   "text": "اجاب الطالب بثقة.",
-   "expected": [
-    "أجاب"
-   ]
-  },
-  {
-   "id": "ort-055",
-   "category": "orthographic",
-   "text": "اكرم المعلم الطالب.",
-   "expected": [
-    "أكرم"
-   ]
-  },
-  {
-   "id": "ort-056",
-   "category": "orthographic",
-   "text": "اوجد المهندس الحل.",
-   "expected": [
-    "أوجد"
-   ]
-  },
-  {
-   "id": "ort-057",
-   "category": "orthographic",
-   "text": "اجاز المدير الخطة.",
-   "expected": [
-    "أجاز"
-   ]
-  },
-  {
-   "id": "ort-058",
-   "category": "orthographic",
-   "text": "اعد المعلم الدرس.",
-   "expected": [
-    "أعد"
-   ]
-  },
-  {
-   "id": "ort-059",
-   "category": "orthographic",
-   "text": "ابطل القاضي الحكم.",
-   "expected": [
-    "أبطل"
-   ]
-  },
-  {
-   "id": "ort-060",
-   "category": "orthographic",
-   "text": "اعطى المعلم الدرس.",
-   "expected": [
-    "أعطى"
-   ]
-  }
- ],
- "controls": [
-  {
-   "id": "ctl-001",
-   "text": "الطالبان مجتهدان."
-  },
-  {
-   "id": "ctl-002",
-   "text": "المعلمان ماهران."
-  },
-  {
-   "id": "ctl-003",
-   "text": "المهندسون جاهزون."
-  },
-  {
-   "id": "ctl-004",
-   "text": "المديرون واقفون."
-  },
-  {
-   "id": "ctl-005",
-   "text": "الباحثون مسرورون."
-  },
-  {
-   "id": "ctl-006",
-   "text": "الكاتبان مشهوران."
-  },
-  {
-   "id": "ctl-007",
-   "text": "اللاعبان نشيطان."
-  },
-  {
-   "id": "ctl-008",
-   "text": "الموظفون حاضرون."
-  },
-  {
-   "id": "ctl-009",
-   "text": "الممرضون يقظون."
-  },
-  {
-   "id": "ctl-010",
-   "text": "الصحفيون دقيقون."
-  },
-  {
-   "id": "ctl-011",
-   "text": "الطالبتان مجتهدتان."
-  },
-  {
-   "id": "ctl-012",
-   "text": "المعلمتان ماهرتان."
-  },
-  {
-   "id": "ctl-013",
-   "text": "حضر الطالبان."
-  },
-  {
-   "id": "ctl-014",
-   "text": "نجح المعلمان."
-  },
-  {
-   "id": "ctl-015",
-   "text": "وصل المهندسون."
-  },
-  {
-   "id": "ctl-016",
-   "text": "اجتمع الباحثون."
-  },
-  {
-   "id": "ctl-017",
-   "text": "الطالبان كتبا الدرس."
-  },
-  {
-   "id": "ctl-018",
-   "text": "المهندسون صمموا الجسر."
-  },
-  {
-   "id": "ctl-019",
-   "text": "رأيت الطالبين."
-  },
-  {
-   "id": "ctl-020",
-   "text": "قابلت المعلمين."
-  },
-  {
-   "id": "ctl-021",
-   "text": "شاهد المدير اللاعبين."
-  },
-  {
-   "id": "ctl-022",
-   "text": "كرم المعلم الطالبين."
-  },
-  {
-   "id": "ctl-023",
-   "text": "سمعت الطبيبين."
-  },
-  {
-   "id": "ctl-024",
-   "text": "حفظ الطلاب الدرسين."
-  },
-  {
-   "id": "ctl-025",
-   "text": "رأيت المهندسين."
-  },
-  {
-   "id": "ctl-026",
-   "text": "قابلت الموظفين."
-  },
-  {
-   "id": "ctl-027",
-   "text": "شاهد المدير العاملين."
-  },
-  {
-   "id": "ctl-028",
-   "text": "كرم المدير المدرسين."
-  },
-  {
-   "id": "ctl-029",
-   "text": "حاور الصحفي المسؤولين."
-  },
-  {
-   "id": "ctl-030",
-   "text": "مررت بالطالبين المجتهدين."
-  },
-  {
-   "id": "ctl-031",
-   "text": "سلمت على المعلمين."
-  },
-  {
-   "id": "ctl-032",
-   "text": "ذهبت إلى المهندسين."
-  },
-  {
-   "id": "ctl-033",
-   "text": "سألت عن الكاتبين."
-  },
-  {
-   "id": "ctl-034",
-   "text": "سافرت مع المدربين."
-  },
-  {
-   "id": "ctl-035",
-   "text": "مررت بالمعلمين."
-  },
-  {
-   "id": "ctl-036",
-   "text": "تحدثت مع الباحثين."
-  },
-  {
-   "id": "ctl-037",
-   "text": "ذهبت إلى المدرسة."
-  },
-  {
-   "id": "ctl-038",
-   "text": "جلست على الكرسي."
-  },
-  {
-   "id": "ctl-039",
-   "text": "كان الطالبان مجتهدين."
-  },
-  {
-   "id": "ctl-040",
-   "text": "أصبح المعلمان حاضرين."
-  },
-  {
-   "id": "ctl-041",
-   "text": "ظل المهندسان مستيقظين."
-  },
-  {
-   "id": "ctl-042",
-   "text": "صار اللاعبان ماهرين."
-  },
-  {
-   "id": "ctl-043",
-   "text": "إن الطالبين مجتهدان."
-  },
-  {
-   "id": "ctl-044",
-   "text": "إن المعلمين ماهران."
-  },
-  {
-   "id": "ctl-045",
-   "text": "لعل المهندسين ناجحان."
-  },
-  {
-   "id": "ctl-046",
-   "text": "كأن اللاعبين متعبان."
-  },
-  {
-   "id": "ctl-047",
-   "text": "كان المعلمون حاضرين."
-  },
-  {
-   "id": "ctl-048",
-   "text": "أصبح المهندسون جاهزين."
-  },
-  {
-   "id": "ctl-049",
-   "text": "ظل الباحثون نشيطين."
-  },
-  {
-   "id": "ctl-050",
-   "text": "إن المعلمين حاضرون."
-  },
-  {
-   "id": "ctl-051",
-   "text": "كان الطلاب حاضرين."
-  },
-  {
-   "id": "ctl-052",
-   "text": "أصبح المعلمون متعبين."
-  },
-  {
-   "id": "ctl-053",
-   "text": "كتب الطالب الدرس."
-  },
-  {
-   "id": "ctl-054",
-   "text": "كتبت الطالبة الدرس."
-  },
-  {
-   "id": "ctl-055",
-   "text": "نجح الطلاب."
-  },
-  {
-   "id": "ctl-056",
-   "text": "نجحت الطالبات."
-  },
-  {
-   "id": "ctl-057",
-   "text": "الطلاب كتبوا الدرس."
-  },
-  {
-   "id": "ctl-058",
-   "text": "الطالبات كتبن الدرس."
-  },
-  {
-   "id": "ctl-059",
-   "text": "الطالبان حضرا."
-  },
-  {
-   "id": "ctl-060",
-   "text": "المعلمان اجتهدا."
-  },
-  {
-   "id": "ctl-061",
-   "text": "المهندسان وصلا."
-  },
-  {
-   "id": "ctl-062",
-   "text": "اللاعبان لعبا."
-  },
-  {
-   "id": "ctl-063",
-   "text": "الطالبتان حضرتا."
-  },
-  {
-   "id": "ctl-064",
-   "text": "حضر المعلمون."
-  },
-  {
-   "id": "ctl-065",
-   "text": "حضرت المعلمات."
-  },
-  {
-   "id": "ctl-066",
-   "text": "كتب المعلمون الدرس."
-  },
-  {
-   "id": "ctl-067",
-   "text": "اجتهد الباحثون."
-  },
-  {
-   "id": "ctl-068",
-   "text": "فهم الطلاب الدرس."
-  },
-  {
-   "id": "ctl-069",
-   "text": "فهمت الطالبات الدرس."
-  },
-  {
-   "id": "ctl-070",
-   "text": "قرأ الصحفي التقرير."
-  },
-  {
-   "id": "ctl-071",
-   "text": "قرأت الصحفية التقرير."
-  },
-  {
-   "id": "ctl-072",
-   "text": "شاهد المدير الفيلم."
-  },
-  {
-   "id": "ctl-073",
-   "text": "الصحفي قرأ الكتاب."
-  },
-  {
-   "id": "ctl-074",
-   "text": "الصحفي زار المتحف."
-  },
-  {
-   "id": "ctl-075",
-   "text": "الصحفي حفظ القصيدة."
-  },
-  {
-   "id": "ctl-076",
-   "text": "الصحفي راجع التقرير."
-  },
-  {
-   "id": "ctl-077",
-   "text": "الصحفي فتح الباب."
-  },
-  {
-   "id": "ctl-078",
-   "text": "الصحفي شاهد الفيلم."
-  },
-  {
-   "id": "ctl-079",
-   "text": "الصحفية قرأت التقرير."
-  },
-  {
-   "id": "ctl-080",
-   "text": "القاضي حكم بالعدل."
-  },
-  {
-   "id": "ctl-081",
-   "text": "الطلاب يكتبون."
-  },
-  {
-   "id": "ctl-082",
-   "text": "لن يكتبوا."
-  },
-  {
-   "id": "ctl-083",
-   "text": "لم يكتبوا."
-  },
-  {
-   "id": "ctl-084",
-   "text": "يكتبون"
-  },
-  {
-   "id": "ctl-085",
-   "text": "يدرسون"
-  },
-  {
-   "id": "ctl-086",
-   "text": "يقرؤون"
-  },
-  {
-   "id": "ctl-087",
-   "text": "الطالبين المجتهدين"
-  },
-  {
-   "id": "ctl-088",
-   "text": "أبيك وأخيك"
-  },
-  {
-   "id": "ctl-089",
-   "text": "كتبٍ"
-  },
-  {
-   "id": "ctl-090",
-   "text": "كتبًا"
-  },
-  {
-   "id": "ctl-091",
-   "text": "الطالبين رأيت."
-  },
-  {
-   "id": "ctl-092",
-   "text": "الطالبين رأيتما."
-  },
-  {
-   "id": "ctl-093",
-   "text": "الطالبين يكتبان."
-  },
-  {
-   "id": "ctl-094",
-   "text": "المعلمين يكتبون."
-  },
-  {
-   "id": "ctl-095",
-   "text": "الطلاب كتب جديدة."
-  },
-  {
-   "id": "ctl-096",
-   "text": "أخذ الطالب الكتاب."
-  },
-  {
-   "id": "ctl-097",
-   "text": "أكل الطفل التفاحة."
-  },
-  {
-   "id": "ctl-098",
-   "text": "أعلن المدير النتائج."
-  },
-  {
-   "id": "ctl-099",
-   "text": "أرسل المعلم الرسالة."
-  },
-  {
-   "id": "ctl-100",
-   "text": "أكمل المهندس المشروع."
-  },
-  {
-   "id": "ctl-101",
-   "text": "ذهب إلى المدرسة."
-  },
-  {
-   "id": "ctl-102",
-   "text": "نظر إلى السماء."
-  },
-  {
-   "id": "ctl-103",
-   "text": "جلس على الكرسي."
-  },
-  {
-   "id": "ctl-104",
-   "text": "اعتمد على نفسه."
-  },
-  {
-   "id": "ctl-105",
-   "text": "انتظر حتى الصباح."
-  },
-  {
-   "id": "ctl-106",
-   "text": "المدرسة جميلة."
-  },
-  {
-   "id": "ctl-107",
-   "text": "القصة طويلة."
-  },
-  {
-   "id": "ctl-108",
-   "text": "الكلمة واضحة."
-  },
-  {
-   "id": "ctl-109",
-   "text": "الجملة مفيدة."
-  },
-  {
-   "id": "ctl-110",
-   "text": "المدينة كبيرة."
-  },
-  {
-   "id": "ctl-111",
-   "text": "الرسالة وصلت."
-  },
-  {
-   "id": "ctl-112",
-   "text": "كتابة الدرس صعبة."
-  },
-  {
-   "id": "ctl-113",
-   "text": "قراءة القصة ممتعة."
-  },
-  {
-   "id": "ctl-114",
-   "text": "هذا معنى عميق."
-  },
-  {
-   "id": "ctl-115",
-   "text": "لدى الطالب موعد."
-  },
-  {
-   "id": "ctl-116",
-   "text": "هذا خطأ كبير."
-  },
-  {
-   "id": "ctl-117",
-   "text": "بدأ الدرس مبكرًا."
-  },
-  {
-   "id": "ctl-118",
-   "text": "قرأ الطالب الدرس."
-  },
-  {
-   "id": "ctl-119",
-   "text": "أظن أن الطالب مجتهد."
-  },
-  {
-   "id": "ctl-120",
-   "text": "إن شاء الله سننجح."
-  },
-  {
-   "id": "ctl-121",
-   "text": "لن يكتب الطالب شيئًا."
-  },
-  {
-   "id": "ctl-122",
-   "text": "لم يلعب الأطفال في الشارع."
-  },
-  {
-   "id": "ctl-123",
-   "text": "الطلاب لن يتأخروا."
-  },
-  {
-   "id": "ctl-124",
-   "text": "يجب أن يكتب الطلاب الدرس."
-  },
-  {
-   "id": "ctl-125",
-   "text": "لن يذهب المعلمون مبكرًا."
-  },
-  {
-   "id": "ctl-126",
-   "text": "لم يفهم الطلاب الدرس."
-  },
-  {
-   "id": "ctl-127",
-   "text": "يكتبون الدرس كل يوم."
-  },
-  {
-   "id": "ctl-128",
-   "text": "لن ينسى الطلاب واجبهم."
-  },
-  {
-   "id": "ctl-129",
-   "text": "الطالب الذي نجح."
-  },
-  {
-   "id": "ctl-130",
-   "text": "الطالبة التي نجحت."
-  },
-  {
-   "id": "ctl-131",
-   "text": "الطلاب الذين نجحوا."
-  },
-  {
-   "id": "ctl-132",
-   "text": "الطالبات اللاتي نجحن."
-  },
-  {
-   "id": "ctl-133",
-   "text": "رأيت الطالبين اللذين نجحا."
-  },
-  {
-   "id": "ctl-134",
-   "text": "جاء الطلاب الذين حضروا مبكرًا."
-  },
-  {
-   "id": "ctl-135",
-   "text": "هذا الطالب مجتهد."
-  },
-  {
-   "id": "ctl-136",
-   "text": "هذه الطالبة مجتهدة."
-  },
-  {
-   "id": "ctl-137",
-   "text": "هذان الطالبان مجتهدان."
-  },
-  {
-   "id": "ctl-138",
-   "text": "هؤلاء الطلاب مجتهدون."
-  },
-  {
-   "id": "ctl-139",
-   "text": "حضر ثلاثة طلاب."
-  },
-  {
-   "id": "ctl-140",
-   "text": "قرأت ثلاث رسائل."
-  },
-  {
-   "id": "ctl-141",
-   "text": "اشتريت خمسة كتب."
-  },
-  {
-   "id": "ctl-142",
-   "text": "جاءت خمس طالبات."
-  },
-  {
-   "id": "ctl-143",
-   "text": "حضر اثنا عشر طالبًا."
-  },
-  {
-   "id": "ctl-144",
-   "text": "قرأت أحد عشر كتابًا."
-  },
-  {
-   "id": "ctl-145",
-   "text": "حضر عشرون طالبًا."
-  },
-  {
-   "id": "ctl-146",
-   "text": "كتبت مئة كلمة."
-  },
-  {
-   "id": "ctl-147",
-   "text": "جاء أبو الطالب."
-  },
-  {
-   "id": "ctl-148",
-   "text": "رأيت أبا الطالب."
-  },
-  {
-   "id": "ctl-149",
-   "text": "مررت بأبي الطالب."
-  },
-  {
-   "id": "ctl-150",
-   "text": "جاء أخو سعيد."
-  },
-  {
-   "id": "ctl-151",
-   "text": "هذا ذو علم."
-  },
-  {
-   "id": "ctl-152",
-   "text": "سلمت على ذي فضل."
-  },
-  {
-   "id": "ctl-153",
-   "text": "حضر الطلاب إلا المعلم."
-  },
-  {
-   "id": "ctl-154",
-   "text": "عاد الطالب مسرورًا."
-  },
-  {
-   "id": "ctl-155",
-   "text": "عادت الطالبة مسرورة."
-  },
-  {
-   "id": "ctl-156",
-   "text": "ازداد الطالب علمًا."
-  },
-  {
-   "id": "ctl-157",
-   "text": "حضر الطالبان والمعلمان."
-  },
-  {
-   "id": "ctl-158",
-   "text": "مررت بالطالبين والمعلمين."
-  },
-  {
-   "id": "ctl-159",
-   "text": "إن كتبًا كثيرة مفيدة."
-  },
-  {
-   "id": "ctl-160",
-   "text": "كان ثلاثة طلاب حاضرين."
-  },
-  {
-   "id": "ctl-161",
-   "text": "ذهبت إلى المهرجان."
-  },
-  {
-   "id": "ctl-162",
-   "text": "جاء عثمان وسلمان."
-  },
-  {
-   "id": "ctl-163",
-   "text": "الطالبات مجتهدات."
-  },
-  {
-   "id": "ctl-164",
-   "text": "المعلمات مخلصات."
-  },
-  {
-   "id": "ctl-165",
-   "text": "جاءت الطالبات."
-  },
-  {
-   "id": "ctl-166",
-   "text": "كتبت المعلمات التقارير."
-  },
-  {
-   "id": "ctl-167",
-   "text": "هذه الكتب مفيدة."
-  },
-  {
-   "id": "ctl-168",
-   "text": "كتب الولد الرسالة."
-  },
-  {
-   "id": "ctl-169",
-   "text": "كتبت البنت الرسالة."
-  },
-  {
-   "id": "ctl-170",
-   "text": "كتب الطلاب الدرس."
-  },
-  {
-   "id": "ctl-171",
-   "text": "كتبا الدرس."
-  },
-  {
-   "id": "ctl-172",
-   "text": "كتبن الدرس."
-  },
-  {
-   "id": "ctl-173",
-   "text": "كتبت الرسالة."
-  },
-  {
-   "id": "ctl-174",
-   "text": "كتبنا الدرس."
-  },
-  {
-   "id": "ctl-175",
-   "text": "كتبتم الدرس."
-  },
-  {
-   "id": "ctl-176",
-   "text": "كتبتن الدرس."
-  },
-  {
-   "id": "ctl-177",
-   "text": "كتبتما الدرس."
-  },
-  {
-   "id": "ctl-178",
-   "text": "الطالبان المجتهدان حضرا."
-  },
-  {
-   "id": "ctl-179",
-   "text": "المعلمان الماهران يشرحان."
-  },
-  {
-   "id": "ctl-180",
-   "text": "الطالبتان المجتهدتان نجحتا."
-  },
-  {
-   "id": "ctl-181",
-   "text": "قابلت الطالبين المجتهدين."
-  },
-  {
-   "id": "ctl-182",
-   "text": "رأيت المعلمين الماهرين."
-  },
-  {
-   "id": "ctl-183",
-   "text": "مررت بالمهندسين الجاهزين."
-  },
-  {
-   "id": "ctl-184",
-   "text": "رأيت الطالبتين المجتهدتين."
-  },
-  {
-   "id": "ctl-185",
-   "text": "الطالبان المجتهدان ناجحان."
-  },
-  {
-   "id": "ctl-186",
-   "text": "إن الطالبين المجتهدين ناجحان."
-  },
-  {
-   "id": "ctl-187",
-   "text": "كان الطالبان المجتهدان حاضرين."
-  },
-  {
-   "id": "ctl-188",
-   "text": "سلمت على المدير."
-  },
-  {
-   "id": "ctl-189",
-   "text": "تحدثت مع المعلم."
-  },
-  {
-   "id": "ctl-190",
-   "text": "رأيت مدير المدرسة."
-  },
-  {
-   "id": "ctl-191",
-   "text": "حضر مدير المدرسة."
-  },
-  {
-   "id": "ctl-192",
-   "text": "مررت ببستان واسع."
-  },
-  {
-   "id": "ctl-193",
-   "text": "ذهبت إلى بيت صديقي."
-  },
-  {
-   "id": "ctl-194",
-   "text": "المعلمات حضرن مبكرًا."
-  },
-  {
-   "id": "ctl-195",
-   "text": "هذا البيت جميل."
-  },
-  {
-   "id": "ctl-196",
-   "text": "هاتان الطالبتان مجتهدتان."
-  },
-  {
-   "id": "ctl-197",
-   "text": "رأيت هاتين الطالبتين."
-  },
-  {
-   "id": "ctl-198",
-   "text": "حضر الطالبان كلاهما."
-  },
-  {
-   "id": "ctl-199",
-   "text": "رأيت الطالبين كليهما."
-  },
-  {
-   "id": "ctl-200",
-   "text": "سافرت إلى بلد بعيد."
-  }
- ]
-});
-
-/**
- * يشغّل المعيار الخارجي المجمّد على المحرك الحالي ويعيد المقاييس الموضوعية:
- * Precision / Recall / F1 وتفصيلًا حسب الفئة مع قوائم الفوائت والإنذارات الكاذبة.
- * الالتقاط: كل الاستبدالات المتوقعة حاضرة بين استبدالات المحرك (مجموعة جزئية).
- */
-function runExternal400HoldoutBenchmark(benchmark = EXTERNAL_HOLDOUT_400_V1877, options = {}) {
-  const errorResults = [];
-  let caught = 0;
-  let crashes = 0;
-  for (const item of benchmark.errors) {
-    let findings = [];
-    try {
-      findings = analyze(item.text, {safeMode: true}).findings || [];
-    } catch (err) {
-      crashes += 1;
-      errorResults.push({id: item.id, text: item.text, category: item.category, caught: false,
-        crash: String((err && err.message) || err)});
-      continue;
-    }
-    const replacements = findings.map(f => f.replacement).filter(Boolean);
-    const ok = (item.expected || []).every(exp => replacements.includes(exp));
-    if (ok) caught += 1;
-    errorResults.push({id: item.id, text: item.text, category: item.category, caught: ok,
-      rules: findings.map(f => f.ruleId), replacements});
-  }
-  const controlResults = [];
-  let falsePositives = 0;
-  for (const item of benchmark.controls) {
-    let findings = [];
-    try {
-      findings = analyze(item.text, {safeMode: true}).findings || [];
-    } catch (err) {
-      crashes += 1;
-      controlResults.push({id: item.id, text: item.text, crash: true});
-      continue;
-    }
-    if (findings.length) falsePositives += 1;
-    controlResults.push({id: item.id, text: item.text, falsePositive: findings.length > 0,
-      findings: findings.map(f => ({ruleId: f.ruleId, replacement: f.replacement}))});
-  }
-  const total = benchmark.errors.length;
-  const precision = (caught + falsePositives) ? caught / (caught + falsePositives) : 0;
-  const recall = total ? caught / total : 0;
-  const f1 = (precision + recall) ? 2 * precision * recall / (precision + recall) : 0;
-  const byCategory = {};
-  for (const cat of [...new Set(benchmark.errors.map(e => e.category))]) {
-    const items = errorResults.filter(r => r.category === cat);
-    const c = items.filter(r => r.caught).length;
-    byCategory[cat] = {total: items.length, caught: c, rate: items.length ? c / items.length : 0};
-  }
-  return {
-    version: benchmark.meta.version, benchmarkId: benchmark.meta.id, engine: META.version,
-    totals: {errors: total, caught, missed: total - caught, falsePositives,
-      controls: benchmark.controls.length, crashes},
-    metrics: {precision, recall, f1},
-    byCategory,
-    missedErrors: errorResults.filter(r => !r.caught),
-    falsePositiveList: controlResults.filter(r => r.falsePositive),
-    targets: {detection: 0.95, falsePositives: 0, correctSuggestion: 0.98}
   };
 }
 
@@ -10666,7 +8708,7 @@ function validate({
     generateMorphology, generateNoun, generateAdjective, generateVerb, generateFiveNoun, generateNumber, generateParadigm,
     morphology, numbers, protection, government, caseGovernment, objectResolver, conditionalGovernment, hamzaMorphology,
     EXTERNAL_HOLDOUT_BENCHMARK_V1876, runExternalHoldoutBenchmark,
-    EXTERNAL_HOLDOUT_400_V1877, runExternal400HoldoutBenchmark,
+    EXTERNAL_HOLDOUT_BENCHMARK_V1877, runLargeExternalBenchmark,
     validate, validateData,
     conjugateVerb, verbAnalyses, weakVerbStats, lexiconStats,
     normalize, normalizeWithMap, normalizeForComparison,
