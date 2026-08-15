@@ -4,12 +4,41 @@
  *  ملف جاهز للنشر (Deployment-Ready) — بدون أي تبعيات خارجية
  * ============================================================================
  *
- *  الإصدار : 18.7.8 (PRECISION+RECALL PRO)
+ *  الإصدار : 18.7.9 (PRECISION+RECALL PRO)
  *  التاريخ : 2026-08-14
  *  الملف   : ملف واحد مستقل (Single-File Bundle) مولَّد من المصادر المجزأة،
  *            لا يحتاج أي مكتبة خارجية ويعمل مباشرة عبر وسم <script>.
  *
  *  ── سجل التغييرات ─────────────────────────────────────────────────────────
+ *  18.7.9 (CORRECTNESS ROUND — إصلاح أخطاء المحرك المكتشفة في جولة المراجعة):
+ *    ▸ إصلاحات جذرية (Root-cause fixes):
+ *      • [حرج] «العربيه ← العربيةه»: كان المقطِّع يقرأ «ال + عربي + ه» فيعامل
+ *        الهاء ضميرًا ملكيًا، ثم يقلبها الجذعُ تاءً مربوطة ويعيد rebuildToken
+ *        الضميرَ فتجتمع «ةه». طُبِّقت القاعدة الصرفية «لا يجتمع أل والإضافة»:
+ *        المعرَّف بـ«ال» لا يقبل ضميرًا متصلًا إطلاقًا، فتبقى الهاء من الجذع.
+ *      • [حرج] «فهم ← فهمت» و«نشر ← نشرت»: كانت الصيغة المجردة تُقرأ ماضيًا
+ *        للغائب في موضع اسمي قطعًا. أُضيف حارس «حرف الجر لا يدخل على الفعل»:
+ *        المصدر بعد حرف جر أو ظرف مضاف أو اسم ملازم للإضافة («عدم نشر») يُحسم
+ *        اسميًا قبل أن تعمل قاعدة المطابقة، فسقط مصدر الإنذارات الكاذبة.
+ *      • «صوره ← صورةه» في CONTEXTUAL_TAA: نفس خلل إعادة إلحاق الضمير، أُصلح.
+ *      • «للصوره ← لالصورة»: لام الجر تُدغم مع «ال» رسمًا؛ وُحِّد بناء اللاصقة
+ *        في buildClitcPrefix فامتنع توليد «لال» من كل القواعد.
+ *      • «للاو ← لالللاوا»: قاعدة واو الجماعة كانت تمرر الرسم الكامل عبر
+ *        rebuildToken فتضاعف اللاصقة؛ صار الإلحاق مباشرًا مع منع دخولها على
+ *        ما حمل «ال» أو حرف جر.
+ *    ▸ استدراك أخطاء حقيقية كانت تفوت (Recall):
+ *      • واو الجماعة في المضارع: «أن يساعدو ← يساعدوا» بحجة صرفية مفهرسة.
+ *      • همزة «أن» الناصبة: «ان/وان + مضارع ← أن/وأن»، مع صون «إن» الشرطية.
+ *      • «الأخبار الغير موثوقة ← غير الموثوقة»: «غير» ملازمة للإضافة فلا تدخلها
+ *        «ال»، والصفة بعدها تُعرَّف (GHAYR_DEFINITE_ATTRIBUTE_V1879).
+ *      • CLITIC_ORTHOGRAPHY_V1879: تصحيح الجذع المعجمي عبر «ال»/حرف الجر،
+ *        فكانت «القراءه/بالحياه/للمدرسه» تفلت بينما تُصحَّح مجردةً.
+ *      • توسعة المعجم: أفعال شائعة (شجع، درب، حسن، شارك، اهتم…) ومصادر مؤنثة
+ *        (كتابة، ممارسة، قراءة…) ومداخل همزة قطع وتاء مربوطة عالية التواتر.
+ *    ▸ ضبط الأولويات ومنع التداخل: «غير» لم تُدرج فعلًا حفاظًا على قاعدة
+ *      الاستثناء، والتصحيح عبر اللواصق مقصور على ما تحسمه اللاصقة اسميًا.
+ *    ▸ الاختبارات: +10 انحدارات ذهبية و+22 مصيدة إنذار كاذب (V1879)، و5
+ *      فحوص بنيوية في validateData، مع بقاء معيار الـ400 على 100% دون تغيير.
  *  18.7.8 (PRECISION+RECALL PRO — دمج قوة PRO مع قواعد V18.7.7 العادية):
  *    • استرجاع طبقة NisbaNounLayer 1.0 من النسخة العادية: أسماء النسب المذكرة
  *      المنتهية بياء (صحفي، قاضي، محامي، عربي، مصري...) مع نِسَبها المؤنثة،
@@ -224,10 +253,10 @@
 const META = Object.freeze({
   name: 'Arabic Proofreader Hybrid Engine',
   nameArabic: 'محرك التدقيق العربي الهجين',
-  version: '18.7.8',
+  version: '18.7.9',
   edition: 'PRECISION-RECALL-PRO',
   language: 'ar',
-  release: 'V18.7.8 Precision+Recall Pro',
+  release: 'V18.7.9 Precision+Recall Pro',
   stability: 'stable',
   releaseDate: '2026-08-14',
   offsetPolicy: 'original-input',
@@ -316,6 +345,7 @@ const DEFAULT_OPTIONS = Object.freeze({
   maxFindings: 500,
   rules: Object.freeze({
     orthography: true,
+    clitizedLexicalOrthography: true,
     contextualOrthography: true,
     weakVerbs: true,
     diptotes: true,
@@ -708,7 +738,16 @@ function expandedNounLemmasV187() {
     ['قيمة','قيم'], ['نسبة','نسب'], ['سرعة','سرعات'], ['ذاكرة','ذاكرات'], ['طاقة','طاقات'],
     ['بيئة','بيئات'], ['منطقة','مناطق'], ['عاصمة','عواصم'], ['ولاية','ولايات'],
     ['وظيفة','وظائف'], ['مهنة','مهن'], ['وزارة','وزارات'], ['إدارة','إدارات'], ['لجنة','لجان'],
-    ['جهة','جهات'], ['فترة','فترات'], ['ساعة','ساعات'], ['دقيقة','دقائق'], ['ثانية','ثوان']
+    ['جهة','جهات'], ['فترة','فترات'], ['ساعة','ساعات'], ['دقيقة','دقائق'], ['ثانية','ثوان'],
+    // V18.7.9 — مصادر مؤنثة عالية التواتر كانت غائبة عن الفهرس، فكان رسمها
+    // بالهاء («الكتابه، الممارسه، القراءه») يفلت من مولد التاء المربوطة
+    // لعدم وجود مرشح معجمي وحيد يقابله.
+    ['كتابة','كتابات','abstract'], ['ممارسة','ممارسات','abstract'],
+    ['قراءة','قراءات','abstract'], ['دراسة','دراسات','abstract'],
+    ['مشاركة','مشاركات','abstract'], ['مراجعة','مراجعات','abstract'],
+    ['ترجمة','ترجمات','abstract'], ['محاولة','محاولات','abstract'],
+    ['طريقة','طرق'], ['وسيلة','وسائل'], ['فائدة','فوائد'], ['نتيجة','نتائج'],
+    ['خبرة','خبرات','abstract'], ['موهبة','مواهب','abstract'], ['ثقة','ثقات','abstract']
   ].forEach(([l,p,a='nonhuman']) => addF(l,p,a));
   return out;
 }
@@ -1556,7 +1595,19 @@ function expandedVerbLexiconV187() {
     ['حاول','ح-و-ل','form-III','يحاول','clausal'], ['واصل','و-ص-ل','form-III','يواصل','transitive'],
     ['نفذ','ن-ف-ذ','form-II','ينفذ','transitive'], ['طور','ط-و-ر','form-II','يطور','transitive'],
     ['حلل','ح-ل-ل','form-II','يحلل','transitive'], ['ولد','و-ل-د','form-II','يولد','transitive'],
-    ['صحح','ص-ح-ح','form-II','يصحح','transitive'], ['وسع','و-س-ع','form-II','يوسع','transitive']
+    ['صحح','ص-ح-ح','form-II','يصحح','transitive'], ['وسع','و-س-ع','form-II','يوسع','transitive'],
+    // V18.7.9 — أفعال عالية التواتر كانت مفقودة، وغيابها كان يُسقط أخطاء
+    // واو الجماعة وهمزة «أن» معها («وان يشجعوهم» ← «وأن يشجعوهم»).
+    ['شجع','ش-ج-ع','form-II','يشجع','transitive'], ['علم','ع-ل-م','form-II','يعلم','ditransitive'],
+    ['درب','د-ر-ب','form-II','يدرب','transitive'], ['حسن','ح-س-ن','form-II','يحسن','transitive'],
+    ['قدم','ق-د-م','form-II','يقدم','transitive'], ['حدد','ح-د-د','form-II','يحدد','transitive'],
+    ['وضح','و-ض-ح','form-II','يوضح','transitive'], ['نظم','ن-ظ-م','form-II','ينظم','transitive'],
+    // «غير» لا تُدرج فعلًا: رسمها المجرد أداة استثناء/نفي في الأغلب الأعم
+    // («حضر الطلاب غير المعلمين»)، وإدراجها يولّد «غير ← غيروا». تبقى
+    // معالجتها لقاعدة الاستثناء وحدها.
+    ['فكر','ف-ك-ر','form-II','يفكر','intransitive'],
+    ['تأكد','أ-ك-د','form-V','يتأكد','intransitive'], ['اهتم','ه-م-م','form-VIII','يهتم','intransitive'],
+    ['شارك','ش-ر-ك','form-III','يشارك','ambitransitive']
   ];
   const hollowShorts = Object.freeze({
     'أضاف': {past: 'أضف', present: 'ضف'},
@@ -1996,7 +2047,26 @@ function looksLikeFiveNounWithEnclitic(value) {
 
 function knownCore(value) {
   const core = value.replace(/^ال/u, '');
-  return exactKnown(value) || looksLikeFiveNounWithEnclitic(core) || /(?:ة|ات|ان|ين|ون)$/u.test(core);
+  // V18.7.9: الجذع المرسوم خطأً وله مدخل إملائي مراجع جذعٌ معروف كذلك؛ فبدونه
+  // كانت «بالقراءه/للحياه» تبقى كتلة واحدة غير محللة فيفوتها التصحيح المعجمي.
+  // ويُشترط ألا يكون تصحيحه صيغةً فعلية: «ال» وحرف الجر لا يدخلان على الفعل،
+  // فلا يجوز أن يفتح المدخل الفعلي («درسو ← درسوا») تقطيعًا اسميًا لـ«بالدرسو».
+  const reviewedCorrection = typeof WORDS !== 'undefined'
+    ? (WORDS[core] || WORDS[value] || null) : null;
+  const reviewedMisspelling = Boolean(reviewedCorrection) && !/\s/u.test(reviewedCorrection)
+    && !(typeof VERB_FORM_INDEX !== 'undefined' && VERB_FORM_INDEX.has(reviewedCorrection));
+  return exactKnown(value) || reviewedMisspelling
+    || looksLikeFiveNounWithEnclitic(core) || /(?:ة|ات|ان|ين|ون)$/u.test(core);
+}
+
+/**
+ * V18.7.9 — بناء اللاصقة الأمامية برسمها الصحيح. لام الجر مع «ال» تُدغم
+ * رسمًا فتُكتب «لل» لا «لال»؛ وتجاهل ذلك كان ينتج «للصوره ← لالصورة».
+ */
+function buildClitcPrefix(conjunction, preposition, article) {
+  const head = `${conjunction || ''}`;
+  if (article && preposition === 'ل') return `${head}لل`;
+  return `${head}${preposition || ''}${article ? 'ال' : ''}`;
 }
 
 function splitClitics(surface) {
@@ -2036,13 +2106,27 @@ function splitClitics(surface) {
   }
 
   let verbalObjectCarrierAlif = false;
+  // V18.7.9 — قاعدة «لا يجتمع أل والإضافة»: المعرَّف بـ«ال» لا يقبل ضميرًا
+  // ملكيًا متصلًا في الفصحى إطلاقًا؛ فلا يصح تحليل «العربيه» إلى «ال+عربي+ه»
+  // ولا «الكتابه» إلى «ال+كتاب+ه». كان هذا التحليل هو السبب الجذري لاقتراح
+  // «العربيه ← العربيةه»: تُقلب الهاء تاءً مربوطة في الجذع، ثم تُعاد الهاء
+  // المفصولة ضميرًا فتجتمع «ةه». الهاء بعد «ال» إما أصلية (الوجه، الفقه،
+  // المياه) وإما تاء مربوطة مرسومة خطأً، وكلتاهما جزء من الجذع لا ضمير.
+  if (article) {
+    return {
+      surface, clean, conjunction, preposition, article, enclitic: null, verbalObjectCarrierAlif: false,
+      prefix: buildClitcPrefix(conjunction, preposition, true),
+      core: rest, coreSurface: rest,
+      definite: true
+    };
+  }
   // V18.7.8: الشكل الكامل المعروف معجميًا يتقدم على قراءة «جذع + ضمير»؛
   // وإلا تحولت «الصحفي» إلى «صحف + ي» وورثت الجملة جنسًا مؤنثًا مزيفًا من
   // جمع التكسير. قراءة الإضافة/الضمير تبقى متاحة لمن ليس شكله الكامل معروفًا.
   if (NOUN_FORM_INDEX.has(rest) || ADJECTIVE_FORM_INDEX.has(rest)) {
     return {
       surface, clean, conjunction, preposition, article, enclitic: null, verbalObjectCarrierAlif: false,
-      prefix: `${conjunction || ''}${preposition || ''}${article ? 'ال' : ''}`,
+      prefix: buildClitcPrefix(conjunction, preposition, article),
       core: rest, coreSurface: rest,
       definite: article || PROPER_NAMES.has(rest)
     };
@@ -2067,10 +2151,10 @@ function splitClitics(surface) {
     }
   }
 
-  const prefix = `${conjunction || ''}${preposition || ''}${article ? 'ال' : ''}`;
   return {
     surface, clean, conjunction, preposition, article, enclitic, verbalObjectCarrierAlif,
-    prefix, core: rest, coreSurface: rest,
+    prefix: buildClitcPrefix(conjunction, preposition, article),
+    core: rest, coreSurface: rest,
     definite: article || Boolean(enclitic) || PROPER_NAMES.has(rest)
   };
 }
@@ -2542,6 +2626,49 @@ function isOvertVerbForm(analysis) {
   return analysis.personCode !== '3ms' || analysis.tense === 'present';
 }
 
+/**
+ * V18.7.9 — الصيغة المجردة المحتملة للمصدر: ماضٍ للغائب المفرد المذكر لا
+ * تحمله علامةٌ صرفيةٌ ظاهرة (لا حرف مضارعة ولا ضمير بارز). رسمها يطابق رسم
+ * المصدر «فهم/نشر/بحث/ذكر»، فلا تصلح وحدها دليلًا على الفعلية في موضع اسمي.
+ */
+function isBareThirdMasculinePast(analysis) {
+  return Boolean(analysis) && analysis.tense === 'past' && analysis.personCode === '3ms';
+}
+
+/**
+ * V18.7.9 — أسماء ملازمة للإضافة: ما بعدها مضاف إليه مجرور قطعًا، ولا يقع
+ * بعدها فعل. أشهرها «عدم» في «وعدم نشر المعلومات»، وهي التي كانت تُمرِّر
+ * قراءة «نشر» فعلًا ماضيًا فيُقترح «نشرت» خطأً.
+ */
+const OBLIGATORY_ANNEXATION_HEADS_V1879 = new Set([
+  'عدم', 'سوء', 'حسن', 'كيفية', 'إمكانية', 'إمكان', 'ضرورة', 'أهمية',
+  'بغية', 'قصد', 'بهدف', 'جميع', 'كافة', 'معظم', 'سائر', 'نصف', 'ربع'
+]);
+
+/**
+ * V18.7.9 — عامل يوجب الجرّ أو الإضافة قبل الموضع: حرف جر صريح («على فهم»)
+ * أو حرف جر متصل («بنشر») أو ظرف مضاف («بعد فهم») أو اسم ملازم للإضافة
+ * («عدم نشر»). كل هذه العوامل لا تدخل على الأفعال في الفصحى، فوجودها يحسم
+ * الموضع اسميًا ويمنع بناء مطابقةٍ فعليةٍ على رسمٍ يشبه الماضي.
+ */
+function precededByNominalGovernor(tokens, index) {
+  const token = tokens[index];
+  if (!token) return false;
+  if (token.morph?.segments?.preposition) return true;
+  const previous = tokens[index - 1];
+  if (!previous || previous.sentence !== token.sentence) return false;
+  const previousCore = previous.morph?.core;
+  if (PREPOSITIONS.has(previousCore) || IDAFA_ADVERBIAL_GOVERNORS.has(previousCore)) return true;
+  // الواو/الفاء العاطفة قد تبقى ملتصقة بالكلمة غير المحللة («وعدم»)، فتُجرَّد
+  // للمقارنة المعجمية دون أن يُبنى على ذلك تحليلٌ صرفي كامل.
+  const bareCore = String(previousCore || '').replace(/^[وف]/u, '');
+  if (OBLIGATORY_ANNEXATION_HEADS_V1879.has(previousCore)
+      || OBLIGATORY_ANNEXATION_HEADS_V1879.has(bareCore)) return true;
+  // «الى/علي» قبل التصحيح الإملائي حرفا جر كذلك؛ الطبقة النحوية تسبق الإملائية.
+  const canonical = WORDS[stripDiacritics(previous.surface || '')] || WORDS[stripDiacritics(previousCore || '')];
+  return PREPOSITIONS.has(canonical);
+}
+
 function contextualPOSDisambiguation(tokens) {
   for (let i = 0; i < tokens.length; i += 1) {
     const token = tokens[i];
@@ -2567,6 +2694,21 @@ function contextualPOSDisambiguation(tokens) {
       continue;
     }
     if (verb && !nominal) {
+      // V18.7.9 — حارس «حرف الجر لا يدخل على الفعل»: الصيغة المجردة التي
+      // تُقرأ ماضيًا للغائب المفرد (فهم/نشر/بحث) هي نفسها رسم المصدر، ولا
+      // يملك المعجم لها مدخلًا اسميًا؛ فإذا سبقها حرف جر صريح أو متصل فالموضع
+      // اسمي قطعًا: «على فهم الدروس» جار ومجرور، لا فعل وفاعل. من دون هذا
+      // الحارس كانت قاعدة المطابقة تبني «فهم ← فهمت» على قراءة فعلية باطلة.
+      if (isBareThirdMasculinePast(verb) && precededByNominalGovernor(tokens, i)) {
+        morph.pos = 'noun';
+        morph.resolvedPos = 'noun';
+        morph.posConfidence = 0.93;
+        morph.posEvidence = ['verbal-surface-in-genitive-position', 'preposition-cannot-govern-a-verb'];
+        morph.posAmbiguous = false;
+        morph.bestVerb = null;
+        morph.masdarReading = true;
+        continue;
+      }
       morph.pos = 'verb';
       morph.resolvedPos = 'verb';
       morph.posConfidence = verb.confidence || 0.9;
@@ -4480,6 +4622,25 @@ const WORDS = Object.freeze({
   'ارقام': 'أرقام', 'اسباب': 'أسباب', 'اشخاص': 'أشخاص', 'اجهزة': 'أجهزة',
   'اوقات': 'أوقات', 'اصدقاء': 'أصدقاء', 'اهداف': 'أهداف', 'اسئلة': 'أسئلة',
   'افراد': 'أفراد', 'اماكن': 'أماكن', 'انسان': 'إنسان',
+  /* V18.7.9 — همزة قطع في صيغ عالية التواتر لا قراءة فصيحة لها بلا همزة.
+     كلها أسماء أو أفعال ماضية على وزن «أفعل»، وليست همزة وصل. */
+  'اخطاء': 'أخطاء', 'ادوات': 'أدوات', 'اداة': 'أداة', 'اخرين': 'آخرين',
+  'الاخطاء': 'الأخطاء', 'الادوات': 'الأدوات', 'الاداة': 'الأداة', 'الاخرين': 'الآخرين',
+  'اصبح': 'أصبح', 'اصبحت': 'أصبحت', 'اهمية': 'أهمية', 'الاهمية': 'الأهمية',
+  'امام': 'أمام', 'اسرة': 'أسرة', 'الاسرة': 'الأسرة', 'اثناء': 'أثناء',
+  'اساس': 'أساس', 'الاساس': 'الأساس', 'اساسي': 'أساسي', 'الاساسية': 'الأساسية',
+  'انواع': 'أنواع', 'الانواع': 'الأنواع', 'اجزاء': 'أجزاء', 'الاجزاء': 'الأجزاء',
+  /* V18.7.9 — تاء مربوطة في مصادر وصفات عالية التواتر رُسمت هاءً. */
+  'يوميه': 'يومية', 'اليوميه': 'اليومية', 'نحويه': 'نحوية', 'ونحويه': 'ونحوية',
+  'مكتوبه': 'مكتوبة', 'المكتوبه': 'المكتوبة', 'مدرسيه': 'مدرسية', 'المدرسيه': 'المدرسية',
+  'مستمره': 'مستمرة', 'المستمره': 'المستمرة', 'سرعه': 'سرعة', 'بسرعه': 'بسرعة',
+  'دقه': 'دقة', 'ودقه': 'ودقة', 'بدقه': 'بدقة', 'خاطئه': 'خاطئة', 'الخاطئه': 'الخاطئة',
+  'كثيره': 'كثيرة', 'الكثيره': 'الكثيرة', 'مفيده': 'مفيدة', 'المفيده': 'المفيدة',
+  'بسيطه': 'بسيطة', 'واضحه': 'واضحة', 'وواضحه': 'وواضحة', 'صحيحه': 'صحيحة',
+  'موثوقه': 'موثوقة', 'متعمده': 'متعمدة', 'مناسبه': 'مناسبة', 'مختلفه': 'مختلفة',
+  'عامه': 'عامة', 'خاصه': 'خاصة', 'هامه': 'هامة', 'قويه': 'قوية', 'طويله': 'طويلة',
+  'قصيره': 'قصيرة', 'كبيره': 'كبيرة', 'صغيره': 'صغيرة', 'جديده': 'جديدة',
+  'قديمه': 'قديمة', 'جميله': 'جميلة', 'سهله': 'سهلة', 'صعبه': 'صعبة',
   'اسلام': 'إسلام', 'ايمان': 'إيمان',
   'الاسلام': 'الإسلام', 'الايمان': 'الإيمان', 'الانسان': 'الإنسان',
   /* ── همزة قطع زائدة على همزة وصل (الافتعال/الاستفعال: الهمزة دائمًا وصل) ── */
@@ -4623,6 +4784,57 @@ function boundary(text, index, length) {
   return (!left || !arabic.test(left)) && (!right || !arabic.test(right));
 }
 
+/**
+ * V18.7.9 — الطبقة المعجمية لا تُبصر الكلمة إلا مجردة من لواصقها، فكانت
+ * «القراءه/الحياه/اللغه» تفلت بينما تُصحَّح «قراءه/حياه/لغه». المدخل المراجع
+ * يصحح رسم الجذع نفسه (تاء مربوطة، همزة، ألف مقصورة)، وهذا التصحيح لا تغيّره
+ * «ال» ولا حرف الجر، فيُعاد بناء الكلمة بلاصقتها بعد تصحيح جذعها.
+ * حُرّاس القاعدة: أن يكون للجذع مدخل مراجع، وألا يكون التصحيح كلمة وظيفية
+ * مغلقة (لا تدخلها «ال»)، وألا يكون السطح الكامل مشمولًا بمدخل مستقل.
+ */
+const CLOSED_CLASS_CORRECTIONS_V1879 = new Set([
+  ...PREPOSITIONS, ...CONJUNCTIONS, ...INNA_PARTICLES, ...NEGATION,
+  ...Object.keys(DEMONSTRATIVES), ...Object.keys(RELATIVE_PRONOUNS),
+  'أن', 'إن', 'أو', 'إذا', 'إذن', 'أنا', 'أنت', 'أنتم', 'أنتن', 'هؤلاء', 'ذلك',
+  'أكثر', 'أقل', 'آخر', 'أخرى', 'الآن', 'شيئًا'
+]);
+
+function clitizedLexicalOrthographyRule(context) {
+  const out = [];
+  for (const token of context.tokens) {
+    if (token.type !== 'word') continue;
+    const segments = token.morph?.segments;
+    const prefix = segments?.prefix;
+    if (!prefix || segments.enclitic) continue;
+    // يقتصر المسار على اللاصقة التي تحسم اسمية الموضع: «ال» أو حرف الجر.
+    // أما واو/فاء العطف وحدها فتدخل على الأفعال أيضًا، وتصحيح جذعٍ فعلي هنا
+    // يزاحم قواعد المطابقة الصرفية على المقطع نفسه («وكانو» ← كان/كانوا).
+    if (!segments.article && !segments.preposition) continue;
+    // لام الجر مع «ال» تُدغم رسمًا في «لل»، والحقل prefix يبنيها «لال»؛
+    // يُعاد بناء اللاصقة من رسم الكلمة نفسها ضمانًا لمطابقة الأصل حرفًا بحرف.
+    const surfacePrefix = token.clean.slice(0, token.clean.length - segments.core.length);
+    if (!token.clean.endsWith(segments.core) || !surfacePrefix) continue;
+    // السطح الكامل له مدخله المستقل، وقد عالجته الطبقة المعجمية بثقة أعلى.
+    if (Object.prototype.hasOwnProperty.call(WORDS, token.clean)) continue;
+    const corrected = WORDS[segments.core];
+    if (!corrected || /\s/u.test(corrected) || corrected === segments.core) continue;
+    if (CLOSED_CLASS_CORRECTIONS_V1879.has(corrected)) continue;
+    out.push(findingFromSpan(context, {
+      startToken: token,
+      replacement: `${surfacePrefix}${corrected}`,
+      ruleId: `CLITIC_ORTHOGRAPHY_V1879:${segments.core}`,
+      type: 'إملائي',
+      classification: 'orthographic',
+      confidence: 0.993,
+      explanation: 'تصحيح إملائي معجمي مراجع للجذع، مع الحفاظ على «ال» أو حرف الجر الملتصق بالكلمة.',
+      evidence: ['reviewed-word-lexicon', 'clitic-aware-stem-match', `prefix:${surfacePrefix}`],
+      safe: true,
+      metadata: {stem: segments.core, correctedStem: corrected}
+    }));
+  }
+  return out;
+}
+
 function orthographyRule(context) {
   const candidates = [];
   const registry = [
@@ -4698,29 +4910,55 @@ function wawAljamaaRule(context) {
     const word = token.clean;
     const core = word.replace(/^[وف]/, ''); // تجريد واو/فاء العطف المتصلة للتحليل
     if (!/^[ء-ي]{3,}و$/.test(core)) continue;
-    if (blockedInitials.has(core[0])) continue;
+    // «ال» وحرف الجر لا يدخلان على الفعل، فما حملهما ليس فعلًا بواو الجماعة.
+    if (token.morph?.segments?.article || token.morph?.segments?.preposition) continue;
     if (WAW_NOUN_EXCEPTIONS.has(core)) continue;
     if (WAW_IMPERFECT_EXCEPTIONS.has(core)) continue;
     if (WORDS[core]) continue; // مشمولة بالمعجم القطعي
-    const stem = core.slice(0, -1);
-    // ألف داخل ساق أطول من 3 أحرف → واو إضافة لصيغ فاعل/فعال (طالبو، قاضو، سافرو)
-    if (stem.includes('ا') && stem.length > 3) continue;
-    // الساق المنتهي بتاء الفاعل (كتبتو = كتبتُ عامية) ليس واو جماعة
-    if (stem.endsWith('ت')) continue;
-    const next = tokens[i + 1];
-    if (next && next.sentence === token.sentence && next.type === 'word'
-        && (next.morph.segments?.article || next.clean?.startsWith('ال'))) continue; // إضافة إلى معرفة
-    const prev = tokens[i - 1];
-    if (prev && prev.clean && prevStop.has(prev.clean)) continue; // سياق جزم/نفي
+
+    // V18.7.9 — واو الجماعة في المضارع المنصوب/المجزوم: «أن يساعدو» ← «يساعدوا».
+    // حرف المضارعة كان محجوبًا كليًا خشية العامية («نكتبو»)، فضاع خطأ شائع جدًا.
+    // البديل حُجّة صرفية قاطعة لا تخمين: يُقبل الشكل فقط إذا كان «الصيغة + ا»
+    // مدخلًا فعليًا مفهرسًا لواو الجماعة (3mp/2mp)، ولم تكن الصيغة نفسها فعلًا
+    // صحيحًا قائمًا («يدعو» فعل تام، و«نكتبوا» ليست صيغة مفهرسة أصلًا).
+    const verbalPluralHost = !VERB_FORM_INDEX.has(core)
+      && (VERB_FORM_INDEX.get(`${core}ا`) || []).some(analysis =>
+        ['3mp', '2mp'].includes(analysis.personCode));
+    // الحُرّاس الاحتمالية أدناه وُضعت للماضي غير المحلَّل صرفيًا؛ الشكل الذي
+    // أثبت الفهرس أنه مضارع بواو الجماعة لا يحتاجها، بل تُفسده: «يساعدو» ساقه
+    // فيه ألف، و«أن يساعدو الطلاب» يليه معرَّف، وكلاهما لا يدل على الإضافة
+    // لأن الفعل لا يكون مضافًا، والنفي/الجزم قبله يبقى مكتوبًا بالألف
+    // («لم يساعدوا»). لذلك يُحسم هذا المسار بالصرف لا بالقرائن السطحية.
+    if (!verbalPluralHost) {
+      if (blockedInitials.has(core[0])) continue;
+      const stem = core.slice(0, -1);
+      // ألف داخل ساق أطول من 3 أحرف → واو إضافة لصيغ فاعل/فعال (طالبو، قاضو، سافرو)
+      if (stem.includes('ا') && stem.length > 3) continue;
+      // الساق المنتهي بتاء الفاعل (كتبتو = كتبتُ عامية) ليس واو جماعة
+      if (stem.endsWith('ت')) continue;
+      const next = tokens[i + 1];
+      if (next && next.sentence === token.sentence && next.type === 'word'
+          && (next.morph.segments?.article || next.clean?.startsWith('ال'))) continue; // إضافة إلى معرفة
+      const prev = tokens[i - 1];
+      if (prev && prev.clean && prevStop.has(prev.clean)) continue; // سياق جزم/نفي
+    }
     out.push(findingFromSpan(context, {
       startToken: token,
-      replacement: rebuildToken(token, word + 'ا'),
+      // V18.7.9: «word» هنا رسم الكلمة كاملًا بلواصقه، فلا يمرَّر عبر
+      // rebuildToken وإلا أُعيدت اللاصقة مرتين («للاو» ← «لالللاوا»).
+      // الألف الفارقة تُلحق بآخر الرسم مباشرة، ولا إمكان لضمير متصل بعدها
+      // لأن الشرط أن ينتهي الرسم بواو الجماعة.
+      replacement: `${word}ا`,
       ruleId: 'WAW_ALJAMAA_V18',
       type: 'إملائي',
       classification: 'orthographic',
-      confidence: 0.9,
-      explanation: 'الماضي المتصل بواو الجماعة يُكتب بألف بعد الواو؛ اقتراح لتعذّر الجزم الصرفي الكامل.',
-      evidence: ['waw-aljamaa-contextual'],
+      confidence: verbalPluralHost ? 0.985 : 0.9,
+      explanation: verbalPluralHost
+        ? 'واو الجماعة في المضارع تلحقها ألف فارقة؛ أثبت الفهرس الصرفي أن الصيغة بالألف فعلٌ مسندٌ إلى واو الجماعة.'
+        : 'الماضي المتصل بواو الجماعة يُكتب بألف بعد الواو؛ اقتراح لتعذّر الجزم الصرفي الكامل.',
+      evidence: verbalPluralHost
+        ? ['waw-aljamaa-verified-imperfect-paradigm', 'alif-fariqa']
+        : ['waw-aljamaa-contextual'],
       safe: true
     }));
   }
@@ -4755,7 +4993,11 @@ function contextualTaaRule(context) {
     if (next.clean.length < 3 || !/[هة]$/.test(next.clean)) continue;
     out.push(findingFromSpan(context, {
       startToken: token,
-      replacement: rebuildToken(token, target),
+      // V18.7.9: «target» صورةٌ كاملةٌ للكلمة بعد التصحيح («صوره» ← «صورة»)،
+      // والهاء فيها هي نفسها التي حللها المقطِّع ضميرًا. تمريرها عبر
+      // rebuildToken كان يعيد إلحاق ذلك الضمير فينتج «صورةه» — وهو عين خلل
+      // «العربيةه». التصحيح السياقي هنا يلغي قراءة الإضافة أصلًا، فلا ضمير.
+      replacement: `${token.morph.segments?.prefix || ''}${target}`,
       ruleId: 'CONTEXTUAL_TAA_V18:' + token.clean,
       type: 'إملائي',
       classification: 'orthographic',
@@ -5644,6 +5886,43 @@ function exceptionRule(context) {
         if (item) out.push(item);
       }
       // التام المنفي يجيز البدل والنصب، والمفرغ يعرب بحسب موقعه؛ لا نفرض تصحيحًا.
+    }
+
+    // V18.7.9 — «الغير» موصوفًا: «الأخبار الغير موثوقة» ← «الأخبار غير الموثوقة».
+    // «غير» اسم ملازم للإضافة، فلا تدخل عليه «ال» ولا يقع نعتًا بنفسه؛ والوجه
+    // الفصيح تعريف الصفة بعده وإضافته إليها. لا يُبنى الاقتراح إلا على قرينتين
+    // معًا: منعوت معرَّف قبله، وصفة نكرة بعده، فلا يمس تركيب «حق الغير» ونحوه.
+    if (core === 'غير' && tokens[i].morph.segments?.article) {
+      const head = tokens[i - 1];
+      const attribute = tokens[i + 1];
+      const attributeIsBareAdjective = Boolean(attribute
+        && attribute.sentence === tokens[i].sentence
+        && !attribute.morph.segments?.article
+        && !attribute.morph.segments?.preposition
+        && (isAdjective(attribute) || /[ةه]$/u.test(attribute.morph.core || '')));
+      if (head && head.sentence === tokens[i].sentence && head.morph.definite
+          && isNominal(head) && attributeIsBareAdjective) {
+        // تُعرَّف الصفة وتُؤخَّر: «الغير موثوقة» ← «غير الموثوقة». ويُصحَّح رسم
+        // التاء المربوطة داخل البديل نفسه، لأن اقتراحين متداخلين على المقطع
+        // ذاته لا يمكن تطبيقهما معًا، فيبقى الخطأ الإملائي عالقًا في الناتج.
+        const attributeCore = attribute.morph.core;
+        const spelledAttribute = WORDS[attributeCore]
+          || (/ه$/u.test(attributeCore) ? uniqueOrthographicCandidate(attributeCore, 'taa') : null)
+          || attributeCore;
+        out.push(findingFromSpan(context, {
+          startToken: tokens[i],
+          endToken: attribute,
+          replacement: `غير ال${spelledAttribute}`,
+          ruleId: 'GHAYR_DEFINITE_ATTRIBUTE_V1879',
+          type: 'نحوي',
+          classification: 'syntax',
+          confidence: 0.93,
+          explanation: '«غير» اسم ملازم للإضافة لا تدخل عليه «ال»؛ والأفصح تعريف الصفة وإضافة «غير» إليها: «غير الموثوقة».',
+          evidence: ['definite-head-before-ghayr', 'indefinite-attribute-after-ghayr', 'ghayr-is-permanently-annexed'],
+          safe: false,
+          metadata: {headIndex: i - 1, attributeIndex: i + 1}
+        }));
+      }
     }
 
     if (core === 'غير' || core === 'سوى') {
@@ -6789,6 +7068,40 @@ function contextualOrthographyRule(context) {
         }));
       }
     }
+
+    // V18.7.9 — Case 2b: «ان» الناصبة للمضارع ← «أن» بهمزة قطع.
+    // «أن» المصدرية تدخل على الفعل المضارع فتنصبه («أن يساعدوا»)، بخلاف «إن»
+    // الشرطية التي تجزم فعلين، و«إنْ» النافية. القرينة الحاسمة هنا صرفية:
+    // مضارع منصوب/مرفوع بعده مباشرة، لا فعل جواب شرط مجزوم. وكلا الوجهين
+    // «إن/أن» بهمزة قطع، فالهمزة واجبة في الحالتين ولا يصح رسمها ألفًا عارية.
+    const bareAnna = clean === 'ان' || clean === 'وان' || clean === 'فان';
+    if (bareAnna && !token.morph.segments?.article) {
+      const prefix = clean.length === 3 ? clean[0] : '';
+      const next = tokens[i + 1];
+      // القرينة تُؤخذ من تحليل الرمز نفسه لا من رسمه السطحي، كي تشمل المضارع
+      // المتصل بضمير المفعول («يشجعوهم» = يشجعوا + هم)، ثم من صيغة واو الجماعة
+      // الناقصة ألفَها الفارقة («يساعدو») لأنها الخطأ المصاحب الشائع.
+      const nextAnalyses = (next?.morph?.verbAnalyses?.length
+        ? next.morph.verbAnalyses
+        : verbAnalyses(next?.clean || ''));
+      const nextIsImperfect = Boolean(next && next.sentence === token.sentence && next.type === 'word'
+        && (nextAnalyses.some(analysis => analysis.tense === 'present')
+          || verbAnalyses(`${next.clean}ا`).some(analysis =>
+            analysis.tense === 'present' && ['3mp', '2mp'].includes(analysis.personCode))));
+      if (nextIsImperfect) {
+        out.push(findingFromSpan(context, {
+          startToken: token,
+          replacement: `${prefix}أن`,
+          ruleId: 'CONTEXTUAL_ORTHOGRAPHY_V1879:أن-الناصبة',
+          type: 'إملائي',
+          classification: 'orthographic',
+          confidence: 0.96,
+          explanation: 'همزة «أن» المصدرية الناصبة للمضارع همزةُ قطع تُرسم على الألف؛ والفعل المضارع بعدها قرينة قاطعة.',
+          evidence: ['contextual-subordinator-before-imperfect', 'hamzat-qat'],
+          safe: true
+        }));
+      }
+    }
     
     // Case 3: سالت → سألت (verb "asked" before human subject)
     if (clean === 'سالت' && !token.morph.segments?.article) {
@@ -6839,6 +7152,7 @@ function contextualOrthographyRule(context) {
 
 const RULE_PIPELINE = Object.freeze([
   {id: 'orthography', run: orthographyRule},
+  {id: 'clitizedLexicalOrthography', run: clitizedLexicalOrthographyRule},
   {id: 'contextualOrthography', run: contextualOrthographyRule},
   {id: 'hamzaMorphological', run: hamzaMorphologicalRule},
   {id: 'productiveOrthography', run: productiveOrthographyRule},
@@ -7513,6 +7827,69 @@ const V1876_GOLD_REGRESSIONS = Object.freeze([
 ]);
 
 /* ── V18.7.8: انحدارات مدمجة من النسختين العادية وPRO — جولة الـ400 والنسبة والإملاء السياقي ── */
+/* V18.7.9 — تثبيت إصلاحات جولة المراجعة: منع «العربيةه»، ومنع الإنذارات
+   الكاذبة على المصادر، واستدراك أخطاء واو الجماعة وهمزة «أن» و«الغير». */
+const V1879_GOLD_REGRESSIONS = Object.freeze([
+  // 1) الخلل الحرج: «ال» + ضمير ملكي قراءةٌ ممتنعة، فلا تُولَّد «العربيةه».
+  {id: 'v1879-al-plus-enclitic-impossible', text: 'تعتبر اللغة العربيه من اللغات الغنية.',
+    rules: ['PRODUCTIVE_TAA_MARBUTA_V187'], replacements: ['العربية']},
+  {id: 'v1879-al-plus-enclitic-kitaba', text: 'ان تحسين الكتابه مهم.',
+    rules: ['PRODUCTIVE_TAA_MARBUTA_V187'], replacements: ['الكتابة']},
+  // 2) واو الجماعة في المضارع + همزة «أن» الناصبة.
+  {id: 'v1879-waw-jamaa-imperfect', text: 'يجب على المعلمين ان يساعدو الطلاب.',
+    rules: ['CONTEXTUAL_ORTHOGRAPHY_V1879:أن-الناصبة', 'WAW_ALJAMAA_V18'],
+    replacements: ['أن', 'يساعدوا']},
+  {id: 'v1879-anna-before-imperfect-with-conj', text: 'وان يشجعوهم على القراءة.',
+    rules: ['CONTEXTUAL_ORTHOGRAPHY_V1879:أن-الناصبة'], replacements: ['وأن']},
+  // 3) «الغير» موصوفًا ← «غير» مضافة إلى الصفة المعرفة.
+  {id: 'v1879-ghayr-definite-attribute', text: 'الأخبار الغير موثوقة تنتشر.',
+    rules: ['GHAYR_DEFINITE_ATTRIBUTE_V1879'], replacements: ['غير الموثوقة']},
+  // 4) التصحيح المعجمي عبر اللواصق، مع سلامة إدغام «لل».
+  {id: 'v1879-clitic-lexical-al', text: 'القراءه مفيدة.',
+    rules: ['CLITIC_ORTHOGRAPHY_V1879:قراءه'], replacements: ['القراءة']},
+  {id: 'v1879-clitic-lexical-bi-al', text: 'بالقراءه يتسع الأفق.',
+    rules: ['CLITIC_ORTHOGRAPHY_V1879:قراءه'], replacements: ['بالقراءة']},
+  {id: 'v1879-clitic-lexical-lam-al-contraction', text: 'للقراءه فوائد.',
+    rules: ['CLITIC_ORTHOGRAPHY_V1879:قراءه'], replacements: ['للقراءة']},
+  {id: 'v1879-lam-al-contraction-productive', text: 'للصوره إطار.',
+    rules: ['PRODUCTIVE_TAA_MARBUTA_V187'], replacements: ['للصورة']},
+  // 5) التصحيح السياقي للتاء لا يعيد إلحاق ضمير محذوف («صورةه»).
+  {id: 'v1879-contextual-taa-no-enclitic-echo', text: 'صوره جميله',
+    rules: ['CONTEXTUAL_TAA_V18:صوره', 'ORTHOGRAPHY_V18:جميله'], replacements: ['صورة', 'جميلة']}
+]);
+
+const V1879_NO_FALSE_POSITIVE_REGRESSIONS = Object.freeze([
+  // المصدر بعد حرف الجر أو بعد اسم ملازم للإضافة ليس فعلًا يُطابَق.
+  ['v1879-nfp-masdar-after-preposition', 'يساعد المعلم الطلاب على فهم الدروس.'],
+  ['v1879-nfp-masdar-after-adam', 'وعدم نشر المعلومات الخاطئة واجب.'],
+  ['v1879-nfp-masdar-after-adverbial', 'راجع الدرس بعد فهم القاعدة.'],
+  // الأفعال المسندة إلى واو الجماعة مرسومةً بالألف الفارقة صحيحة.
+  ['v1879-nfp-waw-jamaa-correct', 'يجب على المعلمين أن يساعدوا الطلاب.'],
+  ['v1879-nfp-waw-jamaa-jussive', 'لم يكتبوا الدرس بعد.'],
+  ['v1879-nfp-waw-jamaa-negated-future', 'لن يذهبوا إلى الرحلة.'],
+  ['v1879-nfp-annexation-waw-still-safe', 'جاء معلمو المدرسة في الموعد.'],
+  ['v1879-nfp-defective-waw-verb', 'يدعو الأب لأبنائه بالتوفيق.'],
+  // «إن» الشرطية و«إن» المكسورة قبل الاسم لا تُقلب «أن».
+  ['v1879-nfp-inna-before-noun', 'إن الطالب مجتهد في دراسته.'],
+  ['v1879-nfp-in-conditional', 'إن تدرس بجد تنجح.'],
+  // «غير» على أصلها، و«الغير» في غير موضع النعت.
+  ['v1879-nfp-ghayr-exception', 'حضر الطلاب غير المعلمين.'],
+  ['v1879-nfp-ghayr-correct-order', 'الأخبار غير الموثوقة تنتشر بسرعة.'],
+  ['v1879-nfp-ghayr-as-noun', 'حق الغير محفوظ بموجب القانون.'],
+  // الهاء الأصلية بعد «ال» لا تُقلب تاءً مربوطة.
+  ['v1879-nfp-original-ha-wajh', 'الوجه المشرق دليل الرضا.'],
+  ['v1879-nfp-original-ha-miyah', 'المياه العذبة نعمة كبيرة.'],
+  ['v1879-nfp-original-ha-fiqh', 'الفقه الإسلامي علم واسع.'],
+  ['v1879-nfp-original-ha-intibah', 'الانتباه إلى التفاصيل مهم.'],
+  // الضمير الملكي على النكرة يبقى ضميرًا.
+  ['v1879-nfp-possessive-still-works', 'قرأت كتابه الجديد.'],
+  ['v1879-nfp-possessive-path', 'سار في طريقه الطويل.'],
+  // الأفعال المضافة حديثًا لا تولد إنذارات في مواضعها الصحيحة.
+  ['v1879-nfp-new-verb-shajjaa', 'يشجع المعلم طلابه على الاجتهاد.'],
+  ['v1879-nfp-new-verb-sharaka', 'شارك الطلاب في المسابقة.'],
+  ['v1879-nfp-new-verb-ihtamma', 'يهتم المعلمون بتطوير أساليب التدريس.']
+]);
+
 const V1877_GOLD_REGRESSIONS = Object.freeze([
   // من PRO: اختبارات المثنى/جمع المذكر والملتبس
   {id: 'v1877-ambiguous-du-pl-predicate-dual', text: 'الباحثين مشغولان.',
@@ -7590,7 +7967,8 @@ const GOLD_CORPUS = Object.freeze([
   ...V1874_GOLD_REGRESSIONS,
   ...V1875_GOLD_REGRESSIONS,
   ...V1876_GOLD_REGRESSIONS,
-  ...V1877_GOLD_REGRESSIONS
+  ...V1877_GOLD_REGRESSIONS,
+  ...V1879_GOLD_REGRESSIONS
 ]);
 
 const BASE_NO_FALSE_POSITIVE_CORPUS = Object.freeze([
@@ -7917,7 +8295,8 @@ const NO_FALSE_POSITIVE_CORPUS = Object.freeze([
   ...V1874_NO_FALSE_POSITIVE_REGRESSIONS,
   ...V1875_NO_FALSE_POSITIVE_REGRESSIONS,
   ...V1876_NO_FALSE_POSITIVE_REGRESSIONS,
-  ...V1877_NO_FALSE_POSITIVE_REGRESSIONS
+  ...V1877_NO_FALSE_POSITIVE_REGRESSIONS,
+  ...V1879_NO_FALSE_POSITIVE_REGRESSIONS
 ]);
 
 const PHRASE_ROLE_REGRESSION_CORPUS = Object.freeze([
@@ -8019,6 +8398,28 @@ function validateData() {
   add('v1878-contextual-orthography-option',
     DEFAULT_OPTIONS.rules.contextualOrthography === true,
     'خيار contextualOrthography مفعّل في DEFAULT_OPTIONS');
+
+  // V18.7.9: فحوصات بنيوية تمنع عودة أخطاء هذه الجولة
+  add('v1879-no-enclitic-under-al',
+    splitClitics('العربيه').enclitic === null && splitClitics('الكتابه').enclitic === null
+      && splitClitics('كتابه').enclitic === 'ه',
+    'المعرّف بـ«ال» لا يقبل ضميرًا متصلًا، والنكرة تقبله');
+  add('v1879-lam-al-contraction',
+    buildClitcPrefix(null, 'ل', true) === 'لل' && buildClitcPrefix(null, 'ب', true) === 'بال',
+    'إدغام لام الجر مع «ال» في الرسم: لل لا لال');
+  add('v1879-masdar-guard',
+    precededByNominalGovernor([
+      {sentence: 0, morph: {core: 'على', segments: {}}},
+      {sentence: 0, morph: {core: 'فهم', segments: {}}}
+    ], 1) === true,
+    'حرف الجر يحسم الموضع اسميًا فيمنع مطابقة فعلية كاذبة');
+  add('v1879-clitic-orthography-stage',
+    RULE_PIPELINE.some(stage => stage.id === 'clitizedLexicalOrthography')
+      && DEFAULT_OPTIONS.rules.clitizedLexicalOrthography === true,
+    'مرحلة التصحيح المعجمي عبر اللواصق مسجلة ومفعّلة');
+  add('v1879-waw-jamaa-imperfect-lexicon',
+    VERB_FORM_INDEX.has('يساعدوا') && VERB_FORM_INDEX.has('يشجعوا'),
+    'صيغ واو الجماعة في المضارع مفهرسة لدعم الألف الفارقة');
 
   const stats = weakVerbStats();
   add('weak-verb-coverage', stats.weakOrIrregularLemmas >= 20, JSON.stringify(stats));
