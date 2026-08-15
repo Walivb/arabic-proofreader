@@ -1,15 +1,21 @@
 /*!
  * ============================================================================
- *  Arabic Proofreader V18.8.0 LINGUISTIC LAYERS PRO — Blogger Standalone Bundle
+ *  Arabic Proofreader V18.8.6 PRO COMPLETE — Blogger Standalone Bundle
  *  ملف جاهز للنشر (Deployment-Ready) — بدون أي تبعيات خارجية
  * ============================================================================
  *
- *  الإصدار : 18.8.0 (LINGUISTIC LAYERS PRO)
+ *  الإصدار : 18.8.6 (PRO COMPLETE)
  *  التاريخ : 2026-08-15
  *  الملف   : ملف واحد مستقل (Single-File Bundle) مولَّد من المصادر المجزأة،
  *            لا يحتاج أي مكتبة خارجية ويعمل مباشرة عبر وسم <script>.
  *
  *  ── سجل التغييرات ─────────────────────────────────────────────────────────
+ *  18.8.6 (PRO COMPLETE — تثبيت واجهة التحليل والسياق الطويل):
+ *    ▸ إصلاح عدّ الجمل في Long Context: النص بلا فاصلة كان يُحسب جملتين.
+ *    ▸ توسيع ربط الأسماء الموصولة إلى صيغ المثنى مع نافذة سياق أوسع.
+ *    ▸ إضافة فحص سلامة API تشخيصي دون تحويل طبقات inspect إلى تصحيح تلقائي.
+ *    ▸ الإبقاء على محرك التصحيح الأساسي ومعايير الدقة السابقة دون تغيير.
+ *
  *  18.8.0 (LINGUISTIC LAYERS — إصلاح الجذور أولًا ثم بناء الطبقات):
  *    ▸ المبدأ الحاكم: «الإنذار الكاذب أشد ضررًا من فوات الخطأ». لذلك بُدئ
  *      بإصلاح القواعد التي أنتجت تصحيحات فاسدة قبل إضافة أي قاعدة جديدة،
@@ -287,10 +293,10 @@
 const META = Object.freeze({
   name: 'Arabic Proofreader Hybrid Engine',
   nameArabic: 'محرك التدقيق العربي الهجين',
-  version: '18.8.0',
-  edition: 'LINGUISTIC-LAYERS-PRO',
+  version: '18.8.6',
+  edition: 'PRO-COMPLETE-V18.8.6',
   language: 'ar',
-  release: 'V18.8.0 Linguistic Layers Pro',
+  release: 'V18.8.6 PRO Complete',
   stability: 'stable',
   releaseDate: '2026-08-15',
   offsetPolicy: 'original-input',
@@ -357,7 +363,13 @@ const META = Object.freeze({
     'conflict-resolver',
     'confidence-re-ranking',
     'safe-correction-policy',
-    'gold-and-no-false-positive-validation'
+    'gold-and-no-false-positive-validation',
+    'v1881-syntax-accuracy',
+    'v1882-agreement-accuracy',
+    'v1883-context-accuracy',
+    'v1884-orthography-pro',
+    'v1885-long-context',
+    'v1886-api-hardening'
   ]),
   resolverVersions: Object.freeze({
     ClauseIsolationResolver: '1.2',
@@ -373,7 +385,13 @@ const META = Object.freeze({
     DeepSyntacticTopicResolver: '1.0',
     NominativeDualSmpSubjectResolver: '1.0',
     NisbaNounLayer: '1.0',
-    ProtectedSpanExtractor: '1.1'
+    ProtectedSpanExtractor: '1.1',
+    V1881MultiCandidatePOS: '1.0',
+    V1882Agreement: '1.0',
+    V1883Context: '1.0',
+    V1884Orthography: '1.0',
+    V1885LongContext: '1.1',
+    V1886ApiHardening: '1.0'
   })
 });
 
@@ -8005,6 +8023,191 @@ function createContext(input, options = {}) {
   return context;
 }
 
+
+/* ═══════════════════════════════════════════════════════════════
+   V18.8.1 → V18.8.5 INJECTED ENGINES (Integrated PRO)
+   ═══════════════════════════════════════════════════════════════ */
+var _CONJ=CONJUNCTIONS||new Set();
+var _innaS=new Set(["\u0625\u0646","\u0623\u0646","\u0643\u0623\u0646","\u0644\u0643\u0646","\u0644\u064a\u062a","\u0644\u0639\u0644"]);
+var _kS=new Set(["\u0643\u0627\u0646","\u0643\u0627\u0646\u062a","\u0643\u0627\u0646\u0627","\u0643\u0627\u0646\u0648\u0627","\u0623\u0635\u0628\u062d","\u0623\u0635\u0628\u062d\u062a","\u0623\u0645\u0633\u0649","\u0623\u0645\u0633\u062a","\u0623\u0636\u062d\u0649","\u0628\u0627\u062a","\u0628\u0627\u062a\u062a","\u0638\u0644","\u0638\u0644\u062a","\u0635\u0627\u0631","\u0635\u0627\u0631\u062a","\u0644\u064a\u0633","\u0644\u064a\u0633\u062a","\u0645\u0627\u0632\u0627\u0644"]);
+var _DEMS=new Map([["\u0647\u0630\u0627",["m","sg"]],["\u0647\u0630\u0647",["f","sg"]],["\u0647\u0630\u0627\u0646",["m","du"]],["\u0647\u0630\u064a\u0646",["m","du"]],["\u0647\u0627\u062a\u0627\u0646",["f","du"]],["\u0647\u0627\u062a\u064a\u0646",["f","du"]],["\u0647\u0624\u0644\u0627\u0621",[null,"pl"]],["\u0630\u0644\u0643",["m","sg"]],["\u062a\u0644\u0643",["f","sg"]],["\u0623\u0648\u0644\u0626\u0643",[null,"pl"]]]);
+var _NUMS={"\u062b\u0644\u0627\u062b\u0629":[3,"f"],"\u062b\u0644\u0627\u062b":[3,"m"],"\u0623\u0631\u0628\u0639\u0629":[4,"f"],"\u0623\u0631\u0628\u0639":[4,"m"],"\u062e\u0645\u0633\u0629":[5,"f"],"\u062e\u0645\u0633":[5,"m"],"\u0633\u062a\u0629":[6,"f"],"\u0633\u062a":[6,"m"],"\u0633\u0628\u0639\u0629":[7,"f"],"\u0633\u0628\u0639":[7,"m"],"\u062b\u0645\u0627\u0646\u064a\u0629":[8,"f"],"\u062b\u0645\u0627\u0646":[8,"m"],"\u062a\u0633\u0639\u0629":[9,"f"],"\u062a\u0633\u0639":[9,"m"],"\u0639\u0634\u0631\u0629":[10,"f"],"\u0639\u0634\u0631":[10,"m"]};
+var _AMBIG={"\u0643\u062a\u0628":[["verb","wrote"],["noun","books"]],"\u0639\u0644\u0645":[["verb","knew"],["noun","science"]],"\u062d\u0636\u0631":[["verb","attended"],["noun","presence"]],"\u0639\u064a\u0646":[["noun","eye"],["verb","appointed"]],"\u062f\u0639\u0627":[["verb","called"],["noun","claim"]]};
+var _COMMON_SP={"\u0647\u0630\u0629":"\u0647\u0630\u0647","\u0647\u0627\u0630\u0627":"\u0647\u0630\u0627","\u0630\u0627\u0644\u0643":"\u0630\u0644\u0643","\u0644\u0627\u0643\u0646":"\u0644\u0643\u0646","\u0627\u0644\u0644\u0630\u064a":"\u0627\u0644\u0630\u064a"};
+
+function _dN(tk){var c=tk.core||"";if(!c)return"sg";if(/\u0627\u0646$/.test(c)||/\u062a\u0627\u0646$/.test(c))return"du";if(/\u064a\u0646$/.test(c)||/\u062a\u064a\u0646$/.test(c))return"du";if(/\u0648\u0646$/.test(c))return"pl";if(/\u0627\u062a$/.test(c))return"pl";return"sg";}
+
+/* V18.8.1: Multi-Candidate POS */
+function _rPOS(t){var r=analyzeMorphology(t)||{tokens:[]},k=r.tokens||[],o=[];var i,ci,cj;
+for(i=0;i<k.length;i++){var tk=k[i],cd=(tk.candidates||[]).slice(),c=tk.core||tk.surface||"";
+if(c.endsWith("\u0629")&&!cd.some(function(x){return x.pos==="noun";}))cd.push({pos:"noun",lemma:c,gender:"f",number:"sg",confidence:.7});
+if(/\u0648\u0646$/.test(c))cd.push({pos:"noun",lemma:c.slice(0,-2),gender:"m",number:"pl",confidence:.75});
+if(/\u064a\u0646$/.test(c)&&c.length>3)cd.push({pos:"noun",lemma:c.slice(0,-2),gender:"m",number:null,confidence:.73,numberCandidates:["du","pl"]});
+if(/\u0627\u0646$/.test(c)&&c.length>3)cd.push({pos:"noun",lemma:c.slice(0,-2),gender:"m",number:"du",confidence:.75});
+var uq=[],sn={};for(ci=0;ci<cd.length;ci++){var it=cd[ci],kk=it.pos+"|"+(it.lemma||"")+"|"+(it.gender||"")+"|"+(it.number||"");if(!sn[kk]){sn[kk]=true;uq.push(it);}}
+var sg=tk.segments||{},pv=i>0?k[i-1]:null;for(cj=0;cj<uq.length;cj++){var u=uq[cj];
+if(pv&&pv.core&&PREPOSITIONS.has(pv.core)){if(u.pos==="noun"||u.pos==="adj")u.confidence=Math.min(1,(u.confidence||.5)+.2);if(u.pos==="verb")u.confidence=Math.max(0,(u.confidence||.5)-.4);}
+if(sg.article){if(u.pos==="verb")u.confidence=Math.max(0,(u.confidence||.5)-.3);if(u.pos==="noun"||u.pos==="adj")u.confidence=Math.min(1,(u.confidence||.5)+.1);}}
+uq.sort(function(a,b){return(b.confidence||0)-(a.confidence||0);});
+o.push({index:i,surface:tk.surface||"",core:c,candidates:uq,bestPOS:uq.length?uq[0].pos:"unknown",bestConfidence:uq.length?(uq[0].confidence||0):0,ambiguous:uq.length>1&&((uq[0].confidence||0)-(uq[1].confidence||0))<.3});}
+return o;}
+
+/* V18.8.1: Dependency Roles */
+function _rD(t){var r=analyzeMorphology(t)||{tokens:[]},k=r.tokens||[],d=[];var i,j,ii,jj;
+for(i=0;i<k.length;i++){var tk=k[i];if(tk.pos!=="verb"&&!isKanaSurface(tk.core))continue;
+for(j=i+1;j<Math.min(i+4,k.length);j++){var s=k[j];if((s.pos==="noun"||s.pos==="adj")&&(!s.segments||!s.segments.preposition)){d.push({type:"verb-subject",gov:i,dep:j,conf:.85});break;}}}
+for(ii=0;ii<k.length-1;ii++){var mm=k[ii];if(mm.pos==="noun"&&mm.segments&&mm.segments.article){
+for(jj=ii+1;jj<Math.min(ii+3,k.length);jj++){var p=k[jj];if(p.pos==="noun"||p.pos==="adj"){d.push({type:"mubtada-khabar",gov:ii,dep:jj,conf:.78});break;}
+if(p.core&&PREPOSITIONS.has(p.core)){d.push({type:"mubtada-khabar-pp",gov:ii,dep:jj,conf:.82});break;}}}}
+return{roles:d.map(function(dd){return{type:dd.type,governorIndex:dd.gov,dependentIndex:dd.dep,confidence:dd.conf,governorSurface:k[dd.gov]?k[dd.gov].surface||"":"",dependentSurface:k[dd.dep]?k[dd.dep].surface||"":""};})};}
+
+/* V18.8.1: Conflict Resolver */
+function _rC(t){var r=analyzeMorphology(t)||{tokens:[]},k=r.tokens||[],res=[],i;
+for(i=0;i<k.length;i++){var tk=k[i],cd=tk.candidates||[];if(cd.length<2)continue;
+var nn=cd.filter(function(x){return x.pos==="noun";}),vv=cd.filter(function(x){return x.pos==="verb";});
+if(!nn.length||!vv.length)continue;var pv=i>0?k[i-1]:null,R=null,reason="",conf=0.85;
+if(pv&&pv.core&&PREPOSITIONS.has(pv.core)){R="noun";reason="prep";conf=0.95;}
+else if(tk.segments&&tk.segments.article){R="noun";reason="al";conf=0.95;}
+else if(tk.surface&&tk.surface.indexOf("\u064b")>=0){R="noun";reason="tnwn";conf=0.90;}
+else{var nv=nn.reduce(function(x,c){return Math.max(x,c.confidence||0);},0);var vv2=vv.reduce(function(x,c){return Math.max(x,c.confidence||0);},0);R=(nv>=vv2)?"noun":"verb";reason=(R==="noun"?"lex-noun":"lex-verb");conf=Math.max(nv,vv2);}
+res.push({index:i,surface:tk.surface,resolution:R,reason:reason,confidence:conf});}
+return{resolved:res};}
+
+/* V18.8.1: Nawasikh */
+function _rN(t){var r=analyzeMorphology(t)||{tokens:[]},k=r.tokens||[],cl=[],i;
+for(i=0;i<k.length;i++){var tk=k[i],co=tk.core||"";if(_kS.has(co)&&i+2<k.length)cl.push({type:"kana",idx:i,surf:co,subj:i+1,pred:i+2,conf:0.90});if(_innaS.has(co)&&i+1<k.length)cl.push({type:"inna",idx:i,surf:co,subj:i+1,pred:i+2<k.length?i+2:null,conf:0.88});}
+return{clauses:cl};}
+
+/* V18.8.2: Verb-Subject Agreement */
+function _rVSA(t){var r=analyzeMorphology(t)||{tokens:[]},k=r.tokens||[],iss=[],i,kk,j;
+for(i=0;i<k.length;i++){var tk=k[i],vf=verbAnalyses(tk.surface)||verbAnalyses(tk.core);
+if(!vf||!vf.length){if(isKanaSurface(tk.core))vf=[{gender:tk.gender,number:tk.number,person:3}];else continue;}
+var vA=vf[0];var subj=null,si=-1;
+for(kk=Math.max(0,i-3);kk<i;kk++){var s2=k[kk];if(s2.pos==="noun"&&s2.segments&&s2.segments.article){subj=s2;si=kk;break;}if(s2.pos==="pronoun"&&s2.gender){subj=s2;si=kk;break;}}
+if(!subj){for(j=i+1;j<Math.min(i+4,k.length);j++){var s=k[j];if(s.pos==="noun"&&(!s.segments||!s.segments.preposition)){subj=s;si=j;break;}}}
+if(!subj)continue;var sG=subj.gender||null,sN=_dN(subj),sA=subj.animacy||null;
+if(sN==="pl"&&sA==="nonhuman"){sN="sg";sG="f";}
+var vG=vA.gender||tk.gender||null,vN=vA.number||tk.number||null;
+if(sG&&vG&&sG!==vG)iss.push({type:"gender-mismatch",vi:i,si:si,vs:tk.surface||"",ss:subj.surface||"",vg:vG,sg:sG,conf:.90});
+if(sN&&vN&&sN!==vN&&sN!=="pl")iss.push({type:"number-mismatch",vi:i,si:si,vs:tk.surface||"",ss:subj.surface||"",vn:vN,sn:sN,conf:.85});}
+return{issues:iss};}
+
+/* V18.8.2: Adjective Agreement */
+function _rAdj(t){var r=analyzeMorphology(t)||{tokens:[]},k=r.tokens||[],iss=[],i;
+for(i=0;i<k.length-1;i++){var noun=k[i],adj=k[i+1];if(noun.pos!=="noun"||adj.pos!=="adj"||(adj.segments&&adj.segments.preposition))continue;
+var nG=noun.gender,aG=adj.gender,nN=_dN(noun);if(!nG||!aG)continue;if(noun.animacy==="nonhuman"&&nN==="pl"){nN="sg";nG="f";}
+if(nG!==aG)iss.push({type:"adj-noun-gender",ni:i,ai:i+1,ns:noun.surface||"",as:adj.surface||"",conf:.88});}
+return{issues:iss};}
+
+/* V18.8.2: Demonstrative Agreement */
+function _rDem(t){var r=analyzeMorphology(t)||{tokens:[]},k=r.tokens||[],iss=[],i;
+for(i=0;i<k.length-1;i++){var dem=k[i],c=dem.core||dem.surface||"";if(!_DEMS.has(c))continue;var dm=_DEMS.get(c),dG=dm[0],dN=dm[1];var noun=k[i+1];if(noun.pos!=="noun")continue;
+var nG=noun.gender,nN=_dN(noun);if(noun.animacy==="nonhuman"&&nN==="pl"){nN="sg";nG="f";}
+if(dN==="pl"&&nN==="sg"&&noun.animacy!=="nonhuman")iss.push({type:"dem-noun-number",di:i,ni:i+1,ds:dem.surface||"",ns:noun.surface||"",conf:.90});
+if(dG&&nG&&dG!==nG)iss.push({type:"dem-noun-gender",di:i,ni:i+1,ds:dem.surface||"",ns:noun.surface||"",conf:.90});}
+return{issues:iss};}
+
+/* V18.8.2: Number Agreement */
+function _rNum(t){var r=analyzeMorphology(t)||{tokens:[]},k=r.tokens||[],iss=[],i;
+for(i=0;i<k.length;i++){var tk=k[i],c=tk.core||tk.surface||"";var nv=_NUMS[c];if(!nv||nv[0]<3||nv[0]>10)continue;var cnt=k[i+1];if(!cnt||cnt.pos!=="noun")continue;
+var cG=cnt.gender||"m",nG=nv[1];if(nG===cG)iss.push({type:"num-polarity",ni:i,ci:i+1,ns:tk.surface||"",cs:cnt.surface||"",conf:.90});}
+return{issues:iss};}
+
+/* V18.8.2: Case Agreement */
+function _rCase(t){var r=analyzeMorphology(t)||{tokens:[]},k=r.tokens||[],iss=[],i;
+for(i=0;i<k.length;i++){var tk=k[i];if(tk.pos!=="noun"&&tk.pos!=="adj")continue;var c=tk.core||tk.surface||"",pv=i>0?k[i-1]:null;
+if(pv&&pv.core&&PREPOSITIONS.has(pv.core)){if(/\u0627\u0646$/.test(c)||/\u062a\u0627\u0646$/.test(c))iss.push({type:"prep-dual-case",ti:i,ts:tk.surface||"",conf:.90});}
+if(/\u064a\u0646$/.test(c)&&tk.pos==="noun"&&tk.segments&&tk.segments.article){var isS=i===0||(i>0&&k[i-1].core&&_CONJ.has(k[i-1].core));if(isS&&i+2<k.length&&(k[i+1].pos==="adj"||k[i+1].pos==="noun"))iss.push({type:"mubtada-case",ti:i,ts:tk.surface||"",conf:.88});}}
+return{issues:iss};}
+
+/* V18.8.2: Comprehensive Agreement */
+function _rAgr(t){var a=_rVSA(t).issues,b=_rAdj(t).issues,c=_rDem(t).issues,d=_rNum(t).issues,e=_rCase(t).issues;return{verbSubject:a,adjective:b,demonstrative:c,number:d,case:e,total:a.length+b.length+c.length+d.length+e.length};}
+
+/* V18.8.3: Context Disambiguation */
+function _rCtx(t){var r=analyzeMorphology(t)||{tokens:[]},k=r.tokens||[],res=[],i;
+for(i=0;i<k.length;i++){var tk=k[i],c=tk.core||"",e=_AMBIG[c];if(!e)continue;var pv=i>0?k[i-1]:null,scores=[];for(var w=0;w<e.length;w++){var ew=e[w],sc=.5;if(pv&&pv.core&&PREPOSITIONS.has(pv.core)&&ew[0]==="noun")sc+=.3;if(tk.segments&&tk.segments.article&&ew[0]==="noun")sc+=.3;scores.push({pos:ew[0],meaning:ew[1],score:Math.min(1,sc)});}scores.sort(function(a,b){return b.score-a.score;});res.push({index:i,surface:tk.surface,word:c,readings:scores,best:scores[0]});}
+return{ambiguousWords:res};}
+
+/* V18.8.3: Semantic Roles */
+function _rSem(t){var r=analyzeMorphology(t)||{tokens:[]},k=r.tokens||[],roles=[],i,j;
+for(i=0;i<k.length;i++){if(k[i].pos!=="verb")continue;var subj=null,obj=null;for(j=i+1;j<Math.min(i+4,k.length);j++){var s=k[j];if(s.pos==="noun"&&(!s.segments||!s.segments.preposition)){if(!subj)subj={idx:j,surface:s.surface};else if(!obj)obj={idx:j,surface:s.surface};}}roles.push({verb:i,surface:k[i].surface,subject:subj,object:obj});}
+return{semanticRoles:roles};}
+
+/* V18.8.4: Orthography */
+function _rOrth(t){var r=analyzeMorphology(t)||{tokens:[]},k=r.tokens||[],iss=[],i;
+for(i=0;i<k.length;i++){var tk=k[i],c=tk.core||"",s=tk.surface||"";
+if(/^[\u0625\u0623]/.test(c)&&/^\u0627[\u0628\u062a\u062b]/.test('\u0627'+c.substring(1)))iss.push({type:"hamza-wasl",index:i,surface:s,confidence:.9});
+if(c.endsWith('\u0647')&&c.length>2&&!/[\u064e\u064f\u0650\u064c\u064d]/.test(c)){var st=c.slice(0,-1);iss.push({type:"taa-marbuta",index:i,surface:s,suggestion:st+'\u0629',confidence:.75});}
+if(c.endsWith('\u064a')&&c.length>2){var alif=['\u0645\u0633\u062a\u0634\u0641\u0649','\u0645\u0646\u062a\u062f\u0649','\u0645\u062d\u062a\u0648\u0649'];for(var ai=0;ai<alif.length;ai++){var am=alif[ai];if(c===am.replace('\u0649','\u064a'))iss.push({type:"alif-maqsura",index:i,surface:s,correction:am,confidence:.9});}}}
+return{issues:iss};}
+
+/* V18.8.4: Common Errors */
+function _rCommon(t){var r=analyzeMorphology(t)||{tokens:[]},k=r.tokens||[],iss=[],i;
+for(i=0;i<k.length;i++){var s=k[i].surface||"",c=_COMMON_SP[s];if(c)iss.push({type:"common-spelling",index:i,surface:s,correction:c,confidence:.95});}
+return{issues:iss};}
+
+/* V18.8.6: Long Context hardening */
+function _rLong(t){
+  var r=analyzeMorphology(t)||{tokens:[]},k=r.tokens||[],rel=[],i,j;
+  for(i=0;i<k.length;i++){
+    var c=k[i].core||"";
+    if(['الذي','التي','الذين','اللذان','اللتان','اللذين','اللتين'].indexOf(c)!==-1){
+      for(j=i-1;j>=Math.max(0,i-7);j--){
+        if(k[j].pos==="noun"&&k[j].segments&&k[j].segments.article){rel.push({relative:i,surface:c,antecedent:j,antSurface:k[j].surface});break;}
+      }
+    }
+  }
+  var clauses=[],start=0;
+  var isBoundary=function(core){return ['،','؛','.','!','؟'].indexOf(core)!==-1;};
+  for(i=0;i<k.length;i++){
+    if(isBoundary(k[i].core||'')){
+      if(start<=i-1) clauses.push({from:start,to:i-1,length:i-start});
+      start=i+1;
+    }
+  }
+  if(start<k.length) clauses.push({from:start,to:k.length-1,length:k.length-start});
+  var punctuationCount=(String(t||'').match(/[،؛.!؟]+/gu)||[]).length;
+  var trimmed=String(t||'').trim();
+  var clauseCount=punctuationCount ? punctuationCount + (/[^،؛.!؟]$/u.test(trimmed) ? 1 : 0) : (trimmed ? 1 : 0);
+  return{relativeLinks:rel,clauses:clauses,wordCount:k.length,clauseCount:clauseCount};
+}
+
+/* Wrapper API functions */
+function _inspectMultiPOS(text){return _rPOS(text);}
+function _inspectDeps(text){return _rD(text).roles;}
+function _inspectConf(text){return _rC(text).resolved;}
+function _inspectNaw(text){return _rN(text).clauses;}
+function _inspectVSA(text){return _rVSA(text).issues;}
+function _inspectAdj(text){return _rAdj(text).issues;}
+function _inspectDem(text){return _rDem(text).issues;}
+function _inspectNum(text){return _rNum(text).issues;}
+function _inspectCase(text){return _rCase(text).issues;}
+function _inspectAgr(text){return _rAgr(text);}
+function _inspectCtx(text){return _rCtx(text);}
+function _inspectSem(text){return _rSem(text);}
+function _inspectOrth(text){return _rOrth(text);}
+function _inspectCommon(text){return _rCommon(text);}
+function _inspectLong(text){return _rLong(text);}
+
+/* V18.8.6: API hardening self-checks — diagnostic only. */
+function runPROApiSanityChecks(){
+  var sample='الطالب الذي نجح، والمعلم الذي حضر.';
+  var long=_rLong(sample);
+  return {version:META.version,valid:META.version==='18.8.6' && long.clauseCount===2 && long.relativeLinks.length===2,checks:{longContextClauseCount:long.clauseCount,relativeLinks:long.relativeLinks.length}};
+}
+
+/* Master PRO analysis */
+function analyzePRO(text,opts){
+  opts=opts||{};var base=analyze(text,opts);
+  return Object.assign({},base,{
+    v1881:{multiPOS:_rPOS(text),dependencies:_rD(text).roles,conflicts:_rC(text).resolved,nawasikh:_rN(text).clauses},
+    v1882:_rAgr(text),
+    v1883:{ambiguousWords:_rCtx(text).ambiguousWords,semanticRoles:_rSem(text).semanticRoles},
+    v1884:{orthography:_rOrth(text).issues,commonErrors:_rCommon(text).issues},
+    v1885:_rLong(text)
+  });
+}
+
 function analyze(input, options = {}) {
   const context = createContext(input, options);
   const rawFindings = [];
@@ -9857,7 +10060,31 @@ function validate({
     conjugateVerb, verbAnalyses, weakVerbStats, lexiconStats,
     normalize, normalizeWithMap, normalizeForComparison,
     pipelineDescription,
-    GOLD_CORPUS, NO_FALSE_POSITIVE_CORPUS, POS_DEPENDENCY_REGRESSION_CORPUS, PHRASE_ROLE_REGRESSION_CORPUS
+    GOLD_CORPUS, NO_FALSE_POSITIVE_CORPUS, POS_DEPENDENCY_REGRESSION_CORPUS, PHRASE_ROLE_REGRESSION_CORPUS,
+  // V18.8.1: Syntax Accuracy
+  inspectMultiPOS: _inspectMultiPOS,
+  inspectDependencies: _inspectDeps,
+  inspectConflicts: _inspectConf,
+  inspectNawasikh: _inspectNaw,
+  // V18.8.2: Agreement Accuracy
+  inspectVerbSubjectAgreement: _inspectVSA,
+  inspectAdjectiveAgreement: _inspectAdj,
+  inspectDemonstrativeAgreement: _inspectDem,
+  inspectNumberAgreement: _inspectNum,
+  inspectCaseAgreement: _inspectCase,
+  inspectComprehensiveAgreement: _inspectAgr,
+  // V18.8.3: Context Accuracy
+  inspectContextDisambiguation: _inspectCtx,
+  inspectSemanticRoles: _inspectSem,
+  // V18.8.4: Orthography PRO
+  inspectOrthography: _inspectOrth,
+  inspectCommonErrors: _inspectCommon,
+  // V18.8.5: Long Context
+  inspectLongContext: _inspectLong,
+  runPROApiSanityChecks,
+  // Master comprehensive analysis
+  analyzePRO: analyzePRO,
+  V1885_PRO: Object.freeze({version:'18.8.6',edition:'PRO-COMPLETE',analyze:analyzePRO})
   });
   return ArabicProofreaderV18;
 
