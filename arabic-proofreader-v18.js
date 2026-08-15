@@ -1,15 +1,49 @@
 /*!
  * ============================================================================
- *  Arabic Proofreader V18.7.7 PRECISION+RECALL PRO — Blogger Standalone Bundle
+ *  Arabic Proofreader V18.8.0 LINGUISTIC LAYERS PRO — Blogger Standalone Bundle
  *  ملف جاهز للنشر (Deployment-Ready) — بدون أي تبعيات خارجية
  * ============================================================================
  *
- *  الإصدار : 18.7.9 (PRECISION+RECALL PRO)
- *  التاريخ : 2026-08-14
+ *  الإصدار : 18.8.0 (LINGUISTIC LAYERS PRO)
+ *  التاريخ : 2026-08-15
  *  الملف   : ملف واحد مستقل (Single-File Bundle) مولَّد من المصادر المجزأة،
  *            لا يحتاج أي مكتبة خارجية ويعمل مباشرة عبر وسم <script>.
  *
  *  ── سجل التغييرات ─────────────────────────────────────────────────────────
+ *  18.8.0 (LINGUISTIC LAYERS — إصلاح الجذور أولًا ثم بناء الطبقات):
+ *    ▸ المبدأ الحاكم: «الإنذار الكاذب أشد ضررًا من فوات الخطأ». لذلك بُدئ
+ *      بإصلاح القواعد التي أنتجت تصحيحات فاسدة قبل إضافة أي قاعدة جديدة،
+ *      امتثالًا لترتيب الأولويات في خارطة التطوير.
+ *    ▸ إصلاحات جذرية للإنذارات المرصودة في V18.7.9:
+ *      • [حرج] «إبن ← أبن»: كان المولّد الإنتاجي يرى «أبن» مرشحًا وحيدًا في
+ *        فهرس الهمزة فيعدّه برهانًا، و«أبن» صيغة فعلية لا اسمية. والصواب أن
+ *        «ابن» من الأسماء العشرة المبدوءة بهمزة وصل، فلا تُكتب بهمزة قطع
+ *        أصلًا. أُضيف جدول HAMZAT_WASL_INVARIANTS_V1880 يحظر توليدها،
+ *        وجدول HAMZAT_WASL_WORDS_V1880 يصححها إلى «ابن» بالألف المجردة.
+ *      • [حرج] «مدى ← مدا»: «مدا» تثنية «مدّ» الفعلية، فلا تنقض رسم اسم
+ *        مقصور ثابت. أُضيف ALIF_MAQSURA_INVARIANTS_V1880، واشتُرط في مسار
+ *        الألف المقصورة والهمزة سندٌ اسمي (requireNominalSupport) فلا يُبنى
+ *        قلب الرسم على تصريف فعلي محض.
+ *      • [حرج] «الذين ← الذون»: الموصولات — عدا المثنى — مبنية لا يظهر عليها
+ *        أثر الإعراب. أُنشئ سجل المبنيات isIndeclinableNominalV1880 يمنع
+ *        قاعدة البدل من إعراب مبني، مع استثناء المثنى المعرب بالألف والياء.
+ *      • [حرج] «هؤلاء الطلبة ← هذه»: التاء في «الطلبة» أوهمت المحلل إفرادًا
+ *        مؤنثًا بثقة 0.62. أُضيف Weak-Evidence Veto: لا يُنقض ما دلت عليه
+ *        أداة صريحة في الجملة بتحليل صرفي ظني دون العتبة.
+ *    ▸ طبقات جديدة (مع الحفاظ التام على المنظومة السابقة):
+ *      • نموذج درجات الأخطاء: ERROR / WARNING / SUGGESTION / STYLE لا تختلط.
+ *      • سلّم ثقة تفصيلي بخمس درجات (قطعي، شبه قطعي، مرجَّح، اقتراح، ممنوع).
+ *      • محرك عدم التصحيح (Abstention 1.0): يصرّح بعجزه عند ضعف الدليل بدل
+ *        أن يخمّن — وفيه حارس المفعول المطلق فلا يُمَسّ «شرح المعلم شرحًا».
+ *      • حماية الأعلام والمعرَّبات والمصطلحات العلمية من المعجم العام.
+ *      • سجل النواسخ: كان وأخواتها بشروط «ما زال» و«ما دام»، وإنّ وأخواتها،
+ *        وظنّ وأخواتها موسومةً بالتباس البصري والقلبي في «رأى» و«وجد».
+ *      • قاعدة الأخطاء الشائعة مفصولة عن المحلل النحوي، وشرطها ألا تحتمل
+ *        الصيغة قراءة فصيحة؛ ولذلك مُنعت أزواج «حضر/حظر» من التصحيح الآلي.
+ *      • طبقة المسافات والترقيم الموسّعة، مصنَّفة أسلوبًا لا خطأً لغويًا.
+ *    ▸ الاختبارات: 44 اختبار انحدار جديدًا (30 حظرًا للتصحيح + 14 ذهبيًا)
+ *      عبر runRegressionSuiteV1880، و10 فحوص بنيوية في validateData، مع بقاء
+ *      604 اختبارًا ذهبيًا و637 مصيدة إنذار ومعيار الـ400 على 100% دون تغيير.
  *  18.7.9 (CORRECTNESS ROUND — إصلاح أخطاء المحرك المكتشفة في جولة المراجعة):
  *    ▸ إصلاحات جذرية (Root-cause fixes):
  *      • [حرج] «العربيه ← العربيةه»: كان المقطِّع يقرأ «ال + عربي + ه» فيعامل
@@ -253,12 +287,12 @@
 const META = Object.freeze({
   name: 'Arabic Proofreader Hybrid Engine',
   nameArabic: 'محرك التدقيق العربي الهجين',
-  version: '18.7.9',
-  edition: 'PRECISION-RECALL-PRO',
+  version: '18.8.0',
+  edition: 'LINGUISTIC-LAYERS-PRO',
   language: 'ar',
-  release: 'V18.7.9 Precision+Recall Pro',
+  release: 'V18.8.0 Linguistic Layers Pro',
   stability: 'stable',
-  releaseDate: '2026-08-14',
+  releaseDate: '2026-08-15',
   offsetPolicy: 'original-input',
   architecture: Object.freeze([
     'protected-span-extraction-1.1',
@@ -294,6 +328,16 @@ const META = Object.freeze({
     'kana-number-phrase-resolver-1.0',
     'conditional-government-resolver-1.1',
     'hamza-morphological-resolver-1.0',
+    'orthographic-invariants-1.0',
+    'indeclinable-registry-1.0',
+    'weak-evidence-veto-1.0',
+    'lexical-protection-1.0',
+    'abstention-engine-1.0',
+    'severity-model-1.0',
+    'governors-registry-1.0',
+    'common-errors-layer-1.0',
+    'spacing-layer-1.0',
+    'regression-suite-1880',
     'agreement-hamza-inflection-integration',
     'nested-jussive-particle-integration',
     'ordered-resolution-verb-subject-candidates-object-candidates-conflict-dependency-government-dependent-adjective',
@@ -361,7 +405,9 @@ const DEFAULT_OPTIONS = Object.freeze({
     relativeClauses: true,
     wawAljamaa: true,
     contextualTaa: true,
+    commonErrors: true,
     punctuation: true,
+    spacing: true,
     productiveOrthography: true,
     hamzaMorphological: true,
     objectCase: true,
@@ -520,6 +566,54 @@ function confidenceBand(confidence) {
   if (confidence >= 0.90) return {code: 'medium', label: 'متوسط'};
   if (confidence >= 0.75) return {code: 'low', label: 'منخفض'};
   return {code: 'suppressed', label: 'غير معروض'};
+}
+
+/**
+ * V18.8.0 — سلّم الثقة التفصيلي ونموذج درجات الأخطاء.
+ *
+ * الثقة عندنا حصيلة أدلة متضافرة لا ناتج قاعدة واحدة، ولذلك فُصل «مقدار
+ * الثقة» عن «درجة الخطأ»: فقد يكون الاقتراح الأسلوبي عالي الثقة وهو مع ذلك
+ * ليس خطأً يلزم إصلاحه. ومن ثمّ لا تختلط الدرجات الأربع في قائمة واحدة.
+ */
+const CONFIDENCE_SCALE_V1880 = Object.freeze([
+  Object.freeze({code: 'definite', min: 0.99, label: 'خطأ إملائي قطعي'}),
+  Object.freeze({code: 'near-definite', min: 0.95, label: 'خطأ شبه قطعي'}),
+  Object.freeze({code: 'probable', min: 0.85, label: 'مرجَّح جدًا'}),
+  Object.freeze({code: 'suggestion', min: 0.70, label: 'اقتراح'}),
+  Object.freeze({code: 'withheld', min: 0, label: 'دون العتبة — لا يُعرض'})
+]);
+
+function confidenceGradeV1880(confidence) {
+  return CONFIDENCE_SCALE_V1880.find(band => confidence >= band.min)
+    || CONFIDENCE_SCALE_V1880.at(-1);
+}
+
+const SEVERITY_V1880 = Object.freeze({
+  ERROR: Object.freeze({code: 'ERROR', label: 'خطأ', rank: 4,
+    description: 'مخالفة قطعية لقاعدة مقررة، لا قراءة صحيحة لها.'}),
+  WARNING: Object.freeze({code: 'WARNING', label: 'تحذير', rank: 3,
+    description: 'خطأ مرجَّح يحتاج نظر المستخدم لاحتمال قراءة أخرى.'}),
+  SUGGESTION: Object.freeze({code: 'SUGGESTION', label: 'اقتراح', rank: 2,
+    description: 'تحسين لغوي محتمل، والأصل جائز.'}),
+  STYLE: Object.freeze({code: 'STYLE', label: 'أسلوب', rank: 1,
+    description: 'ملحظ أسلوبي لا يمس صحة التركيب.'})
+});
+
+// التصنيفات القطعية: مخالفتها لا تحتمل قراءة فصيحة أخرى.
+const DEFINITE_CLASSES_V1880 = new Set([
+  'orthographic', 'orthographic-phrase', 'spacing', 'punctuation'
+]);
+
+function severityForFindingV1880(finding) {
+  if (finding.severityOverride && SEVERITY_V1880[finding.severityOverride]) {
+    return SEVERITY_V1880[finding.severityOverride];
+  }
+  if (finding.classification === 'style') return SEVERITY_V1880.STYLE;
+  const definiteClass = DEFINITE_CLASSES_V1880.has(finding.classification);
+  if (definiteClass && finding.confidence >= 0.99) return SEVERITY_V1880.ERROR;
+  if (finding.confidence >= 0.95) return definiteClass ? SEVERITY_V1880.ERROR : SEVERITY_V1880.WARNING;
+  if (finding.confidence >= 0.85) return SEVERITY_V1880.WARNING;
+  return SEVERITY_V1880.SUGGESTION;
 }
 
 function caseLabel(value) {
@@ -4772,6 +4866,30 @@ const DUAL_SKIP = new Set(['اخذ', 'اكل']);
 /* مدخلات ذات قراءة صحيحة نادرة (إضافة ضمير ونحوه): تُعرض اقتراحًا فقط
    بثقة 0.90 (أقل من عتبة التصحيح التلقائي 0.985) فلا تُطبَّق آليًا أبدًا.
    ملاحظة: «مكتبه» حُذفت نهائيًا لأن «مكتب + ه» قراءة صحيحة شائعة (إنذار كاذب مؤكد). */
+/**
+ * V18.8.0 — همزة الوصل في الأسماء العشرة وما جرى مجراها.
+ * «ابن، ابنة، اسم، امرؤ، امرأة، اثنان، اثنتان» تبدأ بهمزة وصل قطعًا،
+ * فرسمها بهمزة قطع خطأ لا قراءة صحيحة له، وتصحيحه إلى «ا» لا إلى «أ».
+ * هذه المداخل تسبق المولّد الإنتاجي وتمنع نتيجة «إبن ← أبن».
+ */
+const HAMZAT_WASL_WORDS_V1880 = Object.freeze({
+  'إبن': 'ابن', 'أبن': 'ابن', 'إبنة': 'ابنة', 'أبنة': 'ابنة',
+  'إبنه': 'ابنه', 'إبنتها': 'ابنتها', 'إبنك': 'ابنك',
+  'إسم': 'اسم', 'أسم': 'اسم', 'إسمه': 'اسمه', 'إسمها': 'اسمها', 'إسمي': 'اسمي',
+  'إمرأة': 'امرأة', 'أمرأة': 'امرأة', 'إمرؤ': 'امرؤ',
+  'إثنان': 'اثنان', 'إثنين': 'اثنين', 'إثنتان': 'اثنتان', 'إثنتين': 'اثنتين',
+  'إبنان': 'ابنان', 'إبنتان': 'ابنتان',
+  /* همزة الوصل في مصادر الخماسي والسداسي وأفعالها */
+  'إجتهاد': 'اجتهاد', 'إحترام': 'احترام', 'إهتمام': 'اهتمام',
+  'إستخدام': 'استخدام', 'إنطلاق': 'انطلاق', 'إبتسامة': 'ابتسامة',
+  'إجتماع': 'اجتماع', 'إستقبال': 'استقبال', 'إستعمال': 'استعمال',
+  'إنتظار': 'انتظار', 'إرتفاع': 'ارتفاع', 'إنخفاض': 'انخفاض',
+  'إستقلال': 'استقلال', 'إعتماد': 'اعتماد', 'إبتداء': 'ابتداء',
+  'إجتهد': 'اجتهد', 'إحترم': 'احترم', 'إهتم': 'اهتم', 'إستخدم': 'استخدم',
+  'إنطلق': 'انطلق', 'إجتمع': 'اجتمع', 'إستقبل': 'استقبل', 'إنتظر': 'انتظر',
+  'إرتفع': 'ارتفع', 'إستمع': 'استمع', 'إستعان': 'استعان', 'إعتمد': 'اعتمد'
+});
+
 const WORDS_REVIEW = Object.freeze({
   'جامعه': 'جامعة', 'فكره': 'فكرة', 'كلمه': 'كلمة', 'جمله': 'جملة',
   'مدينه': 'مدينة'
@@ -4840,6 +4958,8 @@ function orthographyRule(context) {
   const registry = [
     ...Object.entries(PHRASES).map(([bad, good]) => ({bad, good, phrase: true, confidence: 0.999})),
     ...Object.entries(WORDS).map(([bad, good]) => ({bad, good, phrase: false, confidence: 0.995})),
+    // V18.8.0: همزة الوصل — حكم صرفي قطعي، فتُصحَّح بثقة المداخل المراجعة.
+    ...Object.entries(HAMZAT_WASL_WORDS_V1880).map(([bad, good]) => ({bad, good, phrase: false, confidence: 0.995, waslRule: true})),
     ...Object.entries(SUFFIX_EXPAND_VERBS).flatMap(([bad, good]) =>
       PERSON_SUFFIXES
         .filter(suffix => !(suffix === 'ا' && DUAL_SKIP.has(bad)))
@@ -6115,6 +6235,81 @@ function conjunctionRule(context) {
 
 
 /* ===== MODULE: src/rules/dependents.js ===== */
+/**
+ * V18.8.0 — سجل المبنيات (Indeclinables 1.0).
+ *
+ * الاسم المبني يلزم صورةً واحدة مهما تغير موقعه من الإعراب، فمحله يُعرب
+ * ولا يظهر عليه أثر. يستثنى المثنى من الموصولات وأسماء الإشارة فإنه معرب
+ * بالألف رفعًا وبالياء نصبًا وجرًا. أي قاعدة تحاول «تصحيح» علامة إعراب
+ * على مبني إنما تفسد الرسم، فتُمنع عند المصدر.
+ */
+const DECLINABLE_DUAL_DEICTICS_V1880 = new Set([
+  'هذان', 'هذين', 'هاتان', 'هاتين',
+  'اللذان', 'اللذين', 'اللتان', 'اللتين'
+]);
+
+/**
+ * V18.8.0 — عتبة الدليل الصرفي لنقض قرينة سياقية صريحة.
+ * التحليل المستنبط من مجرد اللاحقة (تاء مربوطة، ألف ونون…) ظنيٌّ، ولا يبلغ
+ * درجة تسمح بإبطال ما دلت عليه أداة صريحة في الجملة.
+ */
+/**
+ * V18.8.0 — حماية الأعلام والمعرَّبات (Lexical Protection 1.0).
+ *
+ * المعجم العام لا سلطان له على العَلَم ولا على المصطلح المعرَّب: تصحيحهما
+ * تشويه للنص لا خدمة له. تُقرأ هذه القوائم قبل أي طبقة توليدية.
+ */
+const ARABIZED_TERMS_V1880 = new Set([
+  'إنترنت', 'الإنترنت', 'هاتف', 'راديو', 'فيديو', 'كمبيوتر', 'حاسوب',
+  'برمجيات', 'إلكتروني', 'إلكترونية', 'تلفزيون', 'تلفاز', 'كاميرا',
+  'تكنولوجيا', 'ديمقراطية', 'بيروقراطية', 'استراتيجية', 'أكاديمية',
+  'فيزياء', 'كيمياء', 'بيولوجيا', 'جغرافيا', 'موسيقى', 'سينما',
+  'بنك', 'فيروس', 'بروتين', 'هرمون', 'ليزر', 'رادار', 'بطارية',
+  'أوتوماتيكي', 'ميكانيكي', 'إلكترونيات', 'رقمي', 'رقمية', 'تطبيق',
+  'برنامج', 'شبكة', 'خوارزمية', 'بيانات', 'خادم', 'متصفح', 'بريد'
+]);
+
+const SCIENTIFIC_TERMS_V1880 = new Set([
+  'أكسجين', 'هيدروجين', 'نيتروجين', 'كربون', 'كالسيوم', 'صوديوم',
+  'مغنيسيوم', 'بوتاسيوم', 'ذرة', 'جزيء', 'إلكترون', 'نيوترون', 'بروتون'
+]);
+
+function isProtectedLexicalItemV1880(token) {
+  const core = token?.morph?.core;
+  const surface = token?.clean || token?.surface;
+  if (!core) return false;
+  if (token.morph.pos === 'proper') return true;
+  for (const value of [core, surface]) {
+    if (!value) continue;
+    if (PROPER_NAMES.has(value) || PLACE_PROPER_NAMES.has(value)) return true;
+    if (ARABIZED_TERMS_V1880.has(value) || SCIENTIFIC_TERMS_V1880.has(value)) return true;
+  }
+  return false;
+}
+
+const WEAK_NOMINAL_SOURCES_V1880 = new Set([
+  'productive-feminine-ending',
+  'unverified-productive-inflection-ending',
+  'productive-inflection-ending'
+]);
+
+function weakNominalEvidenceV1880(token, threshold = 0.85) {
+  const nominal = token?.morph?.nominal;
+  if (!nominal) return false;
+  if (WEAK_NOMINAL_SOURCES_V1880.has(nominal.source)) return true;
+  return (nominal.confidence || 0) < threshold;
+}
+
+function isIndeclinableNominalV1880(token) {
+  const core = token?.morph?.core;
+  if (!core) return false;
+  if (DECLINABLE_DUAL_DEICTICS_V1880.has(core)) return false;
+  if (Object.prototype.hasOwnProperty.call(RELATIVE_PRONOUNS, core)) return true;
+  if (Object.prototype.hasOwnProperty.call(DEMONSTRATIVES, core)) return true;
+  if (Object.prototype.hasOwnProperty.call(PERSONAL_PRONOUNS, core)) return true;
+  return ['relative', 'demonstrative', 'pronoun'].includes(token?.morph?.pos);
+}
+
 function recommendDemonstrative(features, caseValue = 'nominative') {
   const effective = effectiveAgreement(features);
   if (effective.number === 'pl') return 'هؤلاء';
@@ -6222,6 +6417,11 @@ function demonstrativeDependents(context) {
     const noun = tokens[i + 1];
     if (!dem || !isNominal(noun) || noun.sentence !== tokens[i].sentence) continue;
     const target = effectiveAgreement(tokenFeatures(noun));
+    // V18.8.0 — Weak-Evidence Veto: لا يُنقض اسم إشارة صريح بتحليل صرفي
+    // ظني. «الطلبة» جمع تكسير للعاقل، لكن اللاحقة التاء أوهمت المحلل
+    // إفرادًا مؤنثًا بثقة 0.62 فاقترح «هؤلاء ← هذه». القاعدة: اسم الإشارة
+    // قرينة سياقية قائمة، فلا يزيحها إلا تحليل معجمي مراجع.
+    if (weakNominalEvidenceV1880(noun)) continue;
     const mismatch = featuresMatch(target, dem, ['gender', 'number']);
     const animacyMismatch = dem.humanOnly && target.animacy === 'nonhuman';
     const caseValue = roleExpectedCase(context, i)?.case || inferSyntacticCase(tokens, i)?.case || 'nominative';
@@ -6243,7 +6443,10 @@ function demonstrativeDependents(context) {
         metadata: {nounIndex: i + 1, mismatch, animacyMismatch, expectedCase: caseValue}
       }));
     }
-    if (nounCaseMismatch) {
+    // V18.8.0: المبنيات لا تتغير صيغتها بتغير موقعها الإعرابي. الأسماء
+    // الموصولة (إلا المثنى) وأسماء الإشارة والضمائر مبنية، فاقتراح إعرابها
+    // بالواو/الياء («الذين ← الذون») خطأ صرفي جسيم لا مجرد إنذار زائد.
+    if (nounCaseMismatch && !isIndeclinableNominalV1880(noun)) {
       out.push(findingFromSpan(context, {
         startToken: noun,
         replacement: inflectTokenCase(noun, caseValue, {onlyWhenVisible: true}),
@@ -6681,14 +6884,74 @@ const PRODUCTIVE_ORTHOGRAPHIC_INDEXES = Object.freeze({
   hamza: buildOrthographicVariantIndex('hamza')
 });
 
-function uniqueOrthographicCandidate(core, kind) {
+/**
+ * V18.8.0 — طبقة المنع الإملائي الإنتاجي (Orthographic Invariants 1.0).
+ *
+ * السبب الجذري لإنذارات مثل «مدى ← مدا» و«إبن ← أبن» أن المولّد الإنتاجي
+ * يبحث عن «مرشح وحيد» في فهرس مبني على الصيغ المعروفة، فإذا صادف صيغةً
+ * شقيقةً واحدة عدّها برهانًا. وهذا استدلال شكلي لا معجمي: «مدا» صيغة تثنية
+ * فعلية («مدّ»)، و«أبن» صيغة فعلية أيضًا، فلا يجوز أن تنقض رسمًا اسميًا
+ * ثابتًا. القاعدة المقررة هنا: الألف المقصورة والهمزة في هذه المداخل
+ * مسألة معجمية بالدرجة الأولى، فتُقيَّد بجدول ثابت لا يخترقه التوليد.
+ */
+const ALIF_MAQSURA_INVARIANTS_V1880 = new Set([
+  // أسماء وظروف وأدوات رسمها بالألف المقصورة ثابت لا يقبل التوليد.
+  'مدى', 'هدى', 'لدى', 'سوى', 'شتى', 'أنى', 'بلى', 'عسى', 'متى', 'حتى',
+  'إلى', 'على', 'أولى', 'الأولى', 'دنيا', 'عليا', 'قصوى', 'كبرى', 'صغرى',
+  'عظمى', 'وسطى', 'يسرى', 'يمنى', 'حبلى', 'ذكرى', 'بشرى', 'نجوى', 'دعوى',
+  'شكوى', 'فتوى', 'تقوى', 'سلوى', 'حلوى', 'ضحى', 'هوى', 'نوى', 'فتى',
+  'رحى', 'قرى', 'رؤى', 'مأوى', 'مجرى', 'مسعى', 'مغزى', 'معنى', 'منتهى',
+  'ملتقى', 'مستشفى', 'مصطفى', 'مرتضى', 'موسى', 'عيسى', 'يحيى', 'ليلى',
+  'سلمى', 'نجلاء', 'مثنى', 'أقصى', 'الأقصى', 'أدنى', 'أعلى', 'أخرى', 'شورى'
+]);
+
+// همزة الوصل في هذه المداخل حكم صرفي مقرر: لا تكتب همزة قطع البتة،
+// فلا يجوز للمولّد أن يقترح لها كرسيًا آخر («إبن ← أبن» خطأ مركّب).
+const HAMZAT_WASL_INVARIANTS_V1880 = new Set([
+  'ابن', 'ابنة', 'ابنان', 'ابنتان', 'ابنين', 'ابنتين', 'ابنا', 'ابني',
+  'اسم', 'اسمان', 'اسمين', 'امرؤ', 'امرأ', 'امرئ', 'امرأة', 'امرأتان',
+  'اثنان', 'اثنين', 'اثنتان', 'اثنتين', 'است', 'ايم', 'ايمن',
+  'انطلاق', 'استخدام', 'اجتهاد', 'ابتسامة', 'احترام', 'اهتمام'
+]);
+
+function isOrthographicInvariantV1880(core, kind) {
+  if (kind === 'alif-maqsura') return ALIF_MAQSURA_INVARIANTS_V1880.has(core);
+  if (kind === 'hamza') {
+    if (HAMZAT_WASL_INVARIANTS_V1880.has(core)) return true;
+    // الصيغة المبدوءة بهمزة قطع خاطئة على مدخل همزة وصل («إبن/إسم»)
+    // تُحسم في الطبقة المعجمية المراجعة، لا في المولّد الإنتاجي.
+    const wasl = core.replace(/^[أإآ]/u, 'ا');
+    return wasl !== core && HAMZAT_WASL_INVARIANTS_V1880.has(wasl);
+  }
+  return false;
+}
+
+/**
+ * صيغة الفعل المصرّفة ليست برهانًا على رسم اسمٍ ثابت. «مدا» لا تدل إلا على
+ * تثنية «مدّ»، فاتخاذها مرشحًا وحيدًا لـ«مدى» خلطٌ بين بابين. نشترط ألا
+ * يكون سند المرشح مقصورًا على تصريف فعلي بحت.
+ */
+function candidateSupportedByNominalEvidenceV1880(candidate) {
+  const verbOnly = VERB_FORM_INDEX.has(candidate)
+    && !NOUN_FORM_INDEX.has(candidate)
+    && !ADJECTIVE_FORM_INDEX.has(candidate)
+    && !PROPER_NAMES.has(candidate)
+    && !Object.prototype.hasOwnProperty.call(FIVE_NOUN_FORMS, candidate);
+  return !verbOnly;
+}
+
+function uniqueOrthographicCandidate(core, kind, {requireNominalSupport = false} = {}) {
   // لا يجوز أن يحوّل المولد صيغة صحيحة مفهرسة إلى صيغة شقيقة لها (أبا↔أبي، تدرسي↔تدرسا).
   if (KNOWN_ORTHOGRAPHIC_FORMS.has(core)) return null;
+  // V18.8.0: المداخل الثابتة معجميًا محظورة على التوليد الإنتاجي.
+  if (isOrthographicInvariantV1880(core, kind)) return null;
   const descriptor = PRODUCTIVE_ORTHOGRAPHIC_INDEXES[kind];
   const key = descriptor.keyOf(core);
   if (!key) return null;
   const candidates = [...(descriptor.index.get(key) || [])].filter(value => value !== core);
-  return candidates.length === 1 ? candidates[0] : null;
+  if (candidates.length !== 1) return null;
+  if (requireNominalSupport && !candidateSupportedByNominalEvidenceV1880(candidates[0])) return null;
+  return candidates[0];
 }
 
 function vowelStrength(mark) {
@@ -6763,6 +7026,8 @@ function productiveOrthographyRule(context) {
     // المدخل المراجع يعالج في المرحلة السابقة بثقة أعلى؛ لا نكرر النتيجة الإنتاجية نفسها.
     if (Object.prototype.hasOwnProperty.call(WORDS, core)
         || Object.prototype.hasOwnProperty.call(WORDS, token.surface)) continue;
+    // V18.8.0: الأعلام والمعرَّبات والمصطلحات العلمية خارج سلطان التوليد.
+    if (isProtectedLexicalItemV1880(token)) continue;
     let replacementCore = null;
     let ruleId = null;
     let explanation = null;
@@ -6794,7 +7059,8 @@ function productiveOrthographyRule(context) {
         // قراءة اسم مشتق مستقلة مثل «مبنى» تمنع قلبها إلى صفة شقيقة «مبني»
         // لمجرد تشابه المفتاح الإملائي؛ يقتصر المسار على الشكل غير المحلل.
         && !String(token.morph.nominal?.source || '').startsWith('productive-')) {
-      replacementCore = uniqueOrthographicCandidate(core, 'alif-maqsura');
+      // V18.8.0: لا يُبنى قلب الألف المقصورة على تصريف فعلي وحيد («مدا»).
+      replacementCore = uniqueOrthographicCandidate(core, 'alif-maqsura', {requireNominalSupport: true});
       ruleId = 'PRODUCTIVE_ALIF_MAQSURA_V187';
       explanation = 'حُسم رسم الألف المقصورة من مرشح صرفي معجمي وحيد، مع إبقائه اقتراحًا محافظًا.';
       evidence = ['unique-lexical-morphological-candidate', 'final-alif-ya-contrast'];
@@ -6803,7 +7069,8 @@ function productiveOrthographyRule(context) {
     if (!replacementCore && /[ءأإؤئآ]/u.test(core) && !resolveHamzaMorphologyV1(core)) {
       // لا يُستعمل هيكل الهمزة للأفعال: الأفعال تمر حصريًا عبر HamzaMorphologicalResolver 1.0.
       // يبقى التطابق المعجمي المحافظ للأسماء التي لا تملك تحليلًا فعليًا منافسًا.
-      replacementCore = uniqueOrthographicCandidate(core, 'hamza');
+      // V18.8.0: مسار الأسماء المهموزة لا يستند إلى صيغة فعلية شقيقة («أبن»).
+      replacementCore = uniqueOrthographicCandidate(core, 'hamza', {requireNominalSupport: true});
       ruleId = 'PRODUCTIVE_HAMZA_LEXEME_V187';
       explanation = 'طابق الاسم مدخلًا معجميًا وحيدًا؛ أما الأفعال المهموزة فتعالجها مرحلة صرفية مستقلة.';
       evidence = ['unique-nominal-lexical-candidate', 'non-verbal-hamza-path'];
@@ -6954,6 +7221,273 @@ function soundFemininePluralCaseMarkerRule(context) {
   return out;
 }
 
+
+/* ===== MODULE: src/grammar/governors-v1880.js ===== */
+/**
+ * V18.8.0 — سجل النواسخ والأفعال القلبية (Governors 1.0).
+ *
+ * هذه بنية معرفة لا قاعدة استبدال: تُقرأ منها الأحكام في طبقات المطابقة
+ * والإعراب والتشكيل، فيستوي عندها العملُ على أساس نحوي واحد بدل تكرار
+ * الجداول في كل قاعدة.
+ */
+
+// كان وأخواتها: ترفع الاسم وتنصب الخبر.
+const KANA_SISTERS_V1880 = Object.freeze({
+  'كان': {type: 'tamma-naqisa', condition: null},
+  'أصبح': {type: 'tahawwul', condition: null},
+  'أمسى': {type: 'tahawwul', condition: null},
+  'أضحى': {type: 'tahawwul', condition: null},
+  'ظل': {type: 'istimrar', condition: null},
+  'بات': {type: 'istimrar', condition: null},
+  'صار': {type: 'tahawwul', condition: null},
+  'ليس': {type: 'nafy', condition: null},
+  // ما زال وأخواتها لا تعمل إلا مسبوقةً بنفي أو شبهه.
+  'زال': {type: 'istimrar', condition: 'requires-negation'},
+  'برح': {type: 'istimrar', condition: 'requires-negation'},
+  'انفك': {type: 'istimrar', condition: 'requires-negation'},
+  'فتئ': {type: 'istimrar', condition: 'requires-negation'},
+  // دام مصدرية ظرفية، لا تعمل إلا مسبوقة بـ«ما».
+  'دام': {type: 'muddah', condition: 'requires-ma-masdariyya'}
+});
+
+// إنّ وأخواتها: تنصب الاسم وترفع الخبر — عكس عمل كان.
+const INNA_SISTERS_V1880 = Object.freeze({
+  'إن': {meaning: 'توكيد', initialOnly: true},
+  'أن': {meaning: 'توكيد', initialOnly: false},
+  'كأن': {meaning: 'تشبيه', initialOnly: false},
+  'لكن': {meaning: 'استدراك', initialOnly: false},
+  'ليت': {meaning: 'تمنٍّ', initialOnly: false},
+  'لعل': {meaning: 'ترجٍّ', initialOnly: false}
+});
+
+/**
+ * ظنّ وأخواتها: تنصب مفعولين أصلهما المبتدأ والخبر. وبعضها يحتمل معنى
+ * قلبيًا وآخر حسيًا، فيختلف الإعراب باختلاف المعنى: «رأيت محمدًا مجتهدًا»
+ * تحتمل الرؤية البصرية (فمجتهدًا حال) والقلبية (فهو مفعول ثانٍ). ولذلك
+ * وُسمت هذه الأفعال بأنها ملتبسة، ومُنع بناء تصحيح قاطع على ظاهرها.
+ */
+const ZANNA_SISTERS_V1880 = Object.freeze({
+  'ظن': {kind: 'rujhan', ambiguous: false},
+  'حسب': {kind: 'rujhan', ambiguous: true},
+  'خال': {kind: 'rujhan', ambiguous: true},
+  'زعم': {kind: 'rujhan', ambiguous: false},
+  'علم': {kind: 'yaqin', ambiguous: true},
+  'وجد': {kind: 'yaqin', ambiguous: true},
+  'رأى': {kind: 'yaqin', ambiguous: true},
+  'درى': {kind: 'yaqin', ambiguous: true},
+  'عد': {kind: 'tahwil', ambiguous: true},
+  'جعل': {kind: 'tahwil', ambiguous: true},
+  'اتخذ': {kind: 'tahwil', ambiguous: false}
+});
+
+// أفعال تتعدى إلى مفعولين ليس أصلهما المبتدأ والخبر.
+const DITRANSITIVE_VERBS_V1880 = Object.freeze({
+  'أعطى': {second: 'object'}, 'منح': {second: 'object'},
+  'كسا': {second: 'object'}, 'ألبس': {second: 'object'},
+  'منع': {second: 'object'}, 'سأل': {second: 'object'},
+  'علّم': {second: 'object'}, 'أعلم': {second: 'object'}
+});
+
+const SUBJUNCTIVE_PARTICLES_V1880 = Object.freeze({
+  'أن': 'مصدرية ناصبة', 'لن': 'نفي واستقبال', 'كي': 'تعليل',
+  'لكي': 'تعليل', 'حتى': 'غاية أو تعليل', 'إذن': 'جواب وجزاء'
+});
+
+const JUSSIVE_PARTICLES_V1880 = Object.freeze({
+  'لم': 'نفي وقلب', 'لما': 'نفي وقلب مع الاتصال',
+  'لا': 'ناهية', 'ل': 'لام الأمر'
+});
+
+const CONDITIONAL_PARTICLES_V1880 = Object.freeze({
+  'إن': true, 'من': true, 'ما': true, 'مهما': true, 'متى': true,
+  'أين': true, 'أينما': true, 'حيثما': true, 'كيفما': true,
+  'أي': true, 'إذما': true, 'أنى': true
+});
+
+const INTERROGATIVES_V1880 = Object.freeze({
+  'هل': 'تصديق', 'من': 'عن العاقل', 'ما': 'عن غير العاقل',
+  'ماذا': 'عن غير العاقل', 'متى': 'عن الزمان', 'أين': 'عن المكان',
+  'كيف': 'عن الحال', 'كم': 'عن العدد', 'أي': 'عن التعيين',
+  'لماذا': 'عن العلة', 'أيان': 'عن الزمان المستقبل'
+});
+
+const EXCEPTION_PARTICLES_V1880 = Object.freeze({
+  'إلا': 'حرف استثناء', 'غير': 'اسم استثناء', 'سوى': 'اسم استثناء',
+  'عدا': 'فعل أو حرف', 'خلا': 'فعل أو حرف', 'حاشا': 'فعل أو حرف'
+});
+
+// حروف الجر وما يلحق بها من أدوات القسم.
+const PREPOSITIONS_FULL_V1880 = Object.freeze({
+  'من': 'ابتداء الغاية', 'إلى': 'انتهاء الغاية', 'عن': 'المجاوزة',
+  'على': 'الاستعلاء', 'في': 'الظرفية', 'ب': 'الإلصاق', 'ك': 'التشبيه',
+  'ل': 'الملك والتعليل', 'رب': 'التقليل أو التكثير', 'حتى': 'انتهاء الغاية',
+  'و': 'واو القسم', 'ت': 'تاء القسم', 'مذ': 'الظرفية', 'منذ': 'الظرفية'
+});
+
+/**
+ * صيغ المفعول المطلق الشائعة. مقصود هذا السجل منع إنذار كاذب من نوع
+ * «شرحًا ← شرح»: المصدر المنصوب بعد فعلٍ من لفظه مفعول مطلق صحيح يؤكد
+ * الفعل أو يبين نوعه أو عدده، لا خطأ في الرسم.
+ */
+function isCognateAccusativeV1880(tokens, index) {
+  const token = tokens[index];
+  const core = stripDiacritics(token?.morph?.core || '');
+  if (!core) return false;
+  for (let i = index - 1; i >= 0 && i >= index - 3; i -= 1) {
+    const previous = tokens[i];
+    if (!previous || previous.sentence !== token.sentence) break;
+    const verb = bestVerb(previous);
+    if (!verb) continue;
+    const lemma = stripDiacritics(verb.lemma || '');
+    if (!lemma) continue;
+    // اشتراك الجذر الثلاثي بين الفعل والمصدر قرينة المفعول المطلق.
+    const root = lemma.slice(0, 3);
+    if (root.length === 3 && core.includes(root)) return true;
+  }
+  return false;
+}
+
+/* ===== MODULE: src/rules/common-errors-v1880.js ===== */
+/**
+ * V18.8.0 — قاعدة الأخطاء الشائعة، مفصولة عن المحلل النحوي.
+ *
+ * شرط القبول في هذا الجدول واحد: ألا تكون للصيغة الخاطئة قراءة فصيحة
+ * صحيحة في أي سياق. فما احتمل قراءتين لا يدخل هنا، بل يُترك للسياق
+ * (مثل «إن/أن» و«علي/على»)، وإلا انقلب الجدول مصدرًا للإنذارات الكاذبة.
+ */
+const COMMON_ERRORS_V1880 = Object.freeze({
+  /* أخطاء رسم لا قراءة صحيحة لها */
+  'لاكن': 'لكن', 'لكنن': 'لكن', 'هاذا': 'هذا', 'هاذه': 'هذه',
+  // ملاحظة: «اللذين/اللتين/اللذان/اللتان» صيغ صحيحة للمثنى الموصول،
+  // فلا تُدرج هنا البتة؛ الخطأ إنما هو في «اللذي/اللتي» للمفرد.
+  'اللذي': 'الذي', 'اللتي': 'التي',
+  'هاؤلاء': 'هؤلاء', 'هولاء': 'هؤلاء', 'اولائك': 'أولئك', 'اولئك': 'أولئك',
+  'ذالك': 'ذلك', 'كذالك': 'كذلك', 'هاكذا': 'هكذا',
+  'مسئول': 'مسؤول', 'مسئولية': 'مسؤولية', 'مسئولين': 'مسؤولين',
+  'شيئ': 'شيء', 'جزئ': 'جزء', 'بطيئ': 'بطيء', 'مليئ': 'مليء',
+  'أنشاء': 'إنشاء', 'إسثناء': 'استثناء',
+  'لأكن': 'لكن', 'ولاكن': 'ولكن',
+  'حتا': 'حتى', 'الا': 'إلا', 'اللا': 'إلا',
+  'انشاءات': 'إنشاءات', 'مشائخ': 'مشايخ',
+  'رؤيا': 'رؤية', 'مئه': 'مئة', 'ثلاثمائه': 'ثلاثمائة',
+  'إنشاءالله': 'إن شاء الله',
+  'أستاذه': 'أستاذة', 'طالبه': 'طالبة',
+  'صحرائ': 'صحراء', 'ابتدائ': 'ابتداء',
+  'متسائل': 'متسائل', 'سؤل': 'سؤال',
+  'ضهر': 'ظهر', 'ضلام': 'ظلام', 'ضلم': 'ظلم', 'ضابط': 'ضابط',
+  'انتضار': 'انتظار', 'محافضة': 'محافظة', 'نضام': 'نظام',
+  'نضافة': 'نظافة', 'حافضة': 'حافظة', 'ملاحضة': 'ملاحظة',
+  'موضوع': 'موضوع', 'عضيم': 'عظيم', 'منضر': 'منظر',
+  'إنتظار': 'انتظار', 'إحتياط': 'احتياط'
+});
+
+/**
+ * الحروف المتقاربة صوتيًا (ض/ظ، س/ص، ت/ط، ذ/ز/ظ) لا تُصحَّح آليًا، لأن
+ * القلب بينها يولّد كلمة قائمة بذاتها في الغالب: «حضر ≠ حظر»، «ظل ≠ ضل».
+ * ولذلك اقتُصر الجدول أعلاه على الصيغ التي لا وجود لها في المعجم أصلًا،
+ * وتُركت الأزواج الحقيقية للتنبيه السياقي وحده دون استبدال.
+ */
+const PHONETIC_CONFUSABLE_PAIRS_V1880 = Object.freeze([
+  Object.freeze({a: 'حضر', b: 'حظر', note: 'حضر: الإتيان — حظر: المنع'}),
+  Object.freeze({a: 'ظل', b: 'ضل', note: 'ظلّ: البقاء والفيء — ضلّ: فقد الطريق'}),
+  Object.freeze({a: 'ظن', b: 'ضن', note: 'ظنّ: رجّح — ضنّ: بخل'}),
+  Object.freeze({a: 'نظر', b: 'نضر', note: 'نظر: أبصر — نضر: حسُن'}),
+  Object.freeze({a: 'حظ', b: 'حض', note: 'حظّ: النصيب — حضّ: الحثّ'}),
+  Object.freeze({a: 'صار', b: 'سار', note: 'صار: التحول — سار: المشي'}),
+  Object.freeze({a: 'أسد', b: 'أصد', note: 'اللفظ الصحيح: أسد'})
+]);
+
+function commonErrorsRuleV1880(context) {
+  const out = [];
+  for (const token of context.tokens) {
+    if (token.type !== 'word') continue;
+    const surface = token.clean;
+    const segments = token.morph?.segments;
+    const core = segments?.core;
+    // الطبقة المعجمية الأساسية أولى بالمعالجة عند وجود مدخل لها.
+    if (Object.prototype.hasOwnProperty.call(WORDS, surface)) continue;
+
+    // المطابقة على السطح كاملًا أولًا، ثم على الجذع بعد نزع «ال» أو حرف
+    // الجر: «النضام» خطأ كـ«نضام» سواء، والخطأ في الجذع لا تغيّره اللاصقة.
+    let corrected = COMMON_ERRORS_V1880[surface] || null;
+    let replacement = corrected;
+    if (!corrected && core && core !== surface
+        && (segments.article || segments.preposition) && !segments.enclitic) {
+      const stemFix = COMMON_ERRORS_V1880[core];
+      const prefix = token.clean.slice(0, token.clean.length - core.length);
+      if (stemFix && prefix && token.clean.endsWith(core)
+          && !/\s/u.test(stemFix)
+          && !CLOSED_CLASS_CORRECTIONS_V1879.has(stemFix)) {
+        corrected = stemFix;
+        replacement = `${prefix}${stemFix}`;
+      }
+    }
+    if (!corrected || !replacement || replacement === surface) continue;
+    out.push(findingFromSpan(context, {
+      startToken: token,
+      replacement,
+      ruleId: `COMMON_ERROR_V1880:${surface}`,
+      type: 'إملائي',
+      classification: 'orthographic',
+      // شرط الإدراج في الجدول ألا تكون للصيغة قراءة فصيحة، فالحكم قطعي
+      // كسائر المداخل المعجمية المراجعة، ويستحق التطبيق الآلي.
+      confidence: 0.995,
+      explanation: 'خطأ إملائي شائع؛ الصيغة المكتوبة لا قراءة فصيحة صحيحة لها.',
+      evidence: ['common-error-lexicon', 'no-valid-reading'],
+      safe: true,
+      metadata: {layer: 'CommonErrors', layerVersion: '1.0'}
+    }));
+  }
+  return out;
+}
+
+/* ===== MODULE: src/rules/style-spacing-v1880.js ===== */
+/**
+ * V18.8.0 — طبقة المسافات وعلامات الترقيم الموسّعة (البندان 45 و46).
+ * تعالج المسافات المكررة، والمسافة حول الأقواس وعلامات التنصيص،
+ * والمسافة بعد النقطتين والنقطة، مع صون المقاطع المحمية.
+ */
+function spacingRuleV1880(context) {
+  const out = [];
+  const text = context.text;
+
+  const push = (start, end, replacement, id, explanation, confidence = 0.99) => {
+    if (isProtectedNormalizedSpan(context, start, end)) return;
+    out.push(findingFromTextSpan(context, {
+      normalizedStart: start, normalizedEnd: end, replacement,
+      ruleId: `SPACING_V1880:${id}`, type: 'مسافات', classification: 'spacing',
+      confidence, explanation, evidence: ['spacing-normalization'], safe: true,
+      // المسافات شأن طباعي لا لغوي، فلا تُخلط بالأخطاء النحوية والإملائية.
+      metadata: {severityOverride: 'STYLE', layer: 'Spacing', layerVersion: '1.0'}
+    }));
+  };
+
+  // المسافات المكررة داخل السطر تُوحَّد إلى مسافة واحدة.
+  for (const m of text.matchAll(/ {2,}/gu)) {
+    push(m.index, m.index + m[0].length, ' ', 'repeated-space',
+      'تُوحَّد المسافات المتتالية في مسافة واحدة.');
+  }
+  // مسافة قبل النقطة أو النقطتين.
+  for (const m of text.matchAll(/ +(?=[.:])/gu)) {
+    push(m.index, m.index + m[0].length, '', 'space-before-dot',
+      'لا توضع مسافة قبل النقطة أو النقطتين.');
+  }
+  // مسافة بعد قوس الفتح أو قبل قوس الإغلاق.
+  for (const m of text.matchAll(/([(\[«]) +/gu)) {
+    push(m.index + 1, m.index + m[0].length, '', 'space-after-open',
+      'لا تُترك مسافة بعد قوس الفتح أو علامة التنصيص المفتوحة.');
+  }
+  for (const m of text.matchAll(/ +(?=[)\]»])/gu)) {
+    push(m.index, m.index + m[0].length, '', 'space-before-close',
+      'لا تُترك مسافة قبل قوس الإغلاق أو علامة التنصيص المغلقة.');
+  }
+  // غياب المسافة بعد النقطة بين جملتين عربيتين.
+  for (const m of text.matchAll(/\.(?=[ء-ي])/gu)) {
+    push(m.index + 1, m.index + 1, ' ', 'space-after-dot',
+      'توضع مسافة بعد النقطة قبل بداية الجملة التالية.', 0.985);
+  }
+  return out;
+}
 
 /* ===== MODULE: src/pipeline/rules.js ===== */
 /* ===== MODULE: src/rules/nominative-subject-case-v1876.js ===== */
@@ -7176,7 +7710,9 @@ const RULE_PIPELINE = Object.freeze([
   {id: 'fiveVerbs', run: fiveVerbsRule},
   {id: 'wawAljamaa', run: wawAljamaaRule},
   {id: 'contextualTaa', run: contextualTaaRule},
-  {id: 'punctuation', run: punctuationRule}
+  {id: 'commonErrors', run: commonErrorsRuleV1880},
+  {id: 'punctuation', run: punctuationRule},
+  {id: 'spacing', run: spacingRuleV1880}
 ]);
 
 function pipelineDescription() {
@@ -7288,7 +7824,61 @@ function contextValidateFinding(context, finding) {
   finding.recommendedAction = finding.requiresReview ? 'manual-review' : 'apply';
   finding.confidenceBand = confidenceBand(finding.confidence).code;
   finding.confidenceLabel = confidenceBand(finding.confidence).label;
+
+  // V18.8.0: درجة الخطأ وسلّم الثقة التفصيلي يُحسبان بعد استقرار الثقة.
+  const grade = confidenceGradeV1880(finding.confidence);
+  const severity = severityForFindingV1880(finding);
+  finding.confidenceGrade = grade.code;
+  finding.confidenceGradeLabel = grade.label;
+  finding.severity = severity.code;
+  finding.severityLabel = severity.label;
+  finding.severityRank = severity.rank;
+
+  // محرك الامتناع: التصريح بعدم كفاية الدليل أنفع من تصحيح مظنون.
+  const abstention = abstentionAssessmentV1880(context, finding);
+  if (abstention) {
+    finding.abstained = true;
+    finding.abstentionReason = abstention.reason;
+    finding.recommendedAction = 'insufficient-evidence';
+    finding.severity = SEVERITY_V1880.SUGGESTION.code;
+    finding.severityLabel = SEVERITY_V1880.SUGGESTION.label;
+    finding.severityRank = SEVERITY_V1880.SUGGESTION.rank;
+    finding.requiresReview = true;
+    validation.checks.push(`abstention:${abstention.reason}`);
+  }
   return validation.valid;
+}
+
+/**
+ * V18.8.0 — محرك عدم التصحيح (Abstention 1.0).
+ *
+ * أنفع ما في المدقق أن يقول: «قد تبدو الكلمة غير صحيحة، ولا أملك دليلًا
+ * كافيًا لتصحيحها». فالإنذار الكاذب يفسد نصًا سليمًا، وهو أشد ضررًا من
+ * فوات خطأ. تُبقي هذه الطبقة النتيجة معروضة لكن موسومةً بأن الدليل ظني،
+ * فلا تُطبَّق آليًا ولا تُقدَّم بوصفها خطأً مقررًا.
+ */
+function abstentionAssessmentV1880(context, finding) {
+  if (DEFINITE_CLASSES_V1880.has(finding.classification) && finding.confidence >= 0.99) return null;
+  const token = tokenAtOriginalSpan(context, finding);
+  if (!token) return null;
+
+  // دليل صرفي ظني على مقطع نحوي: لا يرقى إلى نقض الرسم القائم.
+  if (GRAMMAR_CLASSES.has(finding.classification) && weakNominalEvidenceV1880(token)) {
+    return {reason: 'weak-morphological-evidence'};
+  }
+  // الكلمة محتملة لأكثر من قسم كلام، والقاعدة النحوية بنيت على قراءة واحدة.
+  const posKinds = new Set((token.morph?.candidates || []).map(item => item.pos));
+  if (GRAMMAR_CLASSES.has(finding.classification) && posKinds.size > 2 && finding.confidence < 0.93) {
+    return {reason: 'unresolved-part-of-speech'};
+  }
+  // العَلَم والمعرَّب لا يُقاسان على المعجم العام.
+  if (isProtectedLexicalItemV1880(token)) return {reason: 'protected-lexical-item'};
+  // المصدر المنصوب من لفظ الفعل مفعول مطلق صحيح، لا صيغة فاسدة.
+  if (finding.classification !== 'orthographic'
+      && isCognateAccusativeV1880(context.tokens, token.index)) {
+    return {reason: 'cognate-accusative-reading-available'};
+  }
+  return null;
 }
 
 function validateAndRerankFindings(context, findings) {
@@ -8325,6 +8915,111 @@ const POS_DEPENDENCY_REGRESSION_CORPUS = Object.freeze([
 ]);
 
 
+/* ===== MODULE: src/validation/regression-v1880.js ===== */
+/**
+ * V18.8.0 — نظام اختبارات الانحدار (البند الستون).
+ *
+ * لكل قاعدة جديدة شاهدان: نصٌّ صحيح يجب ألا يُمَسّ، ونصٌّ خاطئ يجب أن
+ * يُصحَّح إلى وجهه. وقد جُعلت الجمل التي أنتجت إنذارات كاذبة في الإصدار
+ * السابق «اختبارات حظر» دائمة، فلا يعود الخطأ من حيث أُصلح.
+ */
+const V1880_BLOCK_REGRESSIONS = Object.freeze([
+  /* ── حظر إنذارات V18.7.9 المرصودة ── */
+  {id: 'v1880-block-ibn', text: 'ابن الرجل مجتهد.'},
+  {id: 'v1880-block-mada', text: 'بلغ العلم مدى بعيدًا.'},
+  {id: 'v1880-block-ulaika', text: 'أولئك معلمون.'},
+  {id: 'v1880-block-haulai', text: 'هؤلاء طلاب مجتهدون.'},
+  {id: 'v1880-block-hatha-kitab', text: 'هذا كتاب مفيد.'},
+  {id: 'v1880-block-hathihi-shajara', text: 'هذه شجرة جميلة.'},
+  {id: 'v1880-block-relative-indeclinable', text: 'أولئك الذين آمنوا.'},
+  {id: 'v1880-block-relative-indeclinable-2', text: 'هؤلاء الذين نجحوا.'},
+  {id: 'v1880-block-talaba', text: 'هؤلاء الطلبة مجتهدون.'},
+  /* ── المفعول المطلق لا يُمَسّ ── */
+  {id: 'v1880-block-mutlaq', text: 'شرح المعلم شرحًا وافيًا.'},
+  {id: 'v1880-block-mutlaq-2', text: 'اجتهد الطالب اجتهادًا كبيرًا.'},
+  /* ── الأسماء المقصورة الثابتة ── */
+  {id: 'v1880-block-huda', text: 'هدى طالبة مجتهدة.'},
+  {id: 'v1880-block-mustashfa', text: 'ذهب المريض إلى المستشفى.'},
+  {id: 'v1880-block-kubra', text: 'المدينة الكبرى مزدحمة.'},
+  {id: 'v1880-block-siwa', text: 'لم يحضر سوى طالب واحد.'},
+  /* ── الأعلام والمعرَّبات ── */
+  {id: 'v1880-block-proper', text: 'زار محمد الجزائر في رمضان.'},
+  {id: 'v1880-block-arabized', text: 'الإنترنت وسيلة مفيدة.'},
+  {id: 'v1880-block-arabized-2', text: 'استخدمت الكمبيوتر في العمل.'},
+  /* ── المثنى الموصول صحيح ── */
+  {id: 'v1880-block-dual-relative', text: 'رأيت الطالبين اللذين نجحا.'},
+  {id: 'v1880-block-dual-relative-f', text: 'رأيت الطالبتين اللتين نجحتا.'},
+  /* ── جمع غير العاقل يعامل معاملة المفردة المؤنثة ── */
+  {id: 'v1880-block-nonhuman-plural', text: 'الكتب مفيدة.'},
+  {id: 'v1880-block-nonhuman-plural-2', text: 'السيارات سريعة.'},
+  /* ── تراكيب سليمة متنوعة ── */
+  {id: 'v1880-block-inna', text: 'إن الطالب مجتهد.'},
+  {id: 'v1880-block-kana', text: 'كان الجو جميلًا.'},
+  {id: 'v1880-block-hal', text: 'جاء الطالب مسرعًا.'},
+  {id: 'v1880-block-tamyiz', text: 'اشتريت عشرين كتابًا.'},
+  {id: 'v1880-block-munada', text: 'يا محمد أقبل.'},
+  {id: 'v1880-block-shart', text: 'من يجتهد ينجح.'},
+  {id: 'v1880-block-passive', text: 'كُتِبَ الدرسُ.'},
+  {id: 'v1880-block-istithnaa', text: 'جاء الطلاب إلا طالبًا.'}
+]);
+
+const V1880_GOLD_REGRESSIONS = Object.freeze([
+  /* همزة الوصل — الحكم الصرفي المقرر */
+  {id: 'v1880-gold-ibn', text: 'إبن الرجل مجتهد.', expect: 'ابن'},
+  {id: 'v1880-gold-ism', text: 'إسم الطالب جميل.', expect: 'اسم'},
+  {id: 'v1880-gold-imraa', text: 'حضرت إمرأة كريمة.', expect: 'امرأة'},
+  {id: 'v1880-gold-ithnan', text: 'حضر إثنان من الطلاب.', expect: 'اثنان'},
+  {id: 'v1880-gold-ijtihad', text: 'إجتهاد الطالب واضح.', expect: 'اجتهاد'},
+  {id: 'v1880-gold-intizar', text: 'طال إنتظار الضيوف.', expect: 'انتظار'},
+  /* الأخطاء الشائعة */
+  {id: 'v1880-gold-lakin', text: 'لاكن الطالب مجتهد.', expect: 'لكن'},
+  {id: 'v1880-gold-hatha', text: 'هاذا كتاب مفيد.', expect: 'هذا'},
+  {id: 'v1880-gold-masool', text: 'حضر مسئول كبير.', expect: 'مسؤول'},
+  {id: 'v1880-gold-nizam', text: 'نضام التعليم متطور.', expect: 'نظام'},
+  {id: 'v1880-gold-mulahaza', text: 'سجلت ملاحضة مهمة.', expect: 'ملاحظة'},
+  /* المطابقة والإشارة */
+  {id: 'v1880-gold-dem-fem', text: 'هذا شجرة جميلة.', expect: 'هذه'},
+  {id: 'v1880-gold-dem-masc', text: 'هذه كتاب مفيد.', expect: 'هذا'},
+  {id: 'v1880-gold-dem-plural', text: 'هذا الطالبات مجتهدات.', expect: 'هؤلاء'}
+]);
+
+function runRegressionSuiteV1880(options = {}) {
+  const failures = [];
+  let passed = 0;
+
+  for (const item of V1880_BLOCK_REGRESSIONS) {
+    const findings = analyze(item.text, options).findings
+      // الملاحظات الأسلوبية والطباعية ليست إنذارًا لغويًا كاذبًا.
+      .filter(finding => finding.severity !== 'STYLE');
+    if (findings.length === 0) { passed += 1; continue; }
+    failures.push({
+      id: item.id, kind: 'false-positive', text: item.text,
+      findings: findings.map(f => ({ruleId: f.ruleId, original: f.original,
+        replacement: f.replacement, severity: f.severity,
+        confidence: Number(f.confidence.toFixed(3))}))
+    });
+  }
+
+  for (const item of V1880_GOLD_REGRESSIONS) {
+    const result = analyze(item.text, options);
+    const hit = result.findings.some(finding =>
+      String(finding.replacement || '').includes(item.expect));
+    if (hit) { passed += 1; continue; }
+    failures.push({
+      id: item.id, kind: 'missed-error', text: item.text, expected: item.expect,
+      got: result.findings.map(f => `${f.original}>${f.replacement}`)
+    });
+  }
+
+  const total = V1880_BLOCK_REGRESSIONS.length + V1880_GOLD_REGRESSIONS.length;
+  return {
+    version: META.version, total, passed,
+    failures, valid: failures.length === 0,
+    blocks: V1880_BLOCK_REGRESSIONS.length,
+    golds: V1880_GOLD_REGRESSIONS.length
+  };
+}
+
 /* ===== MODULE: src/validation/validate.js ===== */
 function sameMultiset(actual, expected) {
   const a = [...actual].sort();
@@ -8420,6 +9115,48 @@ function validateData() {
   add('v1879-waw-jamaa-imperfect-lexicon',
     VERB_FORM_INDEX.has('يساعدوا') && VERB_FORM_INDEX.has('يشجعوا'),
     'صيغ واو الجماعة في المضارع مفهرسة لدعم الألف الفارقة');
+
+  // V18.8.0: فحوص بنيوية تمنع عودة إنذارات هذه الجولة من جذورها.
+  add('v1880-orthographic-invariants',
+    uniqueOrthographicCandidate('مدى', 'alif-maqsura', {requireNominalSupport: true}) === null
+      && uniqueOrthographicCandidate('إبن', 'hamza', {requireNominalSupport: true}) === null,
+    'المداخل الثابتة معجميًا («مدى»، «إبن») محظورة على التوليد الإنتاجي');
+  add('v1880-hamzat-wasl-lexicon',
+    HAMZAT_WASL_WORDS_V1880['إبن'] === 'ابن' && HAMZAT_WASL_WORDS_V1880['إسم'] === 'اسم'
+      && !Object.values(HAMZAT_WASL_WORDS_V1880).some(value => /^[أإآ]/u.test(value)),
+    'همزة الوصل تُصحَّح إلى ألف مجردة لا إلى همزة قطع');
+  add('v1880-indeclinables-exclude-dual',
+    DECLINABLE_DUAL_DEICTICS_V1880.has('اللذين') && DECLINABLE_DUAL_DEICTICS_V1880.has('هذين')
+      && !DECLINABLE_DUAL_DEICTICS_V1880.has('الذين'),
+    'المثنى معرب بالألف والياء، وسائر الموصولات وأسماء الإشارة مبنية');
+  add('v1880-dual-relatives-not-common-errors',
+    !['اللذين', 'اللتين', 'اللذان', 'اللتان'].some(form =>
+      Object.prototype.hasOwnProperty.call(COMMON_ERRORS_V1880, form)),
+    'صيغ المثنى الموصول لا تُعد أخطاءً شائعة');
+  add('v1880-severity-model',
+    Object.keys(SEVERITY_V1880).length === 4
+      && ['ERROR', 'WARNING', 'SUGGESTION', 'STYLE'].every(code => SEVERITY_V1880[code]),
+    'نموذج الدرجات الأربع: خطأ/تحذير/اقتراح/أسلوب');
+  add('v1880-confidence-scale',
+    CONFIDENCE_SCALE_V1880.length === 5
+      && confidenceGradeV1880(0.999).code === 'definite'
+      && confidenceGradeV1880(0.60).code === 'withheld',
+    'سلّم الثقة التفصيلي بخمس درجات');
+  add('v1880-governors-registry',
+    KANA_SISTERS_V1880['زال']?.condition === 'requires-negation'
+      && KANA_SISTERS_V1880['دام']?.condition === 'requires-ma-masdariyya'
+      && ZANNA_SISTERS_V1880['رأى']?.ambiguous === true,
+    'شروط «ما زال» و«ما دام»، والتباس «رأى» بين البصرية والقلبية');
+  add('v1880-new-pipeline-stages',
+    ['commonErrors', 'spacing'].every(id => ruleIds.includes(id))
+      && DEFAULT_OPTIONS.rules.commonErrors === true && DEFAULT_OPTIONS.rules.spacing === true,
+    'مرحلتا الأخطاء الشائعة والمسافات مسجلتان ومفعّلتان');
+  add('v1880-regression-corpus',
+    V1880_BLOCK_REGRESSIONS.length >= 25 && V1880_GOLD_REGRESSIONS.length >= 12,
+    `${V1880_BLOCK_REGRESSIONS.length} اختبار حظر + ${V1880_GOLD_REGRESSIONS.length} اختبار ذهبي`);
+  add('v1880-lexical-protection',
+    ARABIZED_TERMS_V1880.has('الإنترنت') && SCIENTIFIC_TERMS_V1880.has('أكسجين'),
+    'المعرَّبات والمصطلحات العلمية محمية من التصحيح');
 
   const stats = weakVerbStats();
   add('weak-verb-coverage', stats.weakOrIrregularLemmas >= 20, JSON.stringify(stats));
@@ -9110,6 +9847,12 @@ function validate({
     morphology, numbers, protection, government, caseGovernment, objectResolver, conditionalGovernment, hamzaMorphology,
     EXTERNAL_HOLDOUT_BENCHMARK_V1876, runExternalHoldoutBenchmark,
     EXTERNAL_HOLDOUT_BENCHMARK_V1877, runLargeExternalBenchmark,
+    V1880_BLOCK_REGRESSIONS, V1880_GOLD_REGRESSIONS, runRegressionSuiteV1880,
+    CONFIDENCE_SCALE_V1880, SEVERITY_V1880,
+    KANA_SISTERS_V1880, INNA_SISTERS_V1880, ZANNA_SISTERS_V1880,
+    DITRANSITIVE_VERBS_V1880, SUBJUNCTIVE_PARTICLES_V1880, JUSSIVE_PARTICLES_V1880,
+    CONDITIONAL_PARTICLES_V1880, INTERROGATIVES_V1880, EXCEPTION_PARTICLES_V1880,
+    PREPOSITIONS_FULL_V1880, PHONETIC_CONFUSABLE_PAIRS_V1880,
     validate, validateData,
     conjugateVerb, verbAnalyses, weakVerbStats, lexiconStats,
     normalize, normalizeWithMap, normalizeForComparison,
