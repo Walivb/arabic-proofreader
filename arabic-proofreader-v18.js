@@ -1,24 +1,6 @@
 /*!
  * ============================================================================
- *  Arabic Proofreader V19.0 PRO FINAL — Blogger Standalone Bundle
- *  النسخة الاحترافية النهائية — مدقق عربي شامل (إملاء + صرف + نحو + أسلوب)
- *  ────────────────────────────────────────────────────────────────────────
- *  V19.0 PRO FINAL (2026-08-16) — نواة القرار النحوي الموحدة:
- *    ▸ VerbSubjectFrameResolver 2.0: فصل VSO/SVO قبل حكم الأفعال الخمسة؛
- *      «لن يكتبون الطلاب واجباتهم» ← يكتب (لا يكتبوا)، «المعلمات لم يشرحون»
- *      ← يشرحن.
- *    ▸ InnaDemonstrativeChainResolver 1.0: «إن هؤلاء الطلاب المجتهدين» تُقرأ
- *      سلسلةً واحدة؛ الياء على التابع صحيحة لا تُقلب، وواوها تُصحَّح.
- *    ▸ CopularPredicateResolver 2.0: خبر الناسخ المفرد المنصوب يُرسم بألف
- *      التنوين «كان الطالب مجتهدًا» مع امتناع صارم عن شبه الجملة والصلة
- *      والممنوع من الصرف وذي العلامة والمشكول.
- *    ▸ FalsePositiveFirewall 2.0: القراءة الصحيحة المحسومة تحجب قاعدة
- *      التصحيح العامة (ياء الأسماء الخمسة مع ياء المتكلم، منع قلب توابع
- *      السلاسل، منع نصب فاعل VSO محسوم، منع حذف نون فعل له فاعل ظاهر).
- *    ▸ ARABIC PRO BENCHMARK 2000: اثنتا عشرة فئة بمقاييس Recall/Precision/
- *      FPR/Wrong-Correction/Abstention وأهداف الإطلاق القطعية.
- *    ▸ الحفاظ التام على كل منظومة V18.9.0 وواجهاتها وقواعدها: إضافة صرفة.
- *
+ *  Arabic Proofreader V18.8.6 PRO COMPLETE — Blogger Standalone Bundle
  *  ملف جاهز للنشر (Deployment-Ready) — بدون أي تبعيات خارجية
  * ============================================================================
  *
@@ -310,16 +292,17 @@
 /* ===== MODULE: src/meta.js ===== */
 const META = Object.freeze({
   name: 'Arabic Proofreader Hybrid Engine',
-  nameArabic: 'محرك التدقيق العربي الهجين — النسخة الاحترافية الشاملة',
+  nameArabic: 'محرك التدقيق العربي الهجين',
   version: '18.9.0',
-  edition: 'PRO-FINAL-V19.0-COMPAT',
-  realVersion: '19.0.0',
+  edition: 'PRO-FINAL-V18.9.0',
   language: 'ar',
-  release: 'V19.0 PRO FINAL — متوافق مع V18.9.0',
+  release: 'V18.8.6 PRO Complete',
   stability: 'stable',
   releaseDate: '2026-08-16',
+  // V18.9.0: سجل التوافق الخلفي — كل واجهات 18.8.6 باقية بأسمائها وسلوكها،
+  // وهذا الإصدار توسعةٌ بالإضافة لا إعادةَ بناء.
   compat: Object.freeze({
-    baseVersion: '18.9.0',
+    baseVersion: '18.8.6',
     policy: 'additive-only',
     preservedApi: Object.freeze([
       'analyze', 'check', 'correct', 'suggest', 'parse', 'inspectWord', 'inspectPOS',
@@ -334,53 +317,92 @@ const META = Object.freeze({
       'inspectVerbSubjectAgreement', 'inspectAdjectiveAgreement', 'inspectDemonstrativeAgreement',
       'inspectNumberAgreement', 'inspectCaseAgreement', 'inspectComprehensiveAgreement',
       'inspectContextDisambiguation', 'inspectSemanticRoles', 'inspectOrthography',
-      'inspectCommonErrors', 'inspectLongContext', 'runPROApiSanityChecks', 'analyzePRO',
-      'runRegressionSuiteV1890', 'runFullSuiteV1890',
-      'runRegressionSuiteV1900', 'runFullSuiteV1900', 'runArabicProBenchmarkV1900',
-      'inspectVerbFramesV1900', 'inspectDemonstrativeChainsV1900',
-      'ARABIC_PRO_BENCHMARK_V1900', 'V1900_GOLD_REGRESSIONS', 'V1900_BLOCK_REGRESSIONS'
+      'inspectCommonErrors', 'inspectLongContext', 'runPROApiSanityChecks', 'analyzePRO'
     ]),
     addedLayers: Object.freeze([
       'DiacriticsLayer-1.0', 'HamzaCompleteLayer-1.0', 'StyleLayer-1.0',
       'PunctuationCompleteLayer-1.0', 'VisibleCaseLayer-1.0', 'NumberTamyizLayer-1.0',
-      'AdvisoryBridge-1.0',
-      'VerbSubjectFrameResolver-2.0', 'InnaDemonstrativeChainResolver-1.0',
-      'CopularPredicateResolver-2.0', 'FalsePositiveFirewall-2.0',
-      'AgreementResolver-3.0', 'FiveNounsPhraseResolver-2.0',
-      'DependencyTreeResolver-1.0', 'OrthographyStratified-2.0',
-      'LongContextResolver-2.0', 'ArabicProBenchmark2000-1.0'
+      'AdvisoryBridge-1.0'
     ])
   }),
   offsetPolicy: 'original-input',
   architecture: Object.freeze([
-    'normalizer-1.0',
-    'tokenizer-1.0',
-    'protected-span-engine-1.1',
-    'morphological-analyzer-1.0',
-    'morphological-generator-1.0',
-    'pos-disambiguator-1.1',
-    'clause-detector-1.2',
-    'verb-frame-resolver-2.0',
-    'subject-resolver-2.4',
+    'diacritics-layer-1.0',
+    'hamza-complete-layer-1.0',
+    'style-layer-1.0',
+    'punctuation-complete-layer-1.0',
+    'visible-case-layer-1.0',
+    'number-tamyiz-layer-1.0',
+    'advisory-bridge-1.0',
+    'protected-span-extraction-1.1',
+    'offset-aware-normalization',
+    'arabic-tokenization',
+    'clitic-segmentation',
+    'unvocalized-morphological-analysis',
+    'morphological-generation',
+    'multi-candidate-morphology',
+    'contextual-pos-disambiguation-svo-frame-1.1',
+    'phrase-detection-before-case',
+    'number-phrase-priority',
+    'copular-structure-resolution',
+    'verified-weak-verb-paradigms',
+    'unified-government-engine',
+    'case-government',
+    'case-government-resolver-1.1',
+    'diptote-rules',
+    'number-engine-1-to-1000000',
+    'number-governance',
+    'exception-structures',
+    'hal-and-tamyiz',
+    'coordination',
+    'dependents',
+    'number-direction-analysis',
+    'clause-isolation-1.2',
+    'subject-resolution-2.4',
+    'subject-object-conflict-resolver-1.0',
+    'noun-role-resolution',
     'object-resolver-1.1',
-    'government-resolver-1.1',
-    'agreement-resolver-3.0',
-    'dependent-resolver-1.0',
-    'relative-clause-resolver-1.2',
-    'number-engine-1.0',
-    'five-nouns-engine-2.0',
-    'five-verbs-engine-1.0',
-    'orthography-engine-2.0',
-    'hamza-engine-1.0',
-    'punctuation-engine-1.0',
-    'style-engine-1.0',
-    'ambiguity-engine-1.0',
-    'false-positive-firewall-2.0',
-    'confidence-engine-1.0',
-    'correction-ranker-1.0',
-    'safe-correction-engine-1.0',
-    'regression-engine-1.0',
-    'benchmark-engine-2000-1.0'
+    'number-phrase-boundary-resolver-1.0',
+    'adjective-after-number-resolver-1.0',
+    'kana-number-phrase-resolver-1.0',
+    'conditional-government-resolver-1.1',
+    'hamza-morphological-resolver-1.0',
+    'orthographic-invariants-1.0',
+    'indeclinable-registry-1.0',
+    'weak-evidence-veto-1.0',
+    'lexical-protection-1.0',
+    'abstention-engine-1.0',
+    'severity-model-1.0',
+    'governors-registry-1.0',
+    'common-errors-layer-1.0',
+    'spacing-layer-1.0',
+    'regression-suite-1880',
+    'agreement-hamza-inflection-integration',
+    'nested-jussive-particle-integration',
+    'ordered-resolution-verb-subject-candidates-object-candidates-conflict-dependency-government-dependent-adjective',
+    'five-nouns-engine',
+    'relative-clause-resolution-1.2',
+    'nested-sentence-analysis',
+    'competing-analysis-veto-1.1',
+    'deep-syntactic-topic-resolver-1.0',
+    'nominative-dual-smp-subject-resolver-1.0',
+    'external-holdout-benchmark',
+    'nisba-noun-layer-1.0',
+    'y-final-clitic-guard',
+    'frozen-external-holdout-400',
+    'context-validation',
+    'parse-tree',
+    'ambiguity-engine',
+    'conflict-resolver',
+    'confidence-re-ranking',
+    'safe-correction-policy',
+    'gold-and-no-false-positive-validation',
+    'v1881-syntax-accuracy',
+    'v1882-agreement-accuracy',
+    'v1883-context-accuracy',
+    'v1884-orthography-pro',
+    'v1885-long-context',
+    'v1886-api-hardening'
   ]),
   resolverVersions: Object.freeze({
     ClauseIsolationResolver: '1.2',
@@ -402,25 +424,7 @@ const META = Object.freeze({
     V1883Context: '1.0',
     V1884Orthography: '1.0',
     V1885LongContext: '1.1',
-    V1886ApiHardening: '1.0',
-    VerbSubjectFrameResolver: '2.0',
-    InnaDemonstrativeChainResolver: '1.0',
-    CopularPredicateResolver: '2.0',
-    FalsePositiveFirewall: '2.0',
-    ArabicProBenchmark2000: '1.0',
-    AgreementResolver: '3.0',
-    FiveNounsPhraseResolver: '2.0',
-    DependencyTreeResolver: '1.0',
-    OrthographyStratified: '2.0',
-    LongContextResolver: '2.0'
-  }),
-  releaseCriteria: Object.freeze({
-    precision: 0.98,
-    falsePositiveRate: 0.01,
-    recall: 0.95,
-    wrongCorrectionRate: 0.005,
-    abstentionTechnique: 'الصحيح المحتمل المحسوم أقوى من قاعدة التصحيح العامة',
-    safeThreshold: 0.995
+    V1886ApiHardening: '1.0'
   })
 });
 
@@ -460,7 +464,7 @@ const DEFAULT_OPTIONS = Object.freeze({
     spacing: true,
     productiveOrthography: true,
     hamzaMorphological: true,
-    // V18.9.0 — الطبقات المضافة
+    // V18.9.0 — الطبقات المضافة، كلها مفعّلة افتراضيًا وقابلة للإطفاء فرديًا.
     diacritics: true,
     hamzaComplete: true,
     punctuationComplete: true,
@@ -468,16 +472,6 @@ const DEFAULT_OPTIONS = Object.freeze({
     munada: true,
     numberTamyizCompletion: true,
     style: true,
-    // V19.0.0 — طبقات القرار النحوي الموحد — النواة الحاكمة
-    verbSubjectFrames: true,
-    demonstrativeChains: true,
-    kanaPredicateTanwin: true,
-    grammarFirewall: true,
-    agreementResolver: true,
-    fiveNounsPhrase: true,
-    dependencyTree: true,
-    orthographyStratified: true,
-    longContext: true,
     objectCase: true,
     nominativeSubjectCase: true,
     conditionalGovernment: true,
@@ -4819,7 +4813,7 @@ const WORDS = Object.freeze({
   /* ── الهمزة المتطرفة: تُكتب على السطر أو على ياء، لا على نبرة ── */
   'عبئ': 'عبء', 'جزئ': 'جزء', 'دفئ': 'دفء', 'ملئ': 'ملء', 'بدئ': 'بدء',
   /* ── التاء المربوطة: الصيغة بدون «ة» لا قراءة صحيحة لها ── */
-  'فكره': 'فكرة', 'رساله': 'رسالة', 'تجربه': 'تجربة', 'حكومه': 'حكومة', 'وزاره': 'وزارة',
+  'رساله': 'رسالة', 'تجربه': 'تجربة', 'حكومه': 'حكومة', 'وزاره': 'وزارة',
   'شهاده': 'شهادة', 'ثقافه': 'ثقافة', 'الثقافه': 'الثقافة', 'الرساله': 'الرسالة',
   /* ── الألف المقصورة ── */
   'منتدي': 'منتدى', 'لدي': 'لدى',
@@ -8513,479 +8507,6 @@ function runFullSuiteV1890(options = {}) {
   return {version: META.version, valid, suites};
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
- * V19.0.0 — ARABIC PRO BENCHMARK 2000
- * معيار احترافي موسّع: يولّد ~2000 جملة موزعة على الفئات الإثنتي عشرة
- * المعتمدة في خارطة الطريق، منها 300 جملة صحيحة محصنة يجب ألا تُمسّ.
- * المقاييس: Recall, Precision, False-Positive Rate, Wrong-Correction Rate,
- * وAbstention Quality (جودة الامتناع عن التخمين عند ضعف الدليل).
- * ═══════════════════════════════════════════════════════════════════════════ */
-
-/* مفردات مولِّدات المعيار — محدودة بمداخل المعجم المراجعة حتى لا يُختبر غير
-   المقصود. كل جملة مولدة تُبنى بقالب يعرف موضع الخطأ وبديله سلفًا. */
-const V1900_FRAME_LEMMAS = Object.freeze([
-  {lemma: 'كتب', present3mp: 'يكتبون', past3mp: 'كتبوا', singular3ms: 'يكتب', singularPast3ms: 'كتب', feminine3fp: 'يكتبن', transitive: true, object: 'الرسائل', objectAfter: 'الرسالة'},
-  {lemma: 'شرح', present3mp: 'يشرحون', past3mp: 'شرحوا', singular3ms: 'يشرح', singularPast3ms: 'شرح', feminine3fp: 'يشرحن', transitive: true, object: 'الدروس', objectAfter: 'الدرس'},
-  {lemma: 'قرأ', present3mp: 'يقرأون', past3mp: 'قرأوا', singular3ms: 'يقرأ', singularPast3ms: 'قرأ', feminine3fp: 'يقرأن', transitive: true, object: 'الكتب', objectAfter: 'الكتاب'},
-  {lemma: 'نجح', present3mp: 'ينجحون', past3mp: 'نجحوا', singular3ms: 'ينجح', singularPast3ms: 'نجح', feminine3fp: 'ينجحن', transitive: false, object: null, objectAfter: null},
-  {lemma: 'حضر', present3mp: 'يحضرون', past3mp: 'حضروا', singular3ms: 'يحضر', singularPast3ms: 'حضر', feminine3fp: 'يحضرن', transitive: false, object: null, objectAfter: null}
-]);
-
-const V1900_FRAME_SUBJECTS = Object.freeze([
-  {surface: 'الطلاب', gender: 'm', number: 'pl', animacy: 'human', feminineVariant: null},
-  {surface: 'المعلمون', gender: 'm', number: 'pl', animacy: 'human', feminineVariant: 'المعلمات'},
-  {surface: 'المهندسون', gender: 'm', number: 'pl', animacy: 'human', feminineVariant: 'المهندسات'},
-  {surface: 'الموظفون', gender: 'm', number: 'pl', animacy: 'human', feminineVariant: 'الموظفات'}
-]);
-
-const V1900_KANA_SUBJECTS = Object.freeze(['الطالب', 'الولد', 'الجو', 'الدرس', 'البيت', 'الطبيب', 'الكتاب', 'الخبر']);
-const V1900_KANA_PREDICATES = Object.freeze(['مجتهد', 'معتدل', 'كبير', 'سهل', 'مفيد', 'جميل', 'نشيط', 'مهم']);
-const V1900_KANA_SISTERS = Object.freeze(['كان', 'أصبح', 'صار', 'ظل', 'أمسى', 'بات', 'ليس']);
-const V1900_DEMONSTRATIVE_HEADS = Object.freeze(['الطلاب', 'المعلمون', 'المهندسون', 'الباحثون']);
-const V1900_DEMONSTRATIVE_ADJECTIVES = Object.freeze(['المجتهدون', 'المخلصون', 'الماهرون', 'الجدد']);
-const V1900_ORTHO_PAIRS = Object.freeze([
-  ['سئل', 'سأل'], ['الذى', 'الذي'], ['مدينه', 'مدينة'], ['مباراه', 'مباراة'],
-  ['سياسه', 'سياسة'], ['دراسه', 'دراسة'], ['ممارسه', 'ممارسة'], ['مفاجاه', 'مفاجأة'],
-  ['ساعه', 'ساعة'], ['كبيره', 'كبيرة'], ['النهايه', 'النهاية'], ['البدايه', 'البداية'],
-  ['الحريه', 'الحرية'], ['الثقافه', 'الثقافة'], ['البيئه', 'البيئة'], ['العالميه', 'العالمية'],
-  ['الدوليه', 'الدولية'], ['المحليه', 'المحلية'], ['العامه', 'العامة'], ['الخاصه', 'الخاصة'],
-  ['السريعه', 'السريعة'], ['الطويله', 'الطويلة'], ['الجديده', 'الجديدة'], ['القديمه', 'القديمة'],
-  ['الصغيره', 'الصغيرة'], ['الممتازه', 'الممتازة'], ['الرئيسيه', 'الرئيسية'],
-  ['الى', 'إلى'], ['استاذ', 'أستاذ'], ['اثار', 'آثار'], ['ابداع', 'إبداع'], ['امل', 'أمل'],
-  ['اول', 'أول'], ['اكبر', 'أكبر'], ['اكمل', 'أكمل'], ['اولئك', 'أولئك'], ['انسان', 'إنسان'],
-  ['اذا', 'إذا'], ['اساس', 'أساس'],
-  ['مدرسه', 'مدرسة'], ['جامعه', 'جامعة'], ['شركه', 'شركة'], ['حكومه', 'حكومة'],
-  ['حياه', 'حياة'], ['نتيجه', 'نتيجة'], ['مهمه', 'مهمة'], ['ثقه', 'ثقة'], ['دقيقه', 'دقيقة'],
-  ['واسعه', 'واسعة'], ['فتره', 'فترة'], ['قريه', 'قرية'], ['مدينه', 'مدينة'], ['حديقه', 'حديقة'],
-  ['مستشفي', 'مستشفى'], ['وظيفه', 'وظيفة'], ['منطقه', 'منطقة'], ['اللغه', 'اللغة'],
-  ['العربيه', 'العربية'], ['فكره', 'فكرة'], ['مسئول', 'مسؤول'], ['مسئله', 'مسألة']
-]);
-
-const V1900_NUMBER_ERRORS = Object.freeze([
-  ['رأيت ثلاثة كتب', 'ثلاث عشرة', 'رأيت ثلاثة عشر كتاب', 'كتابًا'],
-  ['قرأت خمسة عشر طالب', 'خمسة عشر طالب', null, null],
-  ['حضر عشرون طلاب', 'عشرون طالب', null, null],
-  ['سلمت على المعلمون', 'المعلمين', null, null],
-  ['مررت بالمهندسون', 'المهندسين', null, null]
-]);
-
-function v1900Fill(target, generator, count) {
-  let guard = 0;
-  while (target.length < count && guard < count * 20) {
-    guard += 1;
-    const item = generator(target.length + guard);
-    if (item) target.push(item);
-  }
-  return target;
-}
-
-/**
- * توليد المعيار الاحترافي حسب جدول الفئات المعتمد في خارطة V19:
- * إملاء 300 / همزات 200 / تاء مربوطة وهاء 150 / صرف 250 / فعل وفاعل 250 /
- * نواسخ 200 / نعت وتوابع 200 / مثنى وجمع 150 / أسماء خمسة 100 / عدد وتمييز 100 /
- * شرط وموصول 100 / جمل صحيحة محصنة 300 (المجموع المستهدف 2000).
- * كل عنصر: {id, text, kind, expect?, category}. kind: 'error' أو 'control'.
- */
-function generateArabicProBenchmarkV1900() {
-  const sentences = [];
-  let serial = 0;
-  const add = (category, kind, text, expect) => {
-    serial += 1;
-    sentences.push(Object.freeze({
-      id: `pro19-${String(serial).padStart(4, '0')}`, category, kind, text,
-      ...(expect ? {expect} : {})
-    }));
-  };
-
-  /* ── 1) إملاء عام (هدف 300) ── */
-  const orthoTemplates = [
-    (bad) => `${bad}`,
-    (bad) => `هذا النص فيه ${bad}.`,
-    (bad) => `كتب الطالب ${bad} في الدفتر.`
-  ];
-  v1900Fill(sentences.filter(() => false), () => null, 0);
-  {
-    let made = 0;
-    let round = 0;
-    while (made < 300 && round < 12) {
-      for (const [bad, good] of V1900_ORTHO_PAIRS) {
-        if (made >= 300) break;
-        const template = orthoTemplates[round % orthoTemplates.length];
-        const text = template(bad);
-        add('orthography', 'error', text, good);
-        made += 1;
-      }
-      round += 1;
-    }
-  }
-
-  /* ── 2) همزات (هدف 200) ── */
-  {
-    const hamzaPairs = V1900_ORTHO_PAIRS.filter(([, good]) => /[أإآؤئ]/u.test(good));
-    let made = 0;
-    let round = 0;
-    const templates = [
-      (bad) => `${bad}`,
-      (bad) => `جاء الصديق ${bad} المنزل.`,
-      (bad) => `كتب المؤلف ${bad} المقال.`
-    ];
-    while (made < 200 && round < 30) {
-      for (const [bad, good] of hamzaPairs) {
-        if (made >= 200) break;
-        add('hamza', 'error', templates[round % templates.length](bad), good);
-        made += 1;
-      }
-      round += 1;
-    }
-  }
-
-  /* ── 3) تاء مربوطة/هاء (هدف 150) ── */
-  {
-    const taaPairs = V1900_ORTHO_PAIRS.filter(([, good]) => /ة$/u.test(good));
-    let made = 0;
-    let round = 0;
-    const templates = [
-      (bad) => `${bad}`,
-      (bad) => {
-        const verbLike = ['فكره', 'كتابه', 'قرائته', 'دراسته'].includes(bad);
-        if (verbLike) return `هذه ${bad} جميلة.`;
-        return `كانت ${bad} المدرسة قريبة.`;
-      },
-      (bad) => `رأى الطفل ${bad} الجميلة.`
-    ];
-    while (made < 150 && round < 20) {
-      for (const [bad, good] of taaPairs) {
-        if (made >= 150) break;
-        add('taa-marbuta', 'error', templates[round % templates.length](bad), good);
-        made += 1;
-      }
-      round += 1;
-    }
-  }
-
-  /* ── 4) صرف (هدف 250): أفعال خمسة قرينة عاملها الصحيح ── */
-  {
-    const fiveVerbSites = [];
-    for (const frame of V1900_FRAME_LEMMAS) {
-      fiveVerbSites.push([`لم ${frame.present3mp} اليوم.`, frame.present3mp.replace(/ون$/u, 'وا')]);
-      fiveVerbSites.push([`لن ${frame.present3mp} غدًا.`, frame.present3mp.replace(/ون$/u, 'وا')]);
-      if (frame.object) fiveVerbSites.push([`لم ${frame.present3mp} ${frame.object} أمس.`, frame.present3mp.replace(/ون$/u, 'وا')]);
-    }
-    let made = 0;
-    for (const [text, fixed] of fiveVerbSites) {
-      add('morphology', 'error', text, fixed);
-      made += 1;
-    }
-    v1900Fill({length: 0, push: () => {}}, () => null, 0);
-    // أغلال المثنى والجمع في البنى الانفعالية المعجمية
-    const extraMorph = [
-      ['الطالبين مجتهدان.', 'الطالبان'], ['المعلمين حاضرون.', 'المعلمون'],
-      ['قابلت المعلمان.', 'المعلمين'], ['حضر الطالبين.', 'الطالبان'],
-      ['رأيت الطالبان.', 'الطالبين'], ['سلمت على المهندسون.', 'المهندسين'],
-      ['المهندسين الماهرين اجتمعوا.', 'المهندسون'], ['مررت بالباحثون.', 'الباحثين']
-    ];
-    while (made < 250) {
-      const [text, fixed] = extraMorph[(made - fiveVerbSites.length) % extraMorph.length];
-      add('morphology', 'error', text, fixed);
-      made += 1;
-    }
-  }
-
-  /* ── 5) فعل وفاعل (هدف 250): إطارات VSO/SVO المحسومة ── */
-  {
-    let made = 0;
-    let round = 0;
-    while (made < 250 && round < 30) {
-      for (const subject of V1900_FRAME_SUBJECTS) {
-        if (made >= 250) break;
-        for (const frame of V1900_FRAME_LEMMAS) {
-          if (made >= 250) break;
-          const objectTail = frame.objectAfter ? ` ${frame.objectAfter}` : '';
-          if (round % 3 === 0) {
-            add('verb-subject', 'error', `لن ${frame.present3mp} ${subject.surface}${objectTail}.`, frame.singular3ms);
-          } else if (round % 3 === 1) {
-            add('verb-subject', 'error', `لم ${frame.present3mp} ${subject.surface}${objectTail}.`, frame.singular3ms);
-          } else if (subject.feminineVariant) {
-            add('verb-subject', 'error', `${subject.feminineVariant} لم ${frame.present3mp}${objectTail}.`, frame.feminine3fp);
-          }
-          made += 1;
-        }
-      }
-      round += 1;
-    }
-  }
-
-  /* ── 6) نواسخ (هدف 200): خبر كان المفرد المنصوب برسم التنوين ── */
-  {
-    let made = 0;
-    let guard = 0;
-    while (made < 200 && guard < 2000) {
-      guard += 1;
-      const sister = V1900_KANA_SISTERS[made % V1900_KANA_SISTERS.length];
-      const subject = V1900_KANA_SUBJECTS[made % V1900_KANA_SUBJECTS.length];
-      const predicate = V1900_KANA_PREDICATES[made % V1900_KANA_PREDICATES.length];
-      add('kana-sisters', 'error', `${sister} ${subject} ${predicate}.`, `${predicate}ًا`);
-      made += 1;
-    }
-    // جُعلت الولادة دورية بلا تكرار حرفي للنص نفسه
-  }
-
-  /* ── 7) نعت وتوابع (هدف 200): سلاسل اسم الإشارة بعد إن ── */
-  {
-    let made = 0;
-    let round = 0;
-    while (made < 200 && round < 20) {
-      for (const head of V1900_DEMONSTRATIVE_HEADS) {
-        if (made >= 200) break;
-        for (const adjective of V1900_DEMONSTRATIVE_ADJECTIVES) {
-          if (made >= 200) break;
-          add('adjective-dependents', 'error',
-            `إن هؤلاء ${head} ${adjective} يستحقون التقدير.`,
-            adjective.replace(/ون$/u, 'ين'));
-          made += 1;
-        }
-      }
-      round += 1;
-    }
-  }
-
-  /* ── 8) مثنى وجمع (هدف 150) ── */
-  {
-    const dualSites = [
-      ['الطالبين حضرا.', 'الطالبان'], ['الطالبين مجتهدان.', 'الطالبان'],
-      ['قابل المدير الموظفان.', 'الموظفين'], ['شاهد المعلم الطالبان المجتهدان.', 'الطالبين'],
-      ['إن الطالبان مجتهدين.', 'مجتهدان'],
-      ['المعلمين حاضرون.', 'المعلمون'], ['مررت بالمعلمون.', 'المعلمين']
-    ];
-    let made = 0;
-    while (made < 150) {
-      const [text, fixed] = dualSites[made % dualSites.length];
-      add('dual-plural', 'error', text, fixed);
-      made += 1;
-    }
-  }
-
-  /* ── 9) أسماء خمسة (هدف 100) — مصححة لمعجم الأعلام المحمية ── */
-  {
-    const fiveSites = [
-      ['رأيت أبو محمد.', 'أبا'], ['سلمت على أبو محمد.', 'أبي'],
-      ['جاء أبا محمد.', 'أبو'], ['رأيت أبو خالد.', 'أبا'],
-      ['مررت بأبا خالد.', 'أبي'], ['مررت بأبا محمد.', 'أبي'],
-      ['جاء أبا خالد.', 'أبو'], ['رأيت أبو أحمد.', 'أبا'],
-      ['سلمت على أبو أحمد.', 'أبي'], ['جاء أبا أحمد.', 'أبو']
-    ];
-    let made = 0;
-    while (made < 100) {
-      const [text, fixed] = fiveSites[made % fiveSites.length];
-      add('five-nouns', 'error', text, fixed);
-      made += 1;
-    }
-  }
-
-  /* ── 10) عدد وتمييز (هدف 100) ── */
-  {
-    const numberSites = [
-      ['في المكتبة عشرون كتاب.', 'كتابًا'], ['قرأت ثلاثة عشر طالب.', 'طالبًا'],
-      ['حضر خمسة عشر طلاب.', 'طالب'], ['رأيت أربعة كتاب.', 'كتب'],
-      ['اشترى ثلاث قلم.', 'أقلام'], ['نجح تسعون طلاب.', 'طالب']
-    ];
-    let made = 0;
-    while (made < 100) {
-      const [text, fixed] = numberSites[made % numberSites.length];
-      add('number-tamyiz', 'error', text, fixed);
-      made += 1;
-    }
-  }
-
-  /* ── 11) شرط وموصول (هدف 100) ── */
-  {
-    const conditionalSites = [
-      ['إن لم تدرسُ.', 'تدرسْ'], ['إن لم تدرسُ تنجحُ.', 'تدرسْ'],
-      ['الطلاب الذين حضر مبكرًا ناجحون.', 'حضروا'], ['جاءت الطالبة الذي نجح.', 'التي'],
-      ['حضر الطلاب الذي اجتهدوا.', 'الذين'], ['رأيت الطالبين التي نجحتا.', 'اللذين'],
-      ['إن تدرسُ تنجحُ.', 'تدرسْ'], ['من يجتهد ينجح.', 'ينجح']
-    ];
-    let made = 0;
-    let round = 0;
-    while (made < 100 && round < 40) {
-      const [text, fixed] = conditionalSites[made % conditionalSites.length];
-      add('conditional-relative', 'error', text, fixed);
-      made += 1;
-      round += 1;
-    }
-  }
-
-  /* ── 12) جمل صحيحة محصنة (هدف 300): لا يجوز أي ملاحظة ── */
-  {
-    const controls = [
-      'إن هؤلاء الطلاب المجتهدين يستحقون التقدير.',
-      'هؤلاء الطلاب المجتهدون ناجحون.',
-      'كان الطالب في المدرسة.',
-      'كان الطالب الذي حضر أمس مجتهدًا.',
-      'لن يكتبوا الواجب.',
-      'لم يكتبوا الواجب.',
-      'يكتبون الواجب كل يوم.',
-      'يكتب الطلاب واجباتهم.',
-      'المعلمات يشرحن الدرس.',
-      'زرت أخي محمد أمس.',
-      'سلمت على أخي.',
-      'مررت بأخي العامل.',
-      'كانت الطالبة مجتهدة.',
-      'إن الطالبين مجتهدان.',
-      'شرح المعلم الدرس شرحًا وافيًا.',
-      'بهؤلاء الطلاب المجتهدين نفتخر.',
-      'أولئك معلمون.',
-      'هؤلاء الطلبة مجتهدون.',
-      'حضر المعلمون الذين اجتهدوا.',
-      'الطالبان حضرا.',
-      'كان الطالبان مجتهدين.',
-      'إن هؤلاء المهندسين الماهرين صمموا المبنى.',
-      'قرأ الطلاب الكتاب قراءة متأنية.',
-      'نجح الطلاب في الامتحان.',
-      'المعلمون حضروا الاجتماع مبكرين.',
-      'سبحان الله وبحمده.',
-      'الطالب المجتهد يقرأ كثيرًا.',
-      'إن هذا القانون يحمي الجميع.',
-      'قال العلماء الذين اجتمعوا كلمتهم.',
-      'سافر المهندسون الذين صمموا الجسر.'
-    ];
-    let made = 0;
-    while (made < 300) {
-      add('protected-correct', 'control', controls[made % controls.length]);
-      made += 1;
-    }
-  }
-
-  return Object.freeze({
-    version: 'V1900-PRO-BENCHMARK-1.0',
-    description: 'المعيار الاحترافي العربي: ~2000 جملة موزعة على اثنتي عشرة فئة، منها 300 جملة صحيحة محصنة.',
-    counts: Object.freeze({total: sentences.length}),
-    sentences: Object.freeze(sentences)
-  });
-}
-
-const ARABIC_PRO_BENCHMARK_V1900 = generateArabicProBenchmarkV1900();
-
-/* تشغيل المعيار بحساب المقاييس الاحترافية الخمسة. */
-function runArabicProBenchmarkV1900(benchmark = ARABIC_PRO_BENCHMARK_V1900, options = {}) {
-  const norm = s => String(s).replace(/\s+/gu, ' ').trim();
-  const wordsOf = s => norm(s).split(' ').filter(Boolean).map(w => w.replace(/^[وف]/u, ''));
-  const matches = (repl, exp) => {
-    if (!repl) return false;
-    const r = norm(repl), e = norm(exp);
-    if (r === e || r.includes(e) || e.includes(r)) return true;
-    const ew = wordsOf(e), rw = wordsOf(r);
-    return ew.length > 0 && ew.every(w => rw.includes(w));
-  };
-
-  let caught = 0;
-  const missed = [];
-  let falsePositives = 0;
-  let wrongCorrections = 0;
-  const fpList = [];
-  const byCategory = {};
-
-  for (const item of benchmark.sentences) {
-    const result = analyze(item.text, {safeMode: true, includeAdvisories: false, ...options});
-    const findings = (result.findings || []).filter(f => f.severity !== 'STYLE');
-    byCategory[item.category] = byCategory[item.category] || {total: 0, caught: 0, fp: 0};
-    byCategory[item.category].total += 1;
-    if (item.kind === 'control') {
-      if (findings.length) {
-        falsePositives += 1;
-        byCategory[item.category].fp += 1;
-        if (result.corrected !== item.text) wrongCorrections += 1;
-        fpList.push({id: item.id, text: item.text,
-          findings: findings.map(f => ({ruleId: f.ruleId, original: f.original, replacement: f.replacement}))});
-      }
-      continue;
-    }
-    const hit = matches(result.corrected, item.expect)
-      || findings.some(f => matches(f.replacement, item.expect));
-    if (hit) { caught += 1; byCategory[item.category].caught += 1; }
-    else missed.push({id: item.id, category: item.category, text: item.text, expect: item.expect,
-      got: findings.map(f => f.replacement).filter(Boolean)});
-  }
-
-  const errors = benchmark.sentences.filter(s => s.kind === 'error').length;
-  const controls = benchmark.sentences.filter(s => s.kind === 'control').length;
-  const recall = errors ? caught / errors : 0;
-  const precision = (caught + falsePositives) ? caught / (caught + falsePositives) : 1;
-  const f1 = (precision + recall) ? 2 * precision * recall / (precision + recall) : 0;
-  const falsePositiveRate = controls ? falsePositives / controls : 0;
-  const wrongCorrectionRate = controls ? wrongCorrections / controls : 0;
-  // جودة الامتناع: نسبة الجمل الصحيحة التي لم تُنتج عليها ملاحظة غير أسلوبية.
-  const abstentionQuality = controls ? 1 - falsePositiveRate : 1;
-
-  const targets = Object.freeze({precision: 0.98, falsePositiveRate: 0.01, recall: 0.95, wrongCorrectionRate: 0.005});
-  return {
-    version: benchmark.version, engine: META.version,
-    total: benchmark.sentences.length, errors, controls,
-    caught, missed: missed.length, falsePositives, wrongCorrections,
-    recall, precision, f1, falsePositiveRate, wrongCorrectionRate, abstentionQuality,
-    targets,
-    targetsMet: {
-      precision: precision >= targets.precision,
-      recall: recall >= targets.recall,
-      falsePositiveRate: falsePositiveRate <= targets.falsePositiveRate,
-      wrongCorrectionRate: wrongCorrectionRate <= targets.wrongCorrectionRate
-    },
-    valid: precision >= targets.precision && recall >= targets.recall
-      && falsePositiveRate <= targets.falsePositiveRate && wrongCorrectionRate <= targets.wrongCorrectionRate,
-    byCategory: Object.fromEntries(Object.entries(byCategory).map(([k, v]) =>
-      [k, {total: v.total, caught: v.caught, fp: v.fp, rate: v.total ? v.caught / v.total : 0}])),
-    missedItems: missed.slice(0, 50), fpList: fpList.slice(0, 50)
-  };
-}
-
-/* المجموعة الجامعة لكل تحققات V19. */
-function runFullSuiteV1900(options = {}) {
-  const core = validate();
-  const regression1880 = runRegressionSuiteV1880(options);
-  const regression1890 = runRegressionSuiteV1890(options);
-  const regression1900 = runRegressionSuiteV1900(options);
-  const benchmark400 = runLargeExternalBenchmark(EXTERNAL_HOLDOUT_BENCHMARK_V1877, options);
-  const proBenchmark = runArabicProBenchmarkV1900(ARABIC_PRO_BENCHMARK_V1900, options);
-  const sanity = runPROApiSanityChecks();
-
-  const suites = {
-    coreValidation: {valid: core.valid, gold: core.gold.total,
-      goldFailures: core.gold.failures.length,
-      noFalsePositives: core.noFalsePositives.total,
-      noFalsePositiveFailures: core.noFalsePositives.failures.length,
-      posDependency: core.posDependency.total,
-      posDependencyFailures: core.posDependency.failures.length,
-      phraseRoles: core.phraseRoles.total,
-      phraseRoleFailures: core.phraseRoles.failures.length,
-      dataFailures: core.data.failures},
-    regressionV1880: {valid: regression1880.valid, total: regression1880.total, passed: regression1880.passed,
-      failures: regression1880.failures.slice(0, 20)},
-    regressionV1890: {valid: regression1890.valid, total: regression1890.total, passed: regression1890.passed,
-      failures: regression1890.failures.slice(0, 20)},
-    regressionV1900: {valid: regression1900.valid, total: regression1900.total, passed: regression1900.passed,
-      failures: regression1900.failures.slice(0, 20)},
-    externalBenchmark400: {recall: benchmark400.recall, precision: benchmark400.precision,
-      f1: benchmark400.f1, falsePositives: benchmark400.counts.falsePositives,
-      missedList: benchmark400.errorResults.filter(e => !e.ok).slice(0, 20),
-      fpList: benchmark400.fpList.slice(0, 20)},
-    arabicProBenchmark2000: {total: proBenchmark.total, errors: proBenchmark.errors,
-      controls: proBenchmark.controls, recall: proBenchmark.recall, precision: proBenchmark.precision,
-      f1: proBenchmark.f1, falsePositiveRate: proBenchmark.falsePositiveRate,
-      wrongCorrectionRate: proBenchmark.wrongCorrectionRate,
-      abstentionQuality: proBenchmark.abstentionQuality, targetsMet: proBenchmark.targetsMet,
-      byCategory: proBenchmark.byCategory,
-      missedSample: proBenchmark.missedItems.slice(0, 15), fpSample: proBenchmark.fpList.slice(0, 15)},
-    apiSanity: sanity
-  };
-
-  const valid = core.valid && regression1880.valid && regression1890.valid && regression1900.valid
-    && benchmark400.counts.falsePositives === 0 && benchmark400.recall === 1
-    && proBenchmark.valid && sanity.valid;
-
-  return {version: META.version, valid, suites};
-}
-
-
 /* ===== MODULE: src/pipeline/rules.js ===== */
 /* ===== MODULE: src/rules/nominative-subject-case-v1876.js ===== */
 /**
@@ -9181,771 +8702,20 @@ function contextualOrthographyRule(context) {
   return out;
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
- * V19.0.0 PRO FINAL — نواة القرار النحوي الموحّدة والجدار الناري للإنذارات
- * ═══════════════════════════════════════════════════════════════════════════
- * المبدأ الحاكم في هذه الطبقة: «ترابط الطبقات قبل ازديادها». لا تضيف V19
- * قواعد كلمةٍ منفردة جديدة بقدر ما تجعل حسم تركيب الجملة (الفاعل، الإطار
- * الفعلي، سلاسل التبعية، بنية الناسخ) سابقًا على إطلاق الأحكام، وتُخضع كل
- * ملاحظةٍ نحوية لجدار فحص: «الصحيح المحتمل المحسوم أقوى من قاعدة التصحيح
- * العامة». كل طبقة جديدة إضافةٌ صرفة: لا تحذف قاعدة ولا تغيّر واجهة.
- *
- * المكونات:
- *   1) VerbSubjectFrameResolver 2.0 — يصنّف طارف الجمل الفعلية إلى:
- *      فعل+فاعل ظاهر (VSO)، فاعل+فعل (SVO)، فاعل مستتر، أو غير محسوم.
- *   2) verbSubjectFrames 2.0 — الفعل بصيغة الجمع مع فاعل ظاهر:
- *        • VSO: «لن يكتبون الطلاب واجباتهم» ← «يكتب» (إفراد الفعل إلزامًا).
- *        • SVO: «المعلمات لم يشرحون الدرس» ← «يشرحن» (مطابقة الجنس والعدد).
- *   3) InnaDemonstrativeChainResolver 1.0 — سلسلة «إن هؤلاء الطلاب
- *      المجتهدين» وحدة تبعية واحدة: التابع يتبع اسم الإشارة في محل إنّ،
- *      فتُصحَّح الواو إلى ياء عند اللزوم وتُحجب القلبات الخاطئة.
- *   4) CopularPredicateResolver 2.0 — خبر كان المنصوب برسمٍ ظاهر: «كان
- *      الطالب مجتهد» ← «مجتهدًا»، مع امتناعٍ تام عن شبه الجملة وصلة
- *      الموصول والممنوع من الصرف والمذكور بعلامة.
- *   5) FalsePositiveFirewall 2.0 — جدار نهائي يراجع كل ملاحظة نحوية قبل
- *      الترتيب: يمنع قلب ياء الأسماء الخمسة المضافة لياء المتكلم، ويمنع
- *      نقض الفعل/الفاعل بعد حسم الإطار، ويمنع نقض توابع السلاسل المحسومة.
- * ═══════════════════════════════════════════════════════════════════════════ */
-
-const V1900_LAYER_IDS = Object.freeze({
-  rules: Object.freeze(['verbSubjectFrames', 'demonstrativeChains', 'kanaPredicateTanwin']),
-  firewall: 'grammarFirewall'
-});
-
-/* حواف الرسم التي لا يجوز قلبها على أساس إعرابي ظني */
-const V1900_OBLIQUE_ENDING_RE = /ين$/u;
-const V1900_NOMINATIVE_ENDING_RE = /(?:ون|ان)$/u;
-const V1900_YAA_FINAL_FIVE_NOUN_RE = /[يى]$/u;
-
-/* ─── أدوات رسم مشتركة ─── */
-function v1900Bare(core) {
-  return stripDiacritics(core || '');
-}
-
-function v1900EndingKind(core) {
-  const bare = v1900Bare(core);
-  if (V1900_OBLIQUE_ENDING_RE.test(bare)) return 'oblique';
-  if (/ون$/u.test(bare)) return 'nominative-plural';
-  if (/ان$/u.test(bare)) return 'nominative-dual';
-  return null;
-}
-
-function v1900FlipDirection(original, replacement) {
-  const fromKind = v1900EndingKind(original);
-  const toKind = v1900EndingKind(replacement);
-  if (!fromKind || !toKind) return null;
-  if (fromKind === 'oblique' && toKind.startsWith('nominative')) return 'to-nominative';
-  if (fromKind.startsWith('nominative') && toKind === 'oblique') return 'to-oblique';
-  return null;
-}
-
-/* ─────────────────────────────────────────────────────────────────────────
- * VerbSubjectFrameResolver 2.0
- * يبني لكل فعلٍ إطارًا: من الفاعل؟ أظاهرٌ أم مستتر؟ وتأكيدُ الترتيب VSO/SVO.
- * الفاعل الظاهر بعد الفعل (VSO) يلزم إفرادَ الفعل ومطابقته للجنس فقط؛
- * والفاعل المبدوء (SVO) يلزم المطابقة الكاملة. وجود الفاعل الظاهر في أي من
- * الجانبين يمنع قراءة ضمير الجماعة المستتر التي تبني عليها قاعدة الأفعال
- * الخمسة قرارها القديم.
- * ───────────────────────────────────────────────────────────────────────── */
-const V1900_EXCLUDED_SUBJECT_ROLES = new Set([
-  'object', 'genitive', 'object-of-preposition', 'number-tamyiz',
-  'adjective', 'hal', 'predicate', 'inna-predicate', 'kana-predicate'
-]);
-
-function v1900GovernorMoodAt(context, verbIndex) {
-  const {tokens} = context;
-  const previous = tokens[verbIndex - 1];
-  if (!previous || previous.sentence !== tokens[verbIndex].sentence) return null;
-  const core = previous.morph?.core;
-  if (SUBJUNCTIVE_PARTICLES.has(core)) return {mood: 'subjunctive', governorIndex: verbIndex - 1, governor: core};
-  if (JUSSIVE_PARTICLES.has(core)) return {mood: 'jussive', governorIndex: verbIndex - 1, governor: core};
-  return null;
-}
-
-/* فاعل مبدوء قبل الفعل، مع تجاوز عامل النصب/الجزم وجوامد التوكيد الزمنية. */
-function v1900PreverbalOvertSubject(context, verbIndex) {
-  const {tokens} = context;
-  const verbToken = tokens[verbIndex];
-  const verb = bestVerb(verbToken);
-  let cursor = verbIndex - 1;
-  if (v1900GovernorMoodAt(context, verbIndex)) cursor -= 1;
-  while (cursor >= 0 && VERBAL_PARTICLES.has(tokens[cursor]?.morph?.core)) cursor -= 1;
-  if (cursor < 0) return null;
-  const candidate = tokens[cursor];
-  if (candidate.sentence !== verbToken.sentence) return null;
-  const core = candidate.morph?.core;
-  if (!core) return null;
-  if (candidate.morph.segments?.conjunction) return null;      // معطوف: المطابقة لقاعدة العطف
-  if (candidate.morph.segments?.preposition || canonicalPrepositionCore(candidate)) return null;
-  if (bestVerb(candidate) || isKanaSurface(core) || INNA_PARTICLES.has(core)) return null;
-  if (RELATIVE_PRONOUNS[core] || PREPOSITIONS.has(core)) return null;
-  if (!isStrongNominalCandidate(candidate) && !isNisbaSubjectCandidate(candidate)) return null;
-  if (isAdjective(candidate)) return null;
-  if (isPrepositionGovernedToken(tokens, cursor)) return null;
-  const role = context.syntax?.roles?.[cursor]?.role;
-  if (V1900_EXCLUDED_SUBJECT_ROLES.has(role)) return null;
-  const observed = observedCase(candidate);
-  if (observed === 'accusative' || observed === 'accgen') return null;
-  const features = effectiveAgreement(tokenFeatures(candidate));
-  if (!features?.gender || !features?.number) return null;
-  // الفعل المتعدي: المفعول المتقدم غير العاقل قراءة أرجح من الفاعلية — لا حسم بلا عقلانية.
-  if (verb?.transitive && features.animacy !== 'human' && observed !== 'nominative') return null;
-  return {subjectIndex: cursor, features, order: 'SVO', confidence: 0.95,
-    evidence: ['preverbal-overt-subject', `role:${role || 'unassigned'}`, `observed:${observed || 'bare'}`]};
-}
-
-/* فاعل ظاهر يلي الفعل مباشرة (VSO): يشترط العقلانية أو اكتمال الإطار بمفعول
-   أو شبه جملة لاحقة، حتى لا يُقلب «يكتبون الواجب» (الواجب مفعول والفاعل مستتر). */
-function v1900PostverbalOvertSubject(context, verbIndex) {
-  const {tokens} = context;
-  const verbToken = tokens[verbIndex];
-  const verb = bestVerb(verbToken);
-  if (!verb) return null;
-  const bounds = sentenceBounds(tokens, verbIndex);
-  const clause = clauseForToken(context, verbIndex);
-  const limit = Math.min(bounds.end, clauseLocalArgumentBounds(context, verbIndex, clause).end);
-  const j = verbIndex + 1;
-  if (j >= limit) return null;
-  const candidate = tokens[j];
-  if (candidate.sentence !== verbToken.sentence) return null;
-  const core = candidate.morph?.core;
-  if (!core) return null;
-  if (candidate.morph.segments?.conjunction || candidate.morph.segments?.preposition) return null;
-  if (candidate.morph.segments?.enclitic === 'ي') return null;               // ياء المتكلم: قراءة مستقلة
-  if (bestVerb(candidate) || isKanaSurface(core) || INNA_PARTICLES.has(core)) return null;
-  if (RELATIVE_PRONOUNS[core] || canonicalPrepositionCore(candidate)) return null;
-  if (SUBJECT_SKIP_ADVERBS.has(core) || ADVERBIAL_GOVERNORS.has(core) || EMPHASIS_BASES.has(core)) return null;
-  if (!isStrongNominalCandidate(candidate) && !isNisbaSubjectCandidate(candidate)) return null;
-  if (isAdjective(candidate) || isPrepositionGovernedToken(tokens, j)) return null;
-  const observed = observedCase(candidate);
-  if (observed === 'accusative' || observed === 'accgen') return null;
-  const features = effectiveAgreement(tokenFeatures(candidate));
-  if (!features?.gender) return null;
-  let frameComplete = !verb.transitive;
-  if (!frameComplete && features.animacy !== 'human') return null;            // متعدٍّ + غير عاقل: مفعول أرجح
-  if (!frameComplete) {
-    for (let k = j + 1; k < limit && k <= j + 6; k += 1) {
-      const token = tokens[k];
-      if (token.sentence !== candidate.sentence) break;
-      const kCore = token.morph?.core;
-      if (!kCore) break;
-      if (RELATIVE_PRONOUNS[kCore] || bestVerb(token) || isKanaSurface(kCore)) break;
-      if (EMPHASIS_BASES.has(kCore) || SUBJECT_SKIP_ADVERBS.has(kCore)) {
-        k = nominalArgumentUnitEnd(tokens, k, limit) - 1;
-        continue;
-      }
-      if (token.morph.segments?.preposition || canonicalPrepositionCore(token)) { frameComplete = true; break; }
-      if (isAdjective(token)) continue;                                        // نعت الفاعل بينهما
-      if (isStrongNominalCandidate(token) && !isPrepositionGovernedToken(tokens, k)) {
-        const observedNext = observedCase(token);
-        if (observedNext === 'accusative' || observedNext === 'accgen'
-            || token.morph.definite || token.morph.segments?.enclitic) frameComplete = true;
-        break;
-      }
-      break;
-    }
-  }
-  if (!frameComplete) return null;
-  return {subjectIndex: j, features, order: 'VSO', confidence: verb.transitive ? 0.95 : 0.96,
-    evidence: ['postverbal-overt-subject', `frame-complete:${Boolean(verb.transitive)}`, `observed:${observed || 'bare'}`]};
-}
-
-function v1900PersonCodeFor(features, {vso = false} = {}) {
-  const gender = features.gender === 'f' ? 'f' : 'm';
-  let number = features.number || 'sg';
-  if (vso) number = 'sg';                                                      // VSO: إفراد إلزامي
-  if (number === 'du') return gender === 'f' ? '3df' : '3dm';
-  if (number === 'pl') return gender === 'f' ? '3fp' : '3mp';
-  return gender === 'f' ? '3fs' : '3ms';
-}
-
-/* سجل الإطارات الموحد: يُحسب مرة واحدة ويشترك فيه محرك التصحيح والجدار الناري
-   والفحص التشخيصي، فلا يبقى قرار الفعل/الفاعل موزعًا بين قواعد متنازعة. */
-function getVerbFramesV1900(context) {
-  if (context.v1900Frames) return context.v1900Frames;
-  const {tokens} = context;
-  const frames = [];
-  for (let i = 0; i < tokens.length; i += 1) {
-    const token = tokens[i];
-    const verb = bestVerb(token);
-    if (!verb || verb.tense === 'imperative') continue;
-    if (token.morph.segments?.enclitic) continue;                              // ضمير متصل يعقّد الإطار
-    const governor = v1900GovernorMoodAt(context, i);
-    const preverbal = v1900PreverbalOvertSubject(context, i);
-    const postverbal = preverbal ? null : v1900PostverbalOvertSubject(context, i);
-    const resolution = preverbal || postverbal;
-    if (!resolution) {
-      frames.push({verbIndex: i, verb, tense: verb.tense, personCode: verb.personCode,
-        mood: governor?.mood || verbMoodInContext(context, i, verb) || 'indicative',
-        order: 'implicit-subject', subjectIndex: -1, mismatch: false});
-      continue;
-    }
-    const expectedPersonCode = v1900PersonCodeFor(resolution.features, {vso: resolution.order === 'VSO'});
-    const mismatch = expectedPersonCode !== verb.personCode;
-    frames.push({
-      verbIndex: i, verb, tense: verb.tense, personCode: verb.personCode,
-      mood: governor?.mood || verbMoodInContext(context, i, verb) || 'indicative',
-      order: resolution.order, subjectIndex: resolution.subjectIndex,
-      subjectFeatures: resolution.features, expectedPersonCode, mismatch,
-      confidence: resolution.confidence, evidence: resolution.evidence,
-      resolverVersion: '2.0'
-    });
-  }
-  context.v1900Frames = frames;
-  return frames;
-}
-
-function v1900ConjugatedReplacement(verb, personCode, mood, tense) {
-  const surface = conjugateVerb(verb.lemma, tense, personCode);
-  if (!surface) return null;
-  // نون النسوة (3fp/2fp) فعل مبني لا يؤثر فيه النصب ولا الجزم؛ applyVerbMood
-  // يعرف ذلك ويعيد السطح كما هو، لكننا نصرّح بالقصد هنا.
-  const moodApplied = tense === 'present' && mood && mood !== 'indicative'
-    ? applyVerbMood(surface, personCode, mood, verb.lemma)
-    : surface;
-  return moodApplied;
-}
-
-/* القاعدة: فعل الجمع (ـون/ـوا/نون النسوة) مع فاعل ظاهر محسوم. */
-function verbSubjectFrameRuleV1900(context) {
-  const out = [];
-  const {tokens} = context;
-  for (const frame of getVerbFramesV1900(context)) {
-    if (!frame.mismatch) continue;
-    if (!['3mp', '3fp'].includes(frame.personCode)) continue;                 // صيغ الجمع فقط
-    const token = tokens[frame.verbIndex];
-    const desired = v1900ConjugatedReplacement(frame.verb, frame.expectedPersonCode, frame.mood, frame.tense);
-    if (!desired || desired === token.morph.core || desired === token.clean) continue;
-    const isVso = frame.order === 'VSO';
-    out.push(findingFromSpan(context, {
-      startToken: token,
-      replacement: rebuildToken(token, desired),
-      ruleId: isVso ? 'V1900_VSO_VERB_SINGULAR_AGREEMENT' : 'V1900_SVO_VERB_GENDER_NUMBER_AGREEMENT',
-      type: 'نحوي', classification: 'agreement',
-      confidence: Math.min(0.96, frame.confidence + (frame.mood !== 'indicative' ? 0 : 0.01)),
-      explanation: isVso
-        ? 'الفاعل الظاهر بعد الفعل يلزم إفراد الفعل ومطابقته للفاعل في الجنس فقط؛ صيغة الجمع (واو الجماعة/نون النسوة) ضمير مستتر لا يجتمع مع فاعل ظاهر.'
-        : 'الفاعل المبدوء قبل الفعل يلزم مطابقة الفعل له في الجنس والعدد؛ واو الجماعة هنا لا تطابق الفاعل المحسوم.',
-      evidence: ['verb-subject-frame-resolver-2.0', `order:${frame.order}`,
-        `subject:${frame.subjectIndex}`, `mood:${frame.mood}`,
-        `person:${frame.personCode}->${frame.expectedPersonCode}`, ...frame.evidence],
-      safe: false,
-      metadata: {resolver: 'VerbSubjectFrameResolver', resolverVersion: '2.0',
-        frameOrder: frame.order, subjectIndex: frame.subjectIndex, mood: frame.mood,
-        expectedPersonCode: frame.expectedPersonCode}
-    }));
-  }
-  return out;
-}
-
-/* ─────────────────────────────────────────────────────────────────────────
- * InnaDemonstrativeChainResolver 1.0 — شجرة تبعية مبسطة لسلسلة اسم الإشارة.
- * «إن هؤلاء الطلاب المجتهدين» ليست ثلاث كلمات مستقلة؛ بل:
- *   إنّ (عامل نصب)
- *   └── هؤلاء (اسم إن، مبني في محل نصب)
- *       └── الطلاب (بدل/نعت، يتبع المحل)
- *           └── المجتهدين (نعت، يتبع المحل)
- * حالة السلسلة تحسم من العامل: ناسخ ناصب ⇒ نصب، حرف جر ⇒ جر، صدر جملة ⇒ رفع
- * (مبتدأ). التابع المنتهي بالياء في سلسلة النصب/الجر صحيح لا يُقلب، والمنتهي
- * بالواو فيها خطأ يُصحح؛ والعكس في سلسلة الرفع.
- * ───────────────────────────────────────────────────────────────────────── */
-function demonstrativeChainsV1900(context) {
-  if (context.v1900Chains) return context.v1900Chains;
-  const {tokens} = context;
-  const chains = [];
-  for (let i = 0; i < tokens.length; i += 1) {
-    const token = tokens[i];
-    const features = DEMONSTRATIVES[token.morph?.core];
-    if (!features) continue;
-    let expectedCase = null;
-    let governor = null;
-    if (token.morph.segments?.preposition || canonicalPrepositionCore(tokens[i - 1])) {
-      expectedCase = 'genitive';
-      governor = token.morph.segments?.preposition || tokens[i - 1]?.morph?.core;
-    } else if (INNA_PARTICLES.has(tokens[i - 1]?.morph?.core)) {
-      expectedCase = 'accusative';
-      governor = tokens[i - 1].morph.core;
-    } else if (i === sentenceBounds(tokens, i).start) {
-      expectedCase = 'nominative';
-      governor = 'sentence-initial-topic';
-    }
-    if (!expectedCase) continue;
-    const members = [];
-    for (let j = i + 1; j < tokens.length && j <= i + 6 && members.length < 4; j += 1) {
-      const member = tokens[j];
-      if (member.sentence !== token.sentence) break;
-      const core = member.morph?.core;
-      if (!core) break;
-      if (member.morph.segments?.conjunction || member.morph.segments?.preposition) break;
-      if (canonicalPrepositionCore(member)) break;
-      if (RELATIVE_PRONOUNS[core]) {
-        const relative = (context.syntax?.clauses || []).find(clause => clause.type === 'relative' && clause.markerIndex === j);
-        if (relative) { j = relative.end - 1; continue; }
-        break;
-      }
-      if (bestVerb(member) || isKanaSurface(core) || INNA_PARTICLES.has(core)) break;
-      if (!isNominal(member)) break;
-      if (!member.morph.definite) break;                                       // نكرة: خبر أو حال — خارج السلسلة
-      if (member.morph.segments?.enclitic) break;                              // جمع متصل بضمير: علامته محذوفة النون
-      members.push(j);
-    }
-    if (!members.length) continue;
-    chains.push({
-      demonstrativeIndex: i, demonstrative: token.morph.core,
-      demonstrativeNumber: features[1],
-      members, expectedCase, governor,
-      confidence: expectedCase === 'nominative' ? 0.94 : 0.98,
-      resolverVersion: '1.0'
-    });
-  }
-  context.v1900Chains = chains;
-  return chains;
-}
-
-function v1900ChainMemberIndex(context) {
-  if (context.v1900ChainMap) return context.v1900ChainMap;
-  const map = new Map();
-  for (const chain of demonstrativeChainsV1900(context)) {
-    for (const memberIndex of chain.members) map.set(memberIndex, chain);
-  }
-  context.v1900ChainMap = map;
-  return map;
-}
-
-function demonstrativeChainCaseRuleV1900(context) {
-  const out = [];
-  const {tokens} = context;
-  for (const chain of demonstrativeChainsV1900(context)) {
-    const obliqueExpected = chain.expectedCase !== 'nominative';
-    for (const memberIndex of chain.members) {
-      const token = tokens[memberIndex];
-      const nominal = token.morph?.nominal;
-      const number = nominal?.number || token.morph?.number;
-      if (number==='sg') continue;
-      const kind = v1900EndingKind(token.morph?.core);
-      if (obliqueExpected && (kind === 'nominative-plural' || kind === 'nominative-dual')) {
-        const bare = v1900Bare(token.morph.core);
-        const desiredCore = bare.replace(/(?:ون|ان)$/u, 'ين');
-        if (desiredCore === bare) continue;
-        out.push(findingFromSpan(context, {
-          startToken: token,
-          replacement: rebuildToken(token, desiredCore),
-          ruleId: 'V1900_DEM_CHAIN_OBLIQUE_CASE',
-          type: 'نحوي', classification: 'syntactic-case', confidence: 0.96,
-          explanation: `التابع في سلسلة اسم الإشارة يتبع محلها بالياء.`,
-          evidence: ['inna-demonstrative-chain-resolver-1.0'],
-          safe: false,
-          metadata: {resolver: 'InnaDemonstrativeChainResolver', resolverVersion: '1.0', chain: chain.demonstrativeIndex, expectedCase: chain.expectedCase}
-        }));
-        continue;
-      }
-      if (!obliqueExpected && kind === 'oblique' && chain.demonstrativeNumber === 'pl' && token.morph?.nominal?.number !== 'du') {
-        if (number==='sg') continue;
-        const bare = v1900Bare(token.morph.core);
-        const desiredCore = bare.replace(/ين$/u, 'ون');
-        if (desiredCore === bare) continue;
-        out.push(findingFromSpan(context, {
-          startToken: token,
-          replacement: rebuildToken(token, desiredCore),
-          ruleId: 'V1900_DEM_CHAIN_NOMINATIVE_CASE',
-          type: 'نحوي', classification: 'syntactic-case', confidence: 0.94,
-          explanation: 'سلسلة اسم الإشارة مبتدأ مرفوع بالواو.',
-          evidence: ['inna-demonstrative-chain-resolver-1.0'],
-          safe: false,
-          metadata: {resolver: 'InnaDemonstrativeChainResolver', resolverVersion: '1.0', chain: chain.demonstrativeIndex, expectedCase: chain.expectedCase}
-        }));
-      }
-    }
-  }
-  return out;
-}
-
-/* ─────────────────────────────────────────────────────────────────────────
- * CopularPredicateResolver 2.0 — الرسم الظاهر لخبر الناسخ المفرد.
- * يعتمد البنية المحسومة من resolveCopularStructure (اسم الناسخ + الخبر بعد
- * تخطّي صلة الموصول)، ثم يقترح رسم ألف التنوين للخبر المنصوب المجرد.
- * محرّمات الإطلاق (امتناع صارم): شبه الجملة، المعرّف بـ«ال»، المتصل بضمير،
- * المشكول/ذو العلامة البنيوية، التاء المربوطة والمقصور والمهموز والمعتل
- * والممنوع من الصرف، صيغ الجمع والمثنى، وصفة لا تطابق مؤنث الاسم.
- * ───────────────────────────────────────────────────────────────────────── */
-const V1900_NO_TANWIN_ALIF_ENDING = /(?:ة|ء|ى|ا|أ|إ|آ|ؤ|ئ|ي|و|ات|ون|ين|ان|اء|وا|وة)$/u;
-
-/* مسار احتياطي محافظ عند تعذّر resolveCopularStructure (مثل «الجو/الأمر»
-   غير المفهرسة معجميًا): اسم الناسخ = أول مرشح اسمي بعدها، والخبر = آخر مرشح
-   اسمي متصل؛ وكل الفحوص اللاحقة (التنكير، عدم العلامة، عدم التعريف...) حاكمة
-   على الاحتياط كما هي على المسار الرسمي. */
-function v1900CopularFallback(context, markerIndex) {
-  const {tokens} = context;
-  const {end} = sentenceBounds(tokens, markerIndex);
-  const candidates = [];
-  for (let j = markerIndex + 1; j < end && j <= markerIndex + 6 && candidates.length < 3; j += 1) {
-    const token = tokens[j];
-    const core = token.morph?.core;
-    if (!core) break;
-    if (token.morph.segments?.preposition || canonicalPrepositionCore(token)
-      || ADVERBIAL_GOVERNORS.has(core) || SUBJECT_SKIP_ADVERBS.has(core)) return null;
-    if (RELATIVE_PRONOUNS[core] || bestVerb(token) || INNA_PARTICLES.has(core)) return null;
-    if (token.morph.segments?.conjunction) return null;
-    if (isNominal(token) || token.morph?.pos === 'unknown' || token.morph?.pos === 'adj') candidates.push(j);
-  }
-  if (candidates.length < 2) return null;
-  return {subjectIndex: candidates[0], subjectFeatureIndex: candidates[0],
-    predicateIndex: candidates[candidates.length - 1], fallback: true};
-}
-
-function kanaPredicateTanwinRuleV1900(context) {
-  const out = [];
-  const {tokens} = context;
-  for (let i = 0; i < tokens.length; i += 1) {
-    const core = tokens[i].morph?.core;
-    if (!core || !isKanaSurface(core)) continue;
-    const sister = KANA_SISTERS_V1880[core] || KANA_SISTERS_V1880[core.replace(/^ما/u, '')];
-    if (sister?.condition === 'requires-negation' || sister?.condition === 'requires-ma-masdariyya') {
-      const previous = tokens[i - 1]?.morph?.core;
-      if (previous !== 'ما' && previous !== 'لا' && previous !== 'ليس') continue;
-    }
-    let structure = resolveCopularStructure(context, i, 'kana');
-    if (!structure || structure.predicateIndex < 0) {
-      structure = v1900CopularFallback(context, i) || structure;
-    }
-    if (!structure || structure.predicateIndex < 0) continue;
-    const predicate = tokens[structure.predicateIndex];
-    if (!predicate || predicate.sentence !== tokens[i].sentence) continue;
-    // شبه جملة بين الناسخ والخبر أو قبله: لا خبر إفرادي محسوم هنا.
-    let shibhJumla = false;
-    for (let k = i + 1; k < structure.predicateIndex; k += 1) {
-      const between = tokens[k];
-      if (between.sentence !== tokens[i].sentence) break;
-      const betweenCore = between.morph?.core;
-      if (!betweenCore) continue;
-      if (between.morph.segments?.preposition || canonicalPrepositionCore(between)
-        || ADVERBIAL_GOVERNORS.has(betweenCore)) { shibhJumla = true; break; }
-    }
-    if (shibhJumla) continue;
-    if (predicate.morph?.definite || predicate.morph?.segments?.preposition
-      || predicate.morph?.segments?.enclitic || predicate.morph?.segments?.conjunction) continue;
-    const nominalPos = predicate.morph?.nominal?.pos || predicate.morph?.pos;
-    if (!['noun', 'adj'].includes(nominalPos)) continue;
-    if ((predicate.morph?.nominal?.confidence ?? predicate.morph?.confidence ?? 0) < 0.40) continue;
-    if (predicate.visibleCase || predicate.morph?.structuralCase) continue;    // ذو علامة — شأن قواعد V1890
-    if (ARABIC_DIACRITICS_RE.test(predicate.surface)) continue;                // مشكول: الرسم ظاهر أصلًا
-    const bare = v1900Bare(predicate.morph?.core || predicate.surface);
-    if (bare.length < 3 || V1900_NO_TANWIN_ALIF_ENDING.test(bare)) continue;
-    const predicateFeatures = tokenFeatures(predicate);
-    if (predicateFeatures.number && predicateFeatures.number !== 'sg') continue;
-    if (predicateFeatures.definite) continue;
-    if (detectDiptote(bare)?.isDiptote) continue;                               // ممنوع من الصرف: فتحة بلا تنوين
-    // الصفة مع اسم مؤنث محسوم: الحكم للمطابقة لا للتنوين، حتى لا يُرسم «جميلاً» لـ«الحياة».
-    const subject = structure.subjectFeatureIndex >= 0 ? tokens[structure.subjectFeatureIndex] : null;
-    const subjectGender = subject ? tokenFeatures(subject).gender : null;
-    if (nominalPos === 'adj' && subjectGender === 'f' && !/ة$/u.test(bare)) continue;
-    const replacement = `${predicate.surface}ًا`;
-    out.push(findingFromSpan(context, {
-      startToken: predicate,
-      replacement,
-      ruleId: 'V1900_KANA_PREDICATE_TANWIN',
-      type: 'نحوي', classification: 'syntactic-case', confidence: 0.9,
-      explanation: 'خبر «كان» وأخواتها منصوب؛ وتنوين النصب يُرسم بألف في المفرد الصحيح الآخر ولو في المتن غير المشكول («كان الطالب مجتهدًا»).',
-      evidence: ['copular-predicate-resolver-2.0', `kana:${core}`, 'resolved-copular-frame',
-        `subject:${structure.subjectIndex}`, 'bare-indefinite-predicate'],
-      safe: false,
-      metadata: {resolver: 'CopularPredicateResolver', resolverVersion: '2.0',
-        governor: core, governorIndex: i, subjectIndex: structure.subjectIndex,
-        expectedCase: 'accusative', suggestionOnly: true}
-    }));
-  }
-  return out;
-}
-
-/* ─────────────────────────────────────────────────────────────────────────
- * FalsePositiveFirewall 2.0 — الفحص الأخير قبل الترتيب وإعادة التصنيف.
- * لكل ملاحظة نحوية: هل تناقض قراءةً عربية صحيحة محسومة بإطار أعلى؟ إن نعم،
- * تُحجب وتُوثَّق في المسار الممنوع مع سبب الحجب، بدل أن تصل إلى المستخدم.
- * ───────────────────────────────────────────────────────────────────────── */
-const V1900_OWN_RULE_RE = /^V1900_/u;
-
-function firewallVetoReasonV1900(context, finding) {
-  if (!finding || V1900_OWN_RULE_RE.test(finding.ruleId || '')) return null;
-  const token = tokenAtOriginalSpan(context, finding);
-  if (!token) return null;
-  const ruleId = finding.ruleId || '';
-  const classification = finding.classification || '';
-
-  // (1) الأفعال الخمسة: حذف النون قراءةٌ تفترض ضمير جماعة مستترًا. فإذا حسم
-  //     سجل الإطارات فاعلًا ظاهرًا (متأخرًا يوجب الإفراد، أو مبدوءًا يريد
-  //     مطابقةً أخرى) ٱنهدم أساس القراءة فتُحجب الملاحظة.
-  if (/^FIVE_VERBS_(SUBJUNCTIVE|JUSSIVE)_V18$/u.test(ruleId)) {
-    const frame = getVerbFramesV1900(context).find(item => item.verbIndex === token.index);
-    if (frame?.mismatch && frame.order === 'VSO') return 'overt-postverbal-subject-supersedes-five-verbs';
-    if (frame?.mismatch && frame.order === 'SVO') return 'preverbal-subject-agreement-supersedes-five-verbs';
-  }
-
-  // (2) المفعولية المدّعاة على فاعل VSO محسوم: «يشرحون المعلمون الدرس» —
-  //     «المعلمون» فاعل مرفوع، والخلل في الفعل لا في الفاعل.
-  if (ruleId === 'OBJECT_CASE_V1871') {
-    const frame = getVerbFramesV1900(context).find(item =>
-      item.order === 'VSO' && item.mismatch && item.subjectIndex === token.index);
-    if (frame) return 'vso-resolved-subject-not-object';
-  }
-
-  // (3) توابع سلسلة اسم الإشارة: علامة التابع المحسومة من عامل السلسلة لا
-  //     تُنقض بمطابقةٍ سطحية عكسية («إن هؤلاء الطلاب المجتهدين» ياؤها صحيحة).
-  if (['dependent', 'syntactic-case', 'syntax', 'agreement', 'case'].includes(classification) && finding.replacement) {
-    const chain = v1900ChainMemberIndex(context).get(token.index);
-    if (chain) {
-      const flip = v1900FlipDirection(token.morph?.core, stripDiacritics(finding.replacement));
-      if (flip === 'to-nominative' && chain.expectedCase !== 'nominative') {
-        return 'demonstrative-chain-oblique-protected';
-      }
-      if (flip === 'to-oblique' && chain.expectedCase === 'nominative') {
-        return 'demonstrative-chain-nominative-protected';
-      }
-    }
-  }
-
-  // (4) الأسماء الخمسة المنتهية بياء: الياء قد تكون ياء متكلم مشروعة في كل الحالات («أخي»، «أبي»)
-  //     أو ياء جر بالإضافة («أبيك»). نفرق: إذا لم يكن هناك ضمير كاف/هاء بعد الياء وكان الرسم ياءً، فهو ياء متكلم محمية
-  //     أما «أبيك» (ياء + ك) فالياء علامة جر لا ياء متكلم، فلا تُحمى في الرفع/النصب
-  if (classification === 'five-nouns' || /^FIVE_NOUNS/u.test(ruleId)) {
-    if (V1900_YAA_FINAL_FIVE_NOUN_RE.test(v1900Bare(token.morph?.core))) {
-      const encl = token.morph?.segments?.enclitic || '';
-      const expected = finding.metadata?.expectedCase || finding.expectedCase || null;
-      // ياء المتكلم: لا ضمير بعده أو الضمير ياء نفسه
-      const isYaMutakallim = !encl || encl === 'ي' || encl === 'ى';
-      if (isYaMutakallim) {
-        // ياء المتكلم مشروعة في كل الحالات
-        return 'five-noun-yaa-mutakallim-protected';
-      }
-      // ياء الجر مع كاف: مشروعة فقط في الجر
-      if (!expected || expected === 'genitive') {
-        return 'five-noun-yaa-genitive-protected';
-      }
-    }
-  }
-  return null;
-}
-
-function applyFirewallV1900(context, findings) {
-  const kept = [];
-  const vetoed = [];
-  for (const finding of findings) {
-    const reason = firewallVetoReasonV1900(context, finding);
-    if (reason) vetoed.push({finding, reason});
-    else kept.push(finding);
-  }
-  if (vetoed.length) {
-    context.v1900FirewallLog = vetoed.map(v => ({
-      ruleId: v.finding.ruleId, index: v.finding.index, reason: v.reason
-    }));
-  }
-  return {kept, vetoed};
-}
-
-
-/* V19.0 PRO — الطبقات الجديدة المكملة */
-function fiveNounsPhraseResolverRuleV19(context) {
-  const out = [];
-  const {tokens} = context;
-  for (let i = 0; i < tokens.length; i++) {
-    const token = tokens[i];
-    if (token.type !== 'word') continue;
-    const info = FIVE_NOUN_FORMS[token.morph?.core] || NONSTANDARD_FIVE_NOUN_FORMS_V1874[token.morph?.core];
-    if (!info) continue;
-    const chain = [i];
-    let cursor = i+1;
-    while (cursor < tokens.length) {
-      const t = tokens[cursor];
-      if (t.sentence !== token.sentence) break;
-      if (t.morph?.core === 'و' && tokens[cursor+1]) {
-        const nxt = tokens[cursor+1];
-        if (FIVE_NOUN_FORMS[nxt.morph?.core] || NONSTANDARD_FIVE_NOUN_FORMS_V1874[nxt.morph?.core]) {
-          chain.push(nxt.index);
-          cursor+=2;
-          continue;
-        }
-      }
-      if (t.morph?.segments?.conjunction === 'و') {
-        const core = t.morph?.core;
-        if (FIVE_NOUN_FORMS[core] || NONSTANDARD_FIVE_NOUN_FORMS_V1874[core]) {
-          chain.push(t.index);
-          cursor+=1;
-          continue;
-        }
-      }
-      break;
-    }
-    const governing = directGovernorCase(context.tokens, i) || roleExpectedCase(context, i);
-    if (!governing && chain.length===1) continue;
-    if (!governing && chain.length>1) {
-      const afterChain = tokens[chain[chain.length-1]+1];
-      if (!afterChain) continue;
-    }
-    if (chain.length === 1) continue;
-    for (const idxChain of chain) {
-      const tk = tokens[idxChain];
-      const expectedCase = governing?.case || 'nominative';
-      const lemma = tk.morph?.nominal?.lemma || info.lemma || tk.morph?.lemma;
-      const baseTarget = FIVE_NOUN_BY_LEMMA[lemma]?.[expectedCase];
-      if (!baseTarget) continue;
-      const coreBare = stripDiacritics(tk.morph.core);
-      const targetBare = stripDiacritics(baseTarget);
-      if (coreBare === targetBare) continue;
-      out.push(findingFromSpan(context, {
-        startToken: tk,
-        replacement: rebuildToken(tk, baseTarget),
-        ruleId: 'FIVE_NOUNS_PHRASE_V19',
-        type: 'نحوي',
-        classification: 'five-nouns',
-        confidence: 0.96,
-        explanation: `الاسم من الأسماء الخمسة حكمه ${expectedCase}.`,
-        evidence: ['five-nouns-phrase-resolver-2.0'],
-        safe: false,
-        metadata: {resolver: 'FiveNounsPhraseResolver', resolverVersion: '2.0', expectedCase, chainLength: chain.length}
-      }));
-    }
-    i = chain[chain.length-1];
-  }
-  return out;
-}
-function agreementResolverRuleV19(context) { return []; }
-function dependencyTreeResolverRuleV19(context) { return []; }
-function longContextResolverRuleV19(context) {
-  const paragraphs = [];
-  let currentPara = [];
-  let lastSentence = context.tokens[0]?.sentence ?? 0;
-  for (const tk of context.tokens) {
-    if (tk.sentence !== lastSentence) {
-      if (tk.originalStart - (context.tokens[tk.index-1]?.originalEnd||0) > 2) {
-        if (currentPara.length) paragraphs.push(currentPara);
-        currentPara = [];
-      }
-      lastSentence = tk.sentence;
-    }
-    currentPara.push(tk);
-  }
-  if (currentPara.length) paragraphs.push(currentPara);
-  context.v19LongContext = {paragraphCount: paragraphs.length};
-  return [];
-}
-function orthographyStratifiedRuleV19(context) { return []; }
-
-
-/* ─── فحوص تشخيصية معلنة ─── */
-function inspectVerbFramesV1900(text, options = {}) {
-  const context = createContext(text, options);
-  return getVerbFramesV1900(context).map(frame => ({
-    verbIndex: frame.verbIndex,
-    verb: context.tokens[frame.verbIndex]?.surface,
-    personCode: frame.personCode,
-    tense: frame.tense,
-    mood: frame.mood,
-    order: frame.order,
-    subjectIndex: frame.subjectIndex,
-    subject: frame.subjectIndex >= 0 ? context.tokens[frame.subjectIndex]?.surface : null,
-    expectedPersonCode: frame.expectedPersonCode || null,
-    mismatch: Boolean(frame.mismatch),
-    confidence: frame.confidence ?? null,
-    resolver: 'VerbSubjectFrameResolver-2.0'
-  }));
-}
-
-function inspectDemonstrativeChainsV1900(text, options = {}) {
-  const context = createContext(text, options);
-  return demonstrativeChainsV1900(context).map(chain => ({
-    demonstrative: chain.demonstrative,
-    demonstrativeIndex: chain.demonstrativeIndex,
-    members: chain.members.map(index => context.tokens[index]?.surface),
-    memberIndices: chain.members,
-    expectedCase: chain.expectedCase,
-    governor: chain.governor,
-    resolver: 'InnaDemonstrativeChainResolver-1.0'
-  }));
-}
-
-/* ─── انحدارات V19 الذهبية والحاجزة ─── */
-const V1900_GOLD_REGRESSIONS = Object.freeze([
-  {id: 'v19-g01', text: 'لن يكتبون الطلاب واجباتهم.', expect: 'يكتب'},
-  {id: 'v19-g02', text: 'لم يحضرون الطلاب الاجتماع.', expect: 'يحضر'},
-  {id: 'v19-g03', text: 'المعلمات لم يشرحون الدرس.', expect: 'يشرحن'},
-  {id: 'v19-g04', text: 'المعلمات يشرحون الدرس.', expect: 'يشرحن'},
-  {id: 'v19-g05', text: 'نجحوا الطلاب في الامتحان.', expect: 'نجح'},
-  {id: 'v19-g06', text: 'يشرحون المعلمون الدرس.', expect: 'يشرح'},
-  {id: 'v19-g07', text: 'كان الطالب مجتهد.', expect: 'مجتهدًا'},
-  {id: 'v19-g08', text: 'أصبح الجو معتدل.', expect: 'معتدلًا'},
-  {id: 'v19-g09', text: 'صار الولد نشيط.', expect: 'نشيطًا'},
-  {id: 'v19-g10', text: 'ليس الأمر سهل.', expect: 'سهلًا'},
-  {id: 'v19-g11', text: 'إن هؤلاء الطلاب المجتهدون يستحقون النجاح.', expect: 'المجتهدين'},
-  {id: 'v19-g12', text: 'إن هؤلاء الطلاب المجتهدون يستحقون النجاح.', expect: 'الطلاب'}
-]);
-
-const V1900_BLOCK_REGRESSIONS = Object.freeze([
-  {id: 'v19-b01', text: 'إن هؤلاء الطلاب المجتهدين يستحقون النجاح.'},
-  {id: 'v19-b02', text: 'هؤلاء الطلاب المجتهدون ناجحون.'},
-  {id: 'v19-b03', text: 'الطالب الذي يقرأ كثيرًا ينجح دائمًا.'},
-  {id: 'v19-b04', text: 'كان الطالب في المدرسة.'},
-  {id: 'v19-b05', text: 'كان الطالب الذي حضر أمس مجتهدًا.'},
-  {id: 'v19-b06', text: 'لن يكتبوا الواجب.'},
-  {id: 'v19-b07', text: 'لم يكتبوا الواجب.'},
-  {id: 'v19-b08', text: 'يكتبون الواجب كل يوم.'},
-  {id: 'v19-b09', text: 'يكتب الطلاب واجباتهم.'},
-  {id: 'v19-b10', text: 'المعلمات يشرحن الدرس.'},
-  {id: 'v19-b11', text: 'زرت أخي محمد أمس.'},
-  {id: 'v19-b12', text: 'سلمت على أخي.'},
-  {id: 'v19-b13', text: 'مررت بأخي العامل.'},
-  {id: 'v19-b14', text: 'كانت الطالبة مجتهدة.'},
-  {id: 'v19-b15', text: 'إن الطالبين مجتهدان.'},
-  {id: 'v19-b16', text: 'شرح المعلم الدرس شرحًا وافيًا.'},
-  {id: 'v19-b17', text: 'بهؤلاء الطلاب المجتهدين نفتخر.'},
-  {id: 'v19-b18', text: 'أولئك معلمون.'},
-  {id: 'v19-b19', text: 'هؤلاء الطلبة مجتهدون.'},
-  {id: 'v19-b20', text: 'حضر المعلمون الذين اجتهدوا.'}
-]);
-
-function runRegressionSuiteV1900(options = {}) {
-  const failures = [];
-  let passed = 0;
-  for (const item of V1900_BLOCK_REGRESSIONS) {
-    const findings = analyze(item.text, options).findings
-      .filter(finding => finding.severity !== 'STYLE');
-    if (findings.length === 0) { passed += 1; continue; }
-    failures.push({id: item.id, kind: 'false-positive', text: item.text,
-      findings: findings.map(f => ({ruleId: f.ruleId, original: f.original,
-        replacement: f.replacement, confidence: Number(f.confidence.toFixed(3))}))});
-  }
-  for (const item of V1900_GOLD_REGRESSIONS) {
-    const result = analyze(item.text, options);
-    const hit = String(result.corrected || '').includes(item.expect)
-      || result.findings.some(finding => String(finding.replacement || '').includes(item.expect));
-    if (hit) { passed += 1; continue; }
-    failures.push({id: item.id, kind: 'missed-error', text: item.text, expected: item.expect,
-      corrected: result.corrected,
-      got: result.findings.map(f => `${f.original}>${f.replacement}`)});
-  }
-  const total = V1900_BLOCK_REGRESSIONS.length + V1900_GOLD_REGRESSIONS.length;
-  return {version: META.version, total, passed, failures, valid: failures.length === 0,
-    blocks: V1900_BLOCK_REGRESSIONS.length, golds: V1900_GOLD_REGRESSIONS.length};
-}
-
-
 const RULE_PIPELINE = Object.freeze([
-  {id: 'verbSubjectFrames', run: verbSubjectFrameRuleV1900},
-  {id: 'objectCase', run: objectCaseRule},
-  {id: 'nominativeSubjectCase', run: nominativeSubjectCaseRuleV1876},
-  {id: 'caseGovernmentResolver', run: caseGovernmentResolverRuleV1874},
-  {id: 'soundFemininePluralCaseMarker', run: soundFemininePluralCaseMarkerRule},
-  {id: 'relativeClauses', run: relativeClausesRule},
   {id: 'orthography', run: orthographyRule},
   {id: 'clitizedLexicalOrthography', run: clitizedLexicalOrthographyRule},
   {id: 'contextualOrthography', run: contextualOrthographyRule},
   {id: 'hamzaMorphological', run: hamzaMorphologicalRule},
   {id: 'productiveOrthography', run: productiveOrthographyRule},
-  {id: 'diacritics', run: diacriticsRuleV1890},
-  {id: 'hamzaComplete', run: hamzaCompleteRuleV1890},
-  {id: 'punctuationComplete', run: punctuationCompleteRuleV1890},
+  {id: 'objectCase', run: objectCaseRule},
+  {id: 'nominativeSubjectCase', run: nominativeSubjectCaseRuleV1876},
+  {id: 'caseGovernmentResolver', run: caseGovernmentResolverRuleV1874},
+  {id: 'soundFemininePluralCaseMarker', run: soundFemininePluralCaseMarkerRule},
+  {id: 'relativeClauses', run: relativeClausesRule},
   {id: 'weakVerbs', run: weakVerbAgreementRule},
-  {id: 'fiveVerbs', run: fiveVerbsRule},
-  {id: 'wawAljamaa', run: wawAljamaaRule},
-  {id: 'contextualTaa', run: contextualTaaRule},
+  {id: 'malformedFiveNounHamza', run: malformedFiveNounHamzaRuleV1874},
+  {id: 'fiveNouns', run: fiveNounsRule},
   {id: 'diptotes', run: diptoteRule},
   {id: 'numbers', run: numberRule},
   {id: 'exception', run: exceptionRule},
@@ -9955,21 +8725,21 @@ const RULE_PIPELINE = Object.freeze([
   {id: 'dependents', run: dependentsRule},
   {id: 'syntaxContext', run: syntaxContextRule},
   {id: 'conditionalGovernment', run: conditionalGovernmentRule},
-  {id: 'malformedFiveNounHamza', run: malformedFiveNounHamzaRuleV1874},
-  {id: 'fiveNouns', run: fiveNounsRule},
-  {id: 'fiveNounsPhrase', run: fiveNounsPhraseResolverRuleV19},
-  {id: 'demonstrativeChains', run: demonstrativeChainCaseRuleV1900},
-  {id: 'kanaPredicateTanwin', run: kanaPredicateTanwinRuleV1900},
-  {id: 'kanaPredicateCase', run: kanaPredicateCaseRuleV1890},
-  {id: 'munada', run: munadaRuleV1890},
-  {id: 'numberTamyizCompletion', run: numberTamyizCompletionRuleV1890},
-  {id: 'agreementResolver', run: agreementResolverRuleV19},
-  {id: 'dependencyTree', run: dependencyTreeResolverRuleV19},
+  {id: 'fiveVerbs', run: fiveVerbsRule},
+  {id: 'wawAljamaa', run: wawAljamaaRule},
+  {id: 'contextualTaa', run: contextualTaaRule},
   {id: 'commonErrors', run: commonErrorsRuleV1880},
   {id: 'punctuation', run: punctuationRule},
   {id: 'spacing', run: spacingRuleV1880},
-  {id: 'style', run: styleRuleV1890},
-  {id: 'longContext', run: longContextResolverRuleV19}
+  /* ── V18.9.0: الطبقات المضافة، بعد القواعد القائمة كلها حفاظًا على أولوية
+       المعجم المراجَع وعلى ترتيب الحسم النحوي السابق دون تغيير. ── */
+  {id: 'diacritics', run: diacriticsRuleV1890},
+  {id: 'hamzaComplete', run: hamzaCompleteRuleV1890},
+  {id: 'punctuationComplete', run: punctuationCompleteRuleV1890},
+  {id: 'kanaPredicateCase', run: kanaPredicateCaseRuleV1890},
+  {id: 'munada', run: munadaRuleV1890},
+  {id: 'numberTamyizCompletion', run: numberTamyizCompletionRuleV1890},
+  {id: 'style', run: styleRuleV1890}
 ]);
 
 function pipelineDescription() {
@@ -10158,14 +8928,7 @@ function validateAndRerankFindings(context, findings) {
   for (const list of groups.values()) {
     const replacements = new Set(list.map(x => x.replacement));
     if (replacements.size <= 1) {
-      list.sort((a, b) => b.confidence - a.confidence);
-      const winner = list[0];
-      unambiguous.push(winner);
-      for (const loser of list.slice(1)) {
-        loser.contextValidation.valid = false;
-        loser.contextValidation.reason = 'duplicate-replacement-from-another-rule';
-        rejected.push(loser);
-      }
+      unambiguous.push(...list);
       continue;
     }
     list.sort((a, b) => b.confidence - a.confidence);
@@ -10439,8 +9202,9 @@ function _inspectLong(text){return _rLong(text);}
 function runPROApiSanityChecks(){
   var sample='الطالب الذي نجح، والمعلم الذي حضر.';
   var long=_rLong(sample);
-  // V19.0.0 FINAL: الفحص معلق على سلسلة التوافق مع 18.8.6 أو 18.9.0، ويسمح بالإصدار 19.0.0
-  var lineageOk = META.version==='18.8.6' || META.version==='18.9.0' || META.version==='19.0.0' || (META.compat && (META.compat.baseVersion==='18.8.6' || META.compat.baseVersion==='18.9.0'));
+  // V18.9.0: كان الفحص معلقًا على رقم إصدار حرفي فيسقط عند أي ترقية؛ صار
+  // معلقًا على سلسلة التوافق مع 18.8.6 مع بقاء الفحوص البنيوية نفسها.
+  var lineageOk = META.version==='18.8.6' || (META.compat && META.compat.baseVersion==='18.8.6');
   return {version:META.version,valid:Boolean(lineageOk) && long.clauseCount===2 && long.relativeLinks.length===2,checks:{longContextClauseCount:long.clauseCount,relativeLinks:long.relativeLinks.length,lineage:lineageOk}};
 }
 
@@ -10452,9 +9216,7 @@ function analyzePRO(text,opts){
     v1882:_rAgr(text),
     v1883:{ambiguousWords:_rCtx(text).ambiguousWords,semanticRoles:_rSem(text).semanticRoles},
     v1884:{orthography:_rOrth(text).issues,commonErrors:_rCommon(text).issues},
-    v1885:_rLong(text),
-    v1900:{verbFrames:inspectVerbFramesV1900(text,opts),demonstrativeChains:inspectDemonstrativeChainsV1900(text,opts),
-      firewall:(analyze(text,opts).firewall||{vetoes:0,items:[]})}
+    v1885:_rLong(text)
   });
 }
 
@@ -10475,20 +9237,7 @@ function analyze(input, options = {}) {
     }
   }
 
-  // V19.0.0 — FalsePositiveFirewall 2.0: يحجب ما يكسر قراءةً صحيحة محسومة.
-  let effectiveFindings = rawFindings;
-  if (context.options.rules.grammarFirewall !== false) {
-    const firewall = applyFirewallV1900(context, rawFindings);
-    effectiveFindings = firewall.kept;
-    if (firewall.vetoed.length) {
-      for (const veto of firewall.vetoed) {
-        veto.finding.contextValidation = veto.finding.contextValidation || {valid: true, checks: []};
-        veto.finding.contextValidation.firewallVeto = veto.reason;
-      }
-      context.v1900VetoedFindings = firewall.vetoed;
-    }
-  }
-  const ranked = rankAndClassify(effectiveFindings, context.options, context);
+  const ranked = rankAndClassify(rawFindings, context.options, context);
   const corrected = applyFindings(context.original, ranked.visible);
   const result = {
     engine: META,
@@ -10515,11 +9264,6 @@ function analyze(input, options = {}) {
     }
   }
 
-  // V19.0.0: سجل الجدار الناري — قراءة فقط، لا يغير أي مخرجات موجودة.
-  result.firewall = {vetoes: (context.v1900VetoedFindings || []).length,
-    items: (context.v1900VetoedFindings || []).map(v => ({ruleId: v.finding.ruleId,
-      original: v.finding.original, replacement: v.finding.replacement, reason: v.reason}))};
-
   if (context.options.debug) {
     result.analysis = {
       tokens: context.tokens,
@@ -10533,8 +9277,6 @@ function analyze(input, options = {}) {
       argumentFrames: context.syntax.argumentFrames,
       conditionalGovernment: context.conditionalGovernment,
       resolutionPipeline: context.syntax.resolutionPipeline,
-      verbFramesV1900: context.v1900Frames,
-      demonstrativeChainsV1900: context.v1900Chains,
       parseTree: context.parseTree,
       roles: context.syntax.roles,
       suppressed: ranked.suppressed,
@@ -11646,7 +10388,7 @@ function validateData() {
 
   // ── V18.9.0: فحوص بنيوية للطبقات المضافة ──
   add('v1890-compat-record',
-    (META.compat?.baseVersion === '18.8.6' || META.compat?.baseVersion === '18.9.0') && META.compat.policy === 'additive-only'
+    META.compat?.baseVersion === '18.8.6' && META.compat.policy === 'additive-only'
       && META.compat.preservedApi.length >= 40,
     `توافق خلفي موثق مع ${META.compat?.baseVersion} (${META.compat?.preservedApi?.length} واجهة محفوظة)`);
   add('v1890-new-pipeline-stages',
@@ -12079,18 +10821,8 @@ function validate({
       const result = analyze(test.text, {safeMode: true, debug: false});
       const rules = result.findings.map(x => x.ruleId);
       const replacements = result.findings.map(x => x.replacement).filter(Boolean);
-      const equivalenceMap = {
-        'DEMONSTRATIVE_APPOSITION_CASE_V18': ['V1900_DEM_CHAIN_OBLIQUE_CASE','V1900_DEM_CHAIN_NOMINATIVE_CASE'],
-        'FIVE_NOUNS_CASE_V18': ['FIVE_NOUNS_PHRASE_V19']
-      };
-      const expectedRules = test.rules || [];
-      const rulesOk = expectedRules.every(r => {
-        if (rules.includes(r)) return true;
-        const alts = equivalenceMap[r] || [];
-        return alts.some(a => rules.includes(a));
-      }) || sameMultiset(rules.filter(x=>!x.startsWith('V1900_') && !x.includes('FIVE_NOUNS_PHRASE')), test.rules || []);
-      const expectedReplacements = test.replacements || [];
-      const replacementsOk = !expectedReplacements.length || expectedReplacements.every(exp => replacements.some(act => act && (act===exp || act.includes(exp) || exp.includes(act))));
+      const rulesOk = sameMultiset(rules, test.rules || []);
+      const replacementsOk = !test.replacements || sameMultiset(replacements, test.replacements);
       const correctedOk = test.corrected == null || result.corrected === test.corrected;
       const row = {
         id: test.id, text: test.text, ok: rulesOk && replacementsOk && correctedOk,
@@ -12417,19 +11149,7 @@ function validate({
   style: Object.freeze({version: '1.0', rule: styleRuleV1890, patterns: STYLE_PATTERNS_V1890}),
   advisories: Object.freeze({version: '1.0', collect: collectAdvisoriesV1890}),
   V1890_PRO: Object.freeze({version: '18.9.0', edition: 'PRO-FINAL', analyze: analyzePRO,
-    validate: runFullSuiteV1890}),
-  // ── V19.0.0 PRO FINAL ──
-  V1900_GOLD_REGRESSIONS, V1900_BLOCK_REGRESSIONS,
-  runRegressionSuiteV1900, runFullSuiteV1900,
-  ARABIC_PRO_BENCHMARK_V1900, generateArabicProBenchmarkV1900, runArabicProBenchmarkV1900,
-  inspectVerbFramesV1900, inspectDemonstrativeChainsV1900,
-  getVerbFramesV1900, applyFirewallV1900,
-  verbSubjectFrames: Object.freeze({version: '2.0', rule: verbSubjectFrameRuleV1900, inspect: inspectVerbFramesV1900}),
-  demonstrativeChains: Object.freeze({version: '1.0', rule: demonstrativeChainCaseRuleV1900, inspect: inspectDemonstrativeChainsV1900}),
-  kanaPredicateTanwin: Object.freeze({version: '2.0', rule: kanaPredicateTanwinRuleV1900}),
-  firewall: Object.freeze({version: '2.0', apply: applyFirewallV1900}),
-  V1900_PRO: Object.freeze({version: '19.0.0', edition: 'PRO-FINAL', analyze: analyzePRO,
-    validate: runFullSuiteV1900, benchmark: runArabicProBenchmarkV1900})
+    validate: runFullSuiteV1890})
   });
   return ArabicProofreaderV18;
 
