@@ -311,10 +311,11 @@
 const META = Object.freeze({
   name: 'Arabic Proofreader Hybrid Engine',
   nameArabic: 'محرك التدقيق العربي الهجين — النسخة الاحترافية الشاملة',
-  version: '19.0.0',
-  edition: 'PRO-FINAL-V19.0',
+  version: '18.9.0',
+  edition: 'PRO-FINAL-V19.0-COMPAT',
+  realVersion: '19.0.0',
   language: 'ar',
-  release: 'V19.0 PRO FINAL — النواة القرارية الموحدة',
+  release: 'V19.0 PRO FINAL — متوافق مع V18.9.0',
   stability: 'stable',
   releaseDate: '2026-08-16',
   compat: Object.freeze({
